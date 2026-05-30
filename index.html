@@ -148,29 +148,47 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 @keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
 .safe-fill{display:none!important}
 html,
-body {
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
   background: var(--s1) !important;
 }
 
 body {
-  overflow-x: hidden;
+  overflow: hidden !important;
 }
 
 .shell {
-  background: var(--bg) !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 50% !important;
+  bottom: 0 !important;
+  transform: translateX(-50%) !important;
+  width: 100% !important;
+  max-width: 480px !important;
+  height: 100vh !important;
   min-height: 100vh !important;
-  height: auto !important;
-  overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  background: var(--bg) !important;
 }
 
-/* Main scrolling content should have room for fixed nav */
+@supports (height: 100dvh) {
+  .shell {
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+  }
+}
+
 .has-nav {
-  padding-bottom: calc(84px + env(safe-area-inset-bottom)) !important;
+  padding-bottom: calc(70px + env(safe-area-inset-bottom)) !important;
 }
 
-/* Fixed bottom nav */
 .nav {
   position: fixed !important;
   left: 50% !important;
@@ -179,55 +197,35 @@ body {
   transform: translateX(-50%) !important;
   width: 100% !important;
   max-width: 480px !important;
-  height: auto !important;
-  min-height: 72px !important;
+  height: calc(60px + env(safe-area-inset-bottom)) !important;
+  min-height: 64px !important;
   background: var(--s1) !important;
   border-top: 1px solid var(--border) !important;
   z-index: 9999 !important;
   display: flex !important;
-  padding-top: 6px !important;
-  padding-bottom: max(6px, env(safe-area-inset-bottom)) !important;
-}
-
-/* Keep nav icons compact */
-.nav button {
-  padding: 4px 0 2px !important;
-  min-height: 58px !important;
-}
-
-/* Remove old filler hacks */
-.safe-fill {
-  display: none !important;
-}
-
-.nav::after {
-  display: none !important;
-  content: none !important;
-}
-
-.nav {
-  min-height: 64px !important;
-  height: 64px !important;
+  align-items: flex-start !important;
   padding-top: 4px !important;
-  padding-bottom: max(4px, env(safe-area-inset-bottom)) !important;
-  align-items: center !important;
+  padding-bottom: env(safe-area-inset-bottom) !important;
+  box-shadow: 0 -1px 0 rgba(200,220,240,.55) !important;
 }
 
 .nav button {
   min-height: 54px !important;
   height: 54px !important;
-  padding: 2px 0 0 !important;
+  padding: 3px 0 2px !important;
   justify-content: center !important;
   gap: 2px !important;
 }
 
 .nav svg,
-.nav .icon {
+.nav .nav-icon {
   margin-bottom: 0 !important;
 }
 
-.has-nav {
-  padding-bottom: calc(74px + env(safe-area-inset-bottom)) !important;
+.safe-fill,
+.nav::after {
+  display: none !important;
+  content: none !important;
 }</style>
 </head>
 <body>
