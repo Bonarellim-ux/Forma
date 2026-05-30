@@ -3838,7 +3838,7 @@ function makeTourDemoState(){
       {name:'Squat',from:'205×6',to:'225×5'},
       {name:'Deadlift',from:'255×5',to:'275×4'}
     ],
-    plateau:{name:'Squat',note:'You hit 225×5 twice in a row. Forma would suggest building to 225×7 before increasing weight.'},
+    plateau:{name:'Bench Press is trending up, but Squat has repeated the same top set twice.',note:'I’d recommend staying at 225 for now and aiming for 6–7 clean reps before increasing the weight.'},
     ai:'Bench has been steady at 185×7 for three sessions. Keep the weight and aim for 185×8 next time.'
   };
 }
@@ -3909,7 +3909,7 @@ function vTourStats(d){
     '<div class="card tour-highlight" style="margin-bottom:11px;border-radius:16px"><span class="lbl">TOP LIFTS</span>'+
       d.prs.map(function(p){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--dim)"><b style="font-size:13px">'+p.name+'</b><span class="mono" style="color:var(--blue);font-weight:800">'+p.to+'</span></div>';}).join('')+
     '</div>'+
-    '<div class="card" style="margin-bottom:0;border-radius:16px"><span class="lbl">WHAT FORMA NOTICES</span><div style="font-size:13px;color:var(--sub);line-height:1.55"><b>'+d.plateau.name+'</b>: '+d.plateau.note+'</div></div>'+
+    '<div class="card" style="margin-bottom:0;border-radius:16px"><span class="lbl">WHAT I NOTICE</span><div style="font-size:13px;color:var(--sub);line-height:1.55">'+d.plateau.name+' '+d.plateau.note+'</div></div>'+
   '</div>';
 }
 function vFeatureTour(){
