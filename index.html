@@ -251,6 +251,17 @@ body {
 .home-week-tile-text{font-size:10px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;text-align:center;letter-spacing:-.01em}
 .home-week-indicator{width:18px;height:4px;border-radius:999px;background:var(--blue)}
 .home-week-indicator-spacer{height:4px}
+.tour-wrap{min-height:100%;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 18px) 16px calc(18px + env(safe-area-inset-bottom))}
+.tour-card{background:linear-gradient(180deg,#FFFFFF 0%,#FBFDFF 100%);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 14px 34px rgba(13,30,46,.08)}
+.tour-kicker{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--blue);margin-bottom:8px}
+.tour-title{font-size:24px;font-weight:800;color:var(--white);letter-spacing:-.04em;line-height:1.12;margin-bottom:8px}
+.tour-copy{font-size:14px;color:var(--sub);line-height:1.55}
+.tour-preview{background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:12px;margin:14px 0;max-height:410px;overflow:hidden}
+.tour-highlight{border:2px solid rgba(26,158,212,.45)!important;box-shadow:0 10px 24px rgba(26,158,212,.14)!important}
+.tour-actions{display:flex;gap:8px;margin-top:auto;padding-top:14px}
+.tour-actions button{flex:1;border-radius:12px;padding:13px 12px;font-size:13px;font-weight:800;font-family:inherit}
+.tour-primary{background:var(--blue);color:#fff}
+.tour-secondary{background:var(--s1);border:1px solid var(--border);color:var(--sub)}
 
 .safe-fill,
 .nav::after {
@@ -702,6 +713,7 @@ const S={
   unit:'lbs',
   onboarded:false,
   obStep:0, obData:{}, obLoading:false, obDone:false,
+  tourPrompt:false, tourActive:false, tourStep:0,
   scheduleRationale:null, // {text:str, dismissed:bool} — shown on home after onboarding
   nudgeDismissedAt:null,
   quickAIOpen:false, quickAIDraft:'', quickAILoading:false, quickAIReply:'', quickAIListening:false,
@@ -1151,15 +1163,18 @@ function render(){
     document.getElementById('root').innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--muted)">loading...</div>';
     return;
   }
-  const hasNav=['home','chat','progress','setup'].includes(S.view);
-  const hasBack=['log','feedback','workout-detail'].includes(S.view);
+  const inTour=S.tourPrompt||S.tourActive;
+  const hasNav=!inTour&&['home','chat','progress','setup'].includes(S.view);
+  const hasBack=!inTour&&['log','feedback','workout-detail'].includes(S.view);
 
   // Show onboarding if first time and no profile set up
-  const isFirstTime=!S.onboarded&&!S.profile.name&&!S.profile.goal&&S.workouts.length===0;
+  const isFirstTime=!inTour&&!S.onboarded&&!S.profile.name&&!S.profile.goal&&S.workouts.length===0;
 
   let body='';
   try{
-  if(isFirstTime)                    body=vOnboarding();
+  if(S.tourPrompt)                   body=vFeatureTourPrompt();
+  else if(S.tourActive)              body=vFeatureTour();
+  else if(isFirstTime)               body=vOnboarding();
   else if(S.view==='apikey')         body=vApiKey();
   else if(S.view==='home')      body=vHome();
   else if(S.view==='chat')      body=vChat();
@@ -1204,7 +1219,7 @@ function render(){
         '</button>':'')+
       '</div>')+
       (S.quickAIOpen&&!isFirstTime?(hasNav||S.view==='log'?vQuickAIPanel():''):'')+
-      '<div class="content'+(isFirstTime?'':hasNav?' has-nav':'')+(S.view==='chat'&&!isFirstTime?' is-chat':'')+(S.restTimer?' style="padding-top:calc(env(safe-area-inset-top) + 58px)"':'')+'">'+body+'</div>'+
+      '<div class="content'+(isFirstTime||inTour?'':hasNav?' has-nav':'')+(S.view==='chat'&&!isFirstTime&&!inTour?' is-chat':'')+(S.restTimer?' style="padding-top:calc(env(safe-area-inset-top) + 58px)"':'')+'">'+body+'</div>'+
       (!isFirstTime&&hasNav?vNav():'')+
     '</div>';
 
@@ -3726,6 +3741,7 @@ async function obGenerate(){
   S.obStep=0;
   S.obData={};
   S.view='home';
+  if(shouldShowFeatureTour())S.tourPrompt=true;
   render();
 }
 
@@ -3741,6 +3757,186 @@ function skipOnboarding(){
   persist('ll_onboarded',true);
   S.view='home';
   render();
+}
+
+function tourDone(){
+  try{localStorage.setItem('forma_feature_tour_done','true');}catch(e){}
+}
+function shouldShowFeatureTour(){
+  try{return localStorage.getItem('forma_feature_tour_done')!=='true';}catch(e){return true;}
+}
+function startFeatureTour(){
+  S.tourPrompt=false;
+  S.tourActive=true;
+  S.tourStep=0;
+  render();
+}
+function skipFeatureTour(){
+  tourDone();
+  S.tourPrompt=false;
+  S.tourActive=false;
+  S.tourStep=0;
+  S.view='home';
+  render();
+}
+function finishFeatureTour(){
+  tourDone();
+  S.tourPrompt=false;
+  S.tourActive=false;
+  S.tourStep=0;
+  S.view='home';
+  render();
+}
+function replayFeatureTour(){
+  S.tourPrompt=false;
+  S.tourActive=true;
+  S.tourStep=0;
+  render();
+}
+function makeTourDemoState(){
+  const base=new Date();
+  const iso=function(daysAgo){
+    const d=new Date(base);
+    d.setDate(d.getDate()-daysAgo);
+    d.setHours(18,15,0,0);
+    return d.toISOString();
+  };
+  const splits=['push','pull','legs','upper','lower'];
+  const names={
+    push:['Bench Press','Incline Bench','Tricep Pushdown'],
+    pull:['Barbell Row','Lat Pulldown','Face Pull'],
+    legs:['Squat','Leg Extension','Leg Curl'],
+    upper:['Overhead Press','Pull-Up','Chest Press'],
+    lower:['Deadlift','Leg Press','Calf Raise']
+  };
+  const workouts=[];
+  for(let i=0;i<14;i++){
+    const sp=splits[i%splits.length];
+    const bump=Math.floor(i/5);
+    workouts.push({
+      date:iso(28-i*2),
+      split:sp,
+      debrief:i===10?'Bench is moving well. Face Pull dipped slightly after higher pressing volume.':'Tour demo workout.',
+      exercises:names[sp].map(function(n,ei){
+        const baseW={push:70,pull:55,legs:95,upper:45,lower:115}[sp]+ei*8+bump*2;
+        const top=n==='Bench Press'&&i>8?84:n==='Face Pull'&&i>9?23:baseW;
+        return {name:n,sets:[
+          {w:Math.max(0,top*.45),r:8,warmup:true},
+          {w:top,r:ei===0?6+bump:10},
+          {w:top,r:ei===0?5+bump:9}
+        ]};
+      })
+    });
+  }
+  return {
+    workouts:workouts,
+    schedule:{mon:'push',tue:'pull',wed:'legs',thu:'upper',fri:'lower',sat:'rest',sun:'rest'},
+    recent:workouts.slice(-3).reverse(),
+    prs:[
+      {name:'Bench Press',from:'170×8',to:'185×7'},
+      {name:'Squat',from:'205×6',to:'225×5'},
+      {name:'Deadlift',from:'255×5',to:'275×4'}
+    ],
+    plateau:{name:'Face Pull',note:'Down for two pull sessions while pressing volume rose.'},
+    ai:'Bench has improved from 170×8 to 185×7. Try 190×5–6 next session.'
+  };
+}
+function vFeatureTourPrompt(){
+  return '<div class="tour-wrap" style="justify-content:center">'+
+    '<div class="tour-card">'+
+      '<div class="tour-kicker">OPTIONAL TOUR</div>'+
+      '<div class="tour-title">Want a quick tour?</div>'+
+      '<div class="tour-copy">Forma gets smarter after you log workouts. This 60-second tour shows how to get the most out of it.</div>'+
+      '<div style="display:flex;gap:8px;margin-top:18px">'+
+        '<button class="tour-primary" onclick="startFeatureTour()" style="flex:1;border-radius:12px;padding:14px;font-size:14px;font-weight:800">Show me</button>'+
+        '<button class="tour-secondary" onclick="skipFeatureTour()" style="flex:1;border-radius:12px;padding:14px;font-size:14px;font-weight:800">Skip</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+function tourMiniHeader(title,msg,step){
+  return '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">'+
+    '<div>'+
+      '<div class="tour-kicker">'+(step+1)+' of 4</div>'+
+      '<div class="tour-title" style="font-size:22px">'+title+'</div>'+
+      '<div class="tour-copy">'+msg+'</div>'+
+    '</div>'+
+    '<button onclick="skipFeatureTour()" style="background:none;border:none;color:var(--muted);font-size:12px;font-weight:800;padding:4px">Skip</button>'+
+  '</div>';
+}
+function vTourHome(d){
+  const days=DAYS.map(function(day){
+    const sp=d.schedule[day], col=spCol(sp), rest=sp==='rest';
+    return '<div style="flex:1;text-align:center">'+
+      '<div style="font-size:10px;font-weight:800;color:var(--muted);margin-bottom:5px">'+DAY_FULL[day][0]+'</div>'+
+      '<div style="height:38px;border-radius:13px;background:'+(rest?'#fff':hexA(col,.1))+';border:1px solid '+(rest?'var(--border)':hexA(col,.25))+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:'+(rest?'var(--dim)':col)+'">'+(rest?'—':spLbl(sp))+'</div>'+
+    '</div>';
+  }).join('');
+  return '<div class="tour-preview">'+
+    '<div class="card tour-highlight" style="background:linear-gradient(135deg,#0D1E2E,#124A6A);margin-bottom:10px"><div class="lbl" style="color:#8EB4CA">TODAY</div><div style="font-size:22px;font-weight:800;color:#fff">Push Day</div><div style="font-size:12px;color:#8EB4CA;margin-top:4px">Bench Press, Incline Bench, Pushdowns</div></div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px"><span class="home-week-title">THIS WEEK</span><span style="font-size:11px;color:var(--blue);font-weight:800">Edit schedule</span></div>'+
+    '<div class="tour-highlight" style="display:flex;gap:5px;border-radius:15px;padding:7px;margin-bottom:10px">'+days+'</div>'+
+    '<div class="card" style="margin-bottom:0">'+
+      '<span class="lbl">RECENT</span>'+
+      d.recent.map(function(w){return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--dim)"><b style="font-size:12px;color:'+spCol(w.split)+'">'+spLbl(w.split)+'</b><span style="font-size:11px;color:var(--sub)">3 exercises</span></div>';}).join('')+
+    '</div>'+
+  '</div>';
+}
+function vTourLog(d){
+  return '<div class="tour-preview">'+
+    '<div class="inline-ai tour-highlight"><div class="inline-ai-hdr"><div style="width:3px;height:14px;background:var(--blue);border-radius:2px"></div><span style="font-size:11px;font-weight:800;color:var(--blue)">PROGRESSION TARGET</span></div><div class="inline-ai-reply" style="margin-bottom:0">Bench Press: last top set was <b>185×7</b>. Aim for <b>190×5–6</b>.</div></div>'+
+    '<div class="ex-card" style="margin-bottom:0">'+
+      '<div class="ex-hdr"><div class="ex-name">Bench Press</div><div class="ex-last">last<br><span class="mono">185 lbs×7</span></div></div>'+
+      '<div style="margin-bottom:12px">'+
+        '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--dim)"><span style="font-size:11px;color:#E8693A" class="mono">#1 <b>WU</b></span><span class="mono" style="font-weight:800">95 lbs × 8</span></div>'+
+        '<div class="tour-highlight" style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--dim)"><span style="font-size:11px;color:var(--sub)" class="mono">#2</span><span class="mono" style="font-weight:800">185 lbs × 7</span></div>'+
+      '</div>'+
+      '<button class="btn-accent" style="padding:11px">Log Set</button>'+
+    '</div>'+
+  '</div>';
+}
+function vTourAI(d){
+  return '<div class="tour-preview">'+
+    '<div class="msg ai" style="margin-bottom:10px"><div class="avatar">L</div><div><div class="bubble tour-highlight">'+
+      '<b>RECOMMENDATION</b><br>'+escH(d.ai)+'<br><br><b>EVIDENCE</b><br>- Bench PR this month<br>- Recent sets stayed near all-time highs<br>- No pain or recovery flags'+
+    '</div></div></div>'+
+    '<div class="card" style="margin-bottom:0"><span class="lbl">WHY IT IS DIFFERENT</span><div style="font-size:13px;color:var(--sub);line-height:1.55">The coach reads workouts, warm-ups, PRs, frequency, and trends before giving advice.</div></div>'+
+  '</div>';
+}
+function vTourStats(d){
+  return '<div class="tour-preview">'+
+    '<div class="card tour-highlight" style="margin-bottom:10px"><span class="lbl">TOP LIFTS</span>'+
+      d.prs.map(function(p){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--dim)"><b style="font-size:13px">'+p.name+'</b><span class="mono" style="color:var(--blue);font-weight:800">'+p.to+'</span></div>';}).join('')+
+    '</div>'+
+    '<div class="card" style="margin-bottom:0"><span class="lbl">OBSERVATION</span><div style="font-size:13px;color:var(--sub);line-height:1.55"><b>'+d.plateau.name+'</b>: '+d.plateau.note+' Worth monitoring before changing the exercise.</div></div>'+
+  '</div>';
+}
+function vFeatureTour(){
+  const d=makeTourDemoState();
+  const steps=[
+    {t:'Your week, at a glance',m:'See what’s planned, what you completed, and what’s coming next.',v:vTourHome(d)},
+    {t:'Log smarter workouts',m:'Track warm-ups, working sets, and what to aim for next time.',v:vTourLog(d)},
+    {t:'AI that uses your history',m:'Forma’s AI uses your actual logs, not generic advice.',v:vTourAI(d)},
+    {t:'Progress that explains itself',m:'See what’s improving, what’s stalled, and why.',v:vTourStats(d)}
+  ];
+  if(S.tourStep>=steps.length){
+    return '<div class="tour-wrap" style="justify-content:center">'+
+      '<div class="tour-card">'+
+        '<div class="tour-kicker">DONE</div><div class="tour-title">You’re ready</div>'+
+        '<div class="tour-copy">Start logging. Forma gets more useful every session.</div>'+
+        '<button class="tour-primary" onclick="finishFeatureTour()" style="width:100%;border-radius:12px;padding:14px;font-size:14px;font-weight:800;margin-top:18px">Start using Forma</button>'+
+      '</div>'+
+    '</div>';
+  }
+  const cur=steps[S.tourStep];
+  return '<div class="tour-wrap">'+
+    tourMiniHeader(cur.t,cur.m,S.tourStep)+
+    cur.v+
+    '<div class="tour-actions">'+
+      '<button class="tour-secondary" onclick="skipFeatureTour()">Skip</button>'+
+      '<button class="tour-primary" onclick="S.tourStep++;render()">'+(S.tourStep===steps.length-1?'Finish':'Next')+'</button>'+
+    '</div>'+
+  '</div>';
 }
 
 function vCalendar(){
@@ -4478,6 +4674,16 @@ function vSetup(){
     '<div id="key-err" style="color:#E05050;font-size:11px;margin-top:7px;min-height:14px"></div>'+
   '</div>';
 
+  const tourCard='<div class="card" style="margin-top:14px">'+
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">'+
+      '<div>'+
+        '<div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:2px">Feature Tour</div>'+
+        '<div style="font-size:11px;color:var(--muted);line-height:1.4">Preview Forma with temporary demo data.</div>'+
+      '</div>'+
+      '<button onclick="replayFeatureTour()" style="background:var(--s2);border:1px solid var(--border2);color:var(--blue);border-radius:9px;padding:9px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap">Replay feature tour</button>'+
+    '</div>'+
+  '</div>';
+
   const backupCard=
     '<div class="card" style="margin-top:14px">'+
       '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'+
@@ -4511,7 +4717,7 @@ function vSetup(){
       '<button onclick="deleteAllData()" style="width:100%;background:#FEE8E8;border:1px solid #FCCECE;color:#C44;border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Delete Everything</button>'+
     '</div>';
 
-  return '<div class="stabs">'+tabs+'</div>'+body+unitCard+apiCard+backupCard+dangerCard;
+  return '<div class="stabs">'+tabs+'</div>'+body+unitCard+apiCard+tourCard+backupCard+dangerCard;
 }
 
 function vChat(){
