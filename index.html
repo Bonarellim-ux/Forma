@@ -203,6 +203,31 @@ body {
 .nav::after {
   display: none !important;
   content: none !important;
+}
+
+.nav {
+  min-height: 64px !important;
+  height: 64px !important;
+  padding-top: 4px !important;
+  padding-bottom: max(4px, env(safe-area-inset-bottom)) !important;
+  align-items: center !important;
+}
+
+.nav button {
+  min-height: 54px !important;
+  height: 54px !important;
+  padding: 2px 0 0 !important;
+  justify-content: center !important;
+  gap: 2px !important;
+}
+
+.nav svg,
+.nav .icon {
+  margin-bottom: 0 !important;
+}
+
+.has-nav {
+  padding-bottom: calc(74px + env(safe-area-inset-bottom)) !important;
 }</style>
 </head>
 <body>
