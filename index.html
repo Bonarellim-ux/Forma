@@ -3374,12 +3374,16 @@ function obPlaceholderFor(def){
   return '';
 }
 function obSetImperialHeight(){
-  const ft=(document.getElementById('ob-height-ft')||{}).value||'';
+  const ft=(document.getElementById('ob-height-ft')||document.getElementById('ob-input')||{}).value||'';
   const inch=(document.getElementById('ob-height-in')||{}).value||'';
   S.obData.height_feet=ft;
   S.obData.height_inches=inch;
   S.obData.height=(ft.trim()&&inch.trim())?(ft.trim()+"'"+inch.trim()+'\"'):'';
   obSyncContinue('height',false);
+}
+
+function obImperialHeightOk(){
+  return String(S.obData.height_feet||'').trim().length>0&&String(S.obData.height_inches||'').trim().length>0;
 }
 
 function vOnboarding(){
@@ -3616,7 +3620,10 @@ function obSyncContinue(key, optional){
   const val=(S.obData[key]||'').trim();
   const btn=document.querySelector('#ob-continue-btn');
   if(!btn)return;
-  const ok=optional||val.length>0;
+  const ok=key==='height'&&!obPrefersMetric()?obImperialHeightOk():(optional||val.length>0);
+  if(key==='height'&&!obPrefersMetric()){
+    S.obData.height=ok?(String(S.obData.height_feet||'').trim()+"'"+String(S.obData.height_inches||'').trim()+'\"'):'';
+  }
   btn.disabled=!ok;
   btn.style.background=ok?'var(--blue)':'var(--border)';
   btn.style.color=ok?'#fff':'var(--muted)';
@@ -3631,6 +3638,10 @@ function obSyncContinue(key, optional){
 function obNext(){
   const step=S.obStep;
   const def=OB_STEPS[step];
+  if(def.type==='text'&&def.key==='height'&&!obPrefersMetric()){
+    if(!obImperialHeightOk())return;
+    S.obData.height=String(S.obData.height_feet||'').trim()+"'"+String(S.obData.height_inches||'').trim()+'\"';
+  }
   if(def.type==='text'&&!def.optional&&!(S.obData[def.key]||'').trim())return;
   if(def.type==='choice'){
     const arr=S.obData[def.key]||[];
