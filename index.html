@@ -4503,7 +4503,7 @@ function vChat(){
   }).join('');
 
   const qcmds=getQuickCmds().map(function(c){
-    return '<button class="qcmd" onclick="sendQuick(\''+c.replace(/'/g,"\\'")+'\')" >'+c+'</button>';
+    return '<button class="qcmd" onclick="sendQuick('+escH(JSON.stringify(c))+')" >'+escH(c)+'</button>';
   }).join('');
 
   return '<div class="chat-wrap">'+
@@ -5889,7 +5889,12 @@ async function sendChat(){
   }
   S.chatLoading=false;render();
 }
-function sendQuick(text){S.chatDraft=text;sendChat();}
+function sendQuick(text){
+  S.chatDraft=text;
+  const inp=document.getElementById('chat-input');
+  if(inp){inp.value=text;autoRes(inp);}
+  sendChat();
+}
 
 
 async function sendInlineAI(){
