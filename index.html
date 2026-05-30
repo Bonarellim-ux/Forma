@@ -238,6 +238,20 @@ body {
   background: var(--blue) !important;
 }
 
+.home-week-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.home-week-title{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.08em}
+.home-week-edit{background:none;border:none;color:var(--blue);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;padding:0;display:flex;align-items:center;gap:4px}
+.home-week-strip{display:flex;gap:6px;margin-bottom:12px}
+.home-week-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;min-width:0}
+.home-week-label{font-size:11px;font-weight:800;letter-spacing:.08em;line-height:1;color:var(--muted)}
+.home-week-label.today{color:var(--white)}
+.home-week-label.selected{color:var(--blue)}
+.home-week-tile{width:100%;height:46px;border-radius:16px;display:flex;align-items:center;justify-content:center;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.home-week-tile.selected{transform:translateY(-1px)}
+.home-week-tile-text{font-size:10px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;text-align:center;letter-spacing:-.01em}
+.home-week-indicator{width:18px;height:4px;border-radius:999px;background:var(--blue)}
+.home-week-indicator-spacer{height:4px}
+
 .safe-fill,
 .nav::after {
   display: none !important;
@@ -1640,30 +1654,31 @@ function vHome(){
   
 
   // ── Week strip + edit schedule button ─────────────────────
-  '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
-    '<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.08em">THIS WEEK</div>'+
-    '<button onclick="navTo(\'setup\');S.setupTab=\'schedule\';render()" style="background:none;border:none;color:var(--blue);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;padding:0;display:flex;align-items:center;gap:4px">'+
+  '<div class="home-week-head">'+
+    '<div class="home-week-title">THIS WEEK</div>'+
+    '<button class="home-week-edit" onclick="navTo(\'setup\');S.setupTab=\'schedule\';render()">'+
       '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'+
       'Edit schedule'+
     '</button>'+
   '</div>'+
-  '<div style="display:flex;gap:5px;margin-bottom:10px">'+
+  '<div class="home-week-strip">'+
     DAYS.map(function(d){
       const dsp=S.schedule[d];
       const dc=spCol(dsp);
       const isT=d===today;
       const isSel=d===selDay;
       const isR=dsp==='rest';
-      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer" onclick="S.selStripDay=\''+d+'\';render()">'+
-        '<div style="font-size:9px;font-weight:600;color:'+(isT?'var(--white)':isSel?'var(--blue)':'var(--muted)')+'">'+DAY_FULL[d].slice(0,1)+'</div>'+
-        '<div style="width:100%;aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;'+
-          'background:'+(isT?dc:isSel?hexA(dc,.2):isR?'var(--s1)':hexA(dc,.1))+';'+
-          'border:'+(isSel&&!isT?'2px':'1.5px')+' solid '+(isT?dc:isSel?dc:isR?'var(--border)':hexA(dc,.25))+';box-shadow:'+(isT?'0 6px 14px '+hexA(dc,.28):(isSel?'0 5px 12px '+hexA(dc,.16):'none'))+'">'+
-          '<div style="font-size:10px;font-weight:700;color:'+(isT?'#fff':isR?'var(--dim)':dc)+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 3px;text-align:center">'+
+      return '<div class="home-week-day" onclick="S.selStripDay=\''+d+'\';render()">'+
+        '<div class="home-week-label '+(isT?'today ':'')+(isSel?'selected':'')+'">'+DAY_FULL[d].slice(0,1)+'</div>'+
+        '<div class="home-week-tile '+(isSel?'selected ':'')+(isR?'rest':'')+'" style="'+
+          'background:'+(isT?dc:isSel?hexA(dc,.18):isR?'rgba(255,255,255,.72)':hexA(dc,.09))+';'+
+          'border:1.5px solid '+(isT?dc:isSel?dc:isR?'rgba(168,200,228,.62)':hexA(dc,.22))+';'+
+          'box-shadow:'+(isT?'0 8px 16px '+hexA(dc,.24):(isSel?'0 7px 14px '+hexA(dc,.14):'0 4px 10px rgba(13,30,46,.035)'))+'">'+
+          '<div class="home-week-tile-text" style="color:'+(isT?'#fff':isR?'var(--dim)':dc)+'">'+
             (isR?'—':spLbl(dsp))+
           '</div>'+
         '</div>'+
-        (isT?'<div style="width:4px;height:4px;border-radius:50%;background:var(--blue)"></div>':'<div style="height:4px"></div>')+
+        (isSel?'<div class="home-week-indicator"></div>':'<div class="home-week-indicator-spacer"></div>')+
       '</div>';
     }).join('')+
   '</div>'+
