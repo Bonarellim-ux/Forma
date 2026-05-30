@@ -611,6 +611,7 @@ const S={
   // chat tab
   messages:[], chatLoading:false,
   chatVoiceRec:null, chatListening:false, chatDraft:'',
+  pendingAction:null,
   // score detail panel
   scoreDetail:null, // sub name string
   _scoreResults:{},  // keyed by sub name, filled during vStrengthScore render
@@ -619,9 +620,9 @@ const S={
 };
 
 // ── STORAGE ───────────────────────────────────────────────────
-const HARDCODED_KEY='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';
-function apiKey(){return localStorage.getItem('ll_apikey')||HARDCODED_KEY;}
+function apiKey(){return localStorage.getItem('ll_apikey')||'';}
 function hasKey(){return!!apiKey();}
+function aiKeyMessage(){return 'Add your AI API key in Setup to enable coaching.';}
 function apiHeaders(){return{'Content-Type':'application/json','x-api-key':apiKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'};}
 
 function loadData(){
@@ -1003,7 +1004,6 @@ function render(){
     document.getElementById('root').innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--muted)">loading...</div>';
     return;
   }
-  if(!hasKey()&&S.view!=='apikey') S.view='apikey';
   const hasNav=['home','chat','progress','setup'].includes(S.view);
   const hasBack=['log','feedback','workout-detail'].includes(S.view);
 
@@ -1188,6 +1188,7 @@ function vQuickAIPanel(){
 function toggleQuickAI(){
   S.quickAIOpen=!S.quickAIOpen;
   if(!S.quickAIOpen){S.quickAIDraft='';S.quickAIReply='';S.quickAIListening=false;}
+  else if(!hasKey())S.quickAIReply=aiKeyMessage();
   render();
   if(S.quickAIOpen)setTimeout(function(){var el=document.getElementById('quick-ai-input');if(el)el.focus();},80);
 }
@@ -1195,6 +1196,17 @@ function toggleQuickAI(){
 async function sendQuickAI(){
   const text=S.quickAIDraft.trim();
   if(!text||S.quickAILoading)return;
+  const actionReply=handleUserActionIntent(text);
+  if(actionReply){
+    S.quickAIDraft='';
+    S.quickAIReply=actionReply;
+    S.messages.push({role:'user',text:text,time:NOW(),actions:[]});
+    S.messages.push({role:'ai',text:actionReply,time:NOW(),actions:[]});
+    saveMessages();
+    render();
+    return;
+  }
+  if(!hasKey()){S.quickAIReply=aiKeyMessage();render();return;}
   // Stop any active voice recording before sending
   if(S.quickAIListening){
     if(S._quickRec){S._quickRec.stop();S._quickRec=null;}
@@ -1282,9 +1294,9 @@ function vApiKey(){
     '<div style="font-size:13px;color:var(--muted);margin-bottom:36px">Your AI-powered strength coach</div>'+
     '<div style="width:100%;max-width:360px;text-align:left">'+
       '<div class="card" style="margin-bottom:14px">'+
-        '<span class="lbl" style="margin-bottom:10px">ANTHROPIC API KEY</span>'+
-        '<input id="api-key-input" type="password" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--white);outline:none;font-family:\'Courier New\',monospace;margin-bottom:8px" placeholder="sk-ant-api03-..." onkeydown="if(event.key===\'Enter\')saveKey()">'+
-        '<div style="font-size:11px;color:var(--muted);line-height:1.5">Get your key at <span style="color:var(--blue)">console.anthropic.com</span><br>Stored only in your browser.</div>'+
+        '<span class="lbl" style="margin-bottom:10px">AI API Key</span>'+
+        '<input id="api-key-input" type="password" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--white);outline:none;font-family:\'Courier New\',monospace;margin-bottom:8px" placeholder="Paste your API key" onkeydown="if(event.key===\'Enter\')saveKey()">'+
+        '<div style="font-size:11px;color:var(--muted);line-height:1.5">Stored only in this browser. For personal use only; long term, AI calls should go through a backend.</div>'+
       '</div>'+
       '<button class="btn-accent" onclick="saveKey()">CONNECT &amp; START &rarr;</button>'+
       '<div id="key-err" style="color:#E05050;font-size:12px;text-align:center;margin-top:10px;min-height:16px"></div>'+
@@ -2182,6 +2194,7 @@ async function sendExInstructChat(){
   if(!text||S.exInstructChatLoading)return;
   S.exInstructChat.push({role:'user',text:text});
   S.exInstructDraft='';
+  if(!hasKey()){S.exInstructChat.push({role:'ai',text:aiKeyMessage()});render();return;}
   S.exInstructChatLoading=true;
   render();
   // Scroll chat to bottom
@@ -2215,11 +2228,17 @@ async function sendExInstructChat(){
 async function showExInstruct(name){
   S.exInstructPanel=name;
   S.exInstructText=null;
-  S.exInstructLoading=true;
+  S.exInstructLoading=hasKey();
   S.exInstructChat=[];
   S.exInstructDraft='';
   S.exInstructChatLoading=false;
   render();
+  if(!hasKey()){
+    S.exInstructText=aiKeyMessage();
+    S.exInstructLoading=false;
+    render();
+    return;
+  }
   // Try with thinking first, then without, then fall back to static content
   const prompt=
     'Give concise, expert instructions for how to perform "'+name+'" with perfect form. Structure your response with these sections:\n\n'+
@@ -3514,6 +3533,7 @@ async function obGenerate(){
     'Also include a "rationale" field in your JSON: 2–3 sentences explaining WHY you chose this specific schedule for them — mention the split type, days, and how it fits their goal. Make it personal and direct. Keep it under 60 words.\n'+
     'Respond ONLY with valid JSON: {"message":"...","rationale":"...","actions":[...]}';
   try{
+    if(!hasKey())throw new Error(aiKeyMessage());
     const resp=await fetch(API,{method:'POST',headers:apiHeaders(),body:JSON.stringify({
       model:MODEL,max_tokens:4000,thinking:{type:'enabled',budget_tokens:1024},
       system:buildSysPrompt()+'\nYou are completing a new user onboarding. Apply all 3 actions (update_profile, update_schedule, update_split_exercises) based on the data provided. Respond ONLY with valid JSON: {"message":"...","rationale":"...","actions":[...]}',
@@ -4289,11 +4309,14 @@ function vSetup(){
   '</div>';
 
   const apiCard='<div class="card" style="margin-top:14px">'+
-    '<span class="lbl" style="margin-bottom:8px">API KEY</span>'+
+    '<span class="lbl" style="margin-bottom:8px">AI API Key</span>'+
+    '<div style="font-size:11px;color:var(--muted);line-height:1.45;margin-bottom:9px">Stored only in this browser. It is not included in backups.</div>'+
+    '<input id="setup-api-key-input" type="password" placeholder="'+(hasKey()?'API key saved':'Paste your API key')+'" onkeydown="if(event.key===\'Enter\')saveKey(\'setup-api-key-input\')" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--white);outline:none;font-family:\'Courier New\',monospace;margin-bottom:8px">'+
     '<div style="display:flex;gap:8px;align-items:center">'+
-      '<div style="font-size:12px;color:var(--sub);flex:1">Stored locally in your browser</div>'+
-      '<button onclick="resetKey()" style="background:none;border:1px solid var(--border);color:var(--sub);border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer;font-family:inherit">Reset key</button>'+
+      '<button onclick="saveKey(\'setup-api-key-input\')" style="flex:1;background:var(--blue);border:none;color:#fff;border-radius:8px;padding:9px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Save AI API Key</button>'+
+      '<button onclick="clearApiKey()" style="background:none;border:1px solid var(--border);color:var(--sub);border-radius:8px;padding:9px 12px;font-size:11px;cursor:pointer;font-family:inherit">Clear API Key</button>'+
     '</div>'+
+    '<div id="key-err" style="color:#E05050;font-size:11px;margin-top:7px;min-height:14px"></div>'+
   '</div>';
 
   const backupCard=
@@ -4333,6 +4356,7 @@ function vSetup(){
 }
 
 function vChat(){
+  const keyNotice=!hasKey()?'<div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:4px 0 12px;font-size:12px;color:var(--sub);line-height:1.45">'+aiKeyMessage()+'</div>':'';
   const msgs=S.messages.map(function(m){
     if(m.role==='typing'){
       return '<div class="msg ai"><div class="avatar">L</div><div><div class="bubble" style="display:flex;align-items:center;gap:5px;padding:14px 16px"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div></div>';
@@ -4350,7 +4374,7 @@ function vChat(){
   }).join('');
 
   return '<div class="chat-wrap">'+
-    '<div class="chat-msgs" id="chat-msgs">'+msgs+'</div>'+
+    '<div class="chat-msgs" id="chat-msgs">'+keyNotice+msgs+'</div>'+
     '<div class="chat-input-area">'+
       '<div class="qcmds">'+qcmds+'</div>'+
       '<div class="chat-input-row">'+
@@ -4451,13 +4475,16 @@ function navTo(view){
   S.view=view;render();
 }
 
-function saveKey(){
-  const inp=document.getElementById('api-key-input');
+function saveKey(inputId){
+  const inp=document.getElementById(inputId||'api-key-input');
   const key=inp?inp.value.trim():'';
-  if(!key.startsWith('sk-ant-')){const err=document.getElementById('key-err');if(err)err.textContent='Key should start with sk-ant-\u2026';return;}
-  localStorage.setItem('ll_apikey',key);S.view='home';render();
+  if(!key){const err=document.getElementById('key-err');if(err)err.textContent='Enter an API key first.';return;}
+  localStorage.setItem('ll_apikey',key);
+  if(S.view==='apikey')S.view='home';
+  render();
 }
-function resetKey(){localStorage.removeItem('ll_apikey');S.view='apikey';render();}
+function clearApiKey(){localStorage.removeItem('ll_apikey');render();}
+function resetKey(){clearApiKey();}
 
 function deleteAllData(){
   if(!confirm('Delete ALL workouts and profile data permanently? Your schedule and exercise lists will not be affected. This cannot be undone.'))return;
@@ -4536,6 +4563,138 @@ function startWorkout(split){
   go('log');
 }
 function resumeWorkout(){go('log');}
+
+const ACTION_SPLITS=['push','pull','legs','upper','lower','rest','cardio','hiit','core','arms'];
+function splitFromText(text){
+  const t=' '+String(text||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ')+' ';
+  for(const sp of ACTION_SPLITS){if(t.indexOf(' '+sp+' ')>=0)return sp;}
+  return null;
+}
+function capSplit(sp){return spLbl(sp||'').replace(/\b\w/g,function(c){return c.toUpperCase();});}
+function todayIso(){return new Date().toISOString();}
+function saveTrainingState(){
+  persistAll();
+  render();
+}
+function startWorkoutFromAI(split){
+  if(!split||split==='rest')return null;
+  startWorkout(split);
+  if(S.workout&&S.workout.split===split&&S.view==='log'){
+    persistAll();
+    return 'Started '+capSplit(split)+' for today.';
+  }
+  persistAll();
+  return 'I could not start '+capSplit(split)+' because the current workout was kept unchanged.';
+}
+function logEmptyWorkoutFromAI(split,date){
+  if(!split||split==='rest')return null;
+  const w={
+    date:date||todayIso(),
+    split:split,
+    startTime:date||todayIso(),
+    durationMin:null,
+    debrief:'Logged from AI chat.',
+    exercises:[]
+  };
+  S.workouts=[w,...S.workouts];
+  S.lastWorkout=w;
+  S.workoutSummary={totalSets:0,totalVol:0,durationMin:null,prs:[]};
+  S.view='home';
+  persistAll();
+  render();
+  return 'Logged completed '+capSplit(split)+' session for today without set details.';
+}
+function logCardioFromAI(minutes,exercise){
+  const mins=Math.max(1,parseInt(minutes,10)||0);
+  if(!mins)return null;
+  const name=exercise||'Cardio Session';
+  const now=todayIso();
+  const w={
+    date:now,
+    split:'cardio',
+    startTime:now,
+    durationMin:mins,
+    debrief:'Logged from AI chat.',
+    exercises:[{
+      name:name,
+      sets:[{w:0,r:mins,cardio:true,minutes:mins}]
+    }]
+  };
+  S.workouts=[w,...S.workouts];
+  S.lastWorkout=w;
+  S.workoutSummary={totalSets:1,totalVol:0,durationMin:mins,prs:[]};
+  S.view='home';
+  persistAll();
+  render();
+  return 'Logged: '+mins+' minutes '+name.toLowerCase()+'.';
+}
+function executePendingAction(text){
+  if(!S.pendingAction)return null;
+  const t=String(text||'').trim().toLowerCase();
+  if(/^(no|nope|cancel|stop|never mind|nevermind|don'?t)$/i.test(t)){
+    S.pendingAction=null;
+    persistAll();
+    render();
+    return 'No problem.';
+  }
+  const yes=/^(yes|yeah|yep|sure|ok|okay|do it|confirm|please|go ahead|start it|log it)$/i.test(t);
+  if(!yes)return null;
+  const pending=S.pendingAction;
+  S.pendingAction=null;
+  if(pending.type==='start_workout')return startWorkoutFromAI(pending.split);
+  if(pending.type==='log_empty_workout'){
+    if(/\bstart\b|\bstart it\b|\bbegin\b/.test(t))return startWorkoutFromAI(pending.split);
+    return logEmptyWorkoutFromAI(pending.split,pending.date);
+  }
+  persistAll();
+  render();
+  return null;
+}
+function cardioIntent(text){
+  const t=String(text||'').toLowerCase();
+  const m=t.match(/\b(\d{1,3})\s*(minutes?|mins?|min)\b/);
+  if(!m)return null;
+  const hasCardio=/\b(walked|walking|walk|cardio|cycling|cycle|biking|bike|running|run|jogging|jog|elliptical|rower|rowing)\b/.test(t);
+  const hasLog=/\b(log|logged|did|completed|mark)\b/.test(t);
+  if(!hasCardio||!hasLog)return null;
+  let ex='Cardio Session';
+  if(/\bwalked|walking|walk\b/.test(t))ex='Walking';
+  else if(/\bcycling|cycle|biking|bike\b/.test(t))ex='Cycling';
+  else if(/\brunning|run\b/.test(t))ex='Running';
+  else if(/\bjogging|jog\b/.test(t))ex='Jogging';
+  else if(/\belliptical\b/.test(t))ex='Elliptical';
+  else if(/\brower|rowing\b/.test(t))ex='Rowing';
+  return{minutes:parseInt(m[1],10),exercise:ex};
+}
+function handleUserActionIntent(text){
+  const pendingReply=executePendingAction(text);
+  if(pendingReply)return pendingReply;
+  const cardio=cardioIntent(text);
+  if(cardio)return logCardioFromAI(cardio.minutes,cardio.exercise);
+  const t=String(text||'').toLowerCase().trim();
+  const split=splitFromText(t);
+  if(!split||split==='rest')return null;
+  const explicitStart=/\b(start|begin|let'?s do|lets do|train)\b/.test(t);
+  const softStart=/\b(i want to do|want to do|do .* today|today)\b/.test(t)&&!/\b(log|logged|did|completed|mark)\b/.test(t);
+  const logDone=/\b(log|logged|i did|did|completed|complete|mark)\b/.test(t)&&/\b(workout|session|today|done|log|logged|completed|complete|did|mark)\b/.test(t);
+  if(explicitStart||softStart){
+    const scheduled=S.schedule[todayKey()];
+    if(softStart&&scheduled&&scheduled!==split){
+      S.pendingAction={type:'start_workout',split:split};
+      persistAll();
+      render();
+      return 'Today is scheduled as '+capSplit(scheduled)+'. Do you want me to start a '+capSplit(split)+' session instead?';
+    }
+    return startWorkoutFromAI(split);
+  }
+  if(logDone){
+    S.pendingAction={type:'log_empty_workout',split:split,date:todayIso()};
+    persistAll();
+    render();
+    return 'Do you want me to log a completed '+capSplit(split)+' session for today without set details, or start a '+capSplit(split)+' workout now?';
+  }
+  return null;
+}
 
 function cancelWorkout(){
   if(!S.workout)return;
@@ -4642,6 +4801,7 @@ async function finishWorkout(){
   S.workout=null;
   S.feedback=null;S.feedbackLoading=true;go('feedback');
   try{
+    if(!hasKey())throw new Error(aiKeyMessage());
     const cleanDisplay={
       split:clean.split,
       date:fmtD(clean.date),
@@ -4871,6 +5031,7 @@ function selEx(name){
 
 async function requestChartAnalysis(){
   if(!S.selEx||S.chartAnalysisLoading)return;
+  if(!hasKey()){S.chartAnalysis=aiKeyMessage();S.chartAnalysisEx=S.selEx;S.chartAnalysisLoading=false;render();setTimeout(drawChart,0);return;}
   S.chartAnalysisLoading=true;S.chartAnalysisEx=S.selEx;S.chartAnalysis=null;render();setTimeout(drawChart,0);
   try{
     const ex=S.selEx;
@@ -5555,6 +5716,19 @@ async function sendChat(){
   if(S.chatListening&&S.chatVoiceRec){try{S.chatVoiceRec.stop();}catch(e){} S.chatVoiceRec=null;S.chatListening=false;}
   S.chatDraft='';if(inp){inp.value='';inp.style.height='auto';}
   S.messages.push({role:'user',text:text,time:NOW(),actions:[]});
+  const actionReply=handleUserActionIntent(text);
+  if(actionReply){
+    S.messages.push({role:'ai',text:actionReply,time:NOW(),actions:[]});
+    saveMessages();
+    render();
+    return;
+  }
+  if(!hasKey()){
+    S.messages.push({role:'ai',text:aiKeyMessage(),time:NOW(),actions:[]});
+    saveMessages();
+    render();
+    return;
+  }
   S.messages.push({role:'typing'});
   S.chatLoading=true;render();
   try{
@@ -5589,6 +5763,7 @@ async function sendInlineAI(){
   const inp=document.getElementById('inline-ta');
   const text=(inp?inp.value.trim():S.inlineAIDraft.trim());
   if(!text||S.inlineAILoading)return;
+  if(!hasKey()){S.inlineAIReply=aiKeyMessage();render();return;}
   if(S.inlineAIListening&&S.inlineAIVoiceRec){try{S.inlineAIVoiceRec.stop();}catch(e){} S.inlineAIVoiceRec=null;S.inlineAIListening=false;}
   S.inlineAIDraft='';S.inlineAIReply='';S.inlineAILoading=true;
   if(inp){inp.value='';inp.style.height='auto';}
@@ -5629,6 +5804,7 @@ async function sendInlineAI(){
 // ── EXERCISE RECOMMENDATION ───────────────────────────────────
 async function sendRecommend(){
   if(!S.workout||S.inlineAILoading)return;
+  if(!hasKey()){S.inlineAIReply=aiKeyMessage();render();return;}
   S.inlineAIReply='';S.inlineAILoading=true;render();
   try{
     const w=S.workout;
