@@ -1047,9 +1047,10 @@ function render(){
   document.getElementById('root').innerHTML=
     timerHtml+
     '<div class="shell">'+
+      '<div id="deploy-test-banner" style="background:#ff3b30;color:white;text-align:center;font-weight:800;font-size:18px;padding:12px;position:relative;z-index:999999;">LIVE GITHUB TEST - DELETE ME</div>'+
       (isFirstTime?'':
       '<div class="hdr">'+
-        '<div class="logo">Forma TEST<span>.</span></div>'+
+        '<div class="logo">Forma<span>.</span></div>'+
         (hasBack?'<button class="back-btn" onclick="'+(S.view==='workout-detail'?'go(\'progress\')':S.workout&&S.workout.templateOnly?'S.workout=null;go(\'home\')':'go(\'home\')')+'">← '+(S.view==='workout-detail'?'CALENDAR':'HOME')+'</button>':
         hasNav?'<button onclick="toggleQuickAI()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;border:none;background:'+(S.quickAIOpen?'#0D1E2E':'#1A9ED4')+';cursor:pointer;transition:all .15s">'+
           '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M17.8 6.2L19 5M3 21l9-9M12.2 6.2L11 5"/></svg>'+
