@@ -3837,8 +3837,8 @@ function makeTourDemoState(){
       {name:'Squat',from:'205×6',to:'225×5'},
       {name:'Deadlift',from:'255×5',to:'275×4'}
     ],
-    plateau:{name:'Squat',note:'Repeated 225×5 across two leg sessions while other main lifts improved.'},
-    ai:'Bench has improved from 170×8 to 185×7. Try 190×5–6 next session.'
+    plateau:{name:'Squat',note:'You hit 225×5 twice in a row. Forma would suggest building to 225×7 before increasing weight.'},
+    ai:'Bench has been steady at 185×7 for three sessions. Keep the weight and aim for 185×8 next time.'
   };
 }
 function vFeatureTourPrompt(){
@@ -3898,7 +3898,7 @@ function vTourLog(d){
 function vTourAI(d){
   return '<div class="tour-preview">'+
     '<div class="msg ai" style="margin-bottom:10px"><div class="avatar">L</div><div><div class="bubble tour-highlight">'+
-      '<b>RECOMMENDATION</b><br>'+escH(d.ai)+'<br><br><b>EVIDENCE</b><br>- Bench PR this month<br>- Recent sets stayed near all-time highs<br>- No pain or recovery flags'+
+      '<b>RECOMMENDATION</b><br>'+escH(d.ai)+'<br><br><b>EVIDENCE</b><br>- Last 3 bench top sets: 185×7<br>- Performance is near your best<br>- No pain or recovery flags'+
     '</div></div></div>'+
     '<div class="card" style="margin-bottom:0"><span class="lbl">WHY IT IS DIFFERENT</span><div style="font-size:13px;color:var(--sub);line-height:1.55">The coach reads workouts, warm-ups, PRs, frequency, and trends before giving advice.</div></div>'+
   '</div>';
@@ -3908,14 +3908,14 @@ function vTourStats(d){
     '<div class="card tour-highlight" style="margin-bottom:11px;border-radius:16px"><span class="lbl">TOP LIFTS</span>'+
       d.prs.map(function(p){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--dim)"><b style="font-size:13px">'+p.name+'</b><span class="mono" style="color:var(--blue);font-weight:800">'+p.to+'</span></div>';}).join('')+
     '</div>'+
-    '<div class="card" style="margin-bottom:0;border-radius:16px"><span class="lbl">OBSERVATION</span><div style="font-size:13px;color:var(--sub);line-height:1.55"><b>'+d.plateau.name+'</b>: '+d.plateau.note+' Worth monitoring before changing the exercise.</div></div>'+
+    '<div class="card" style="margin-bottom:0;border-radius:16px"><span class="lbl">WHAT FORMA NOTICES</span><div style="font-size:13px;color:var(--sub);line-height:1.55"><b>'+d.plateau.name+'</b>: '+d.plateau.note+'</div></div>'+
   '</div>';
 }
 function vFeatureTour(){
   const d=makeTourDemoState();
   const steps=[
     {t:'Your week, at a glance',m:'See what’s planned, what you completed, and what’s coming next.',v:vTourHome(d)},
-    {t:'Log smarter workouts',m:'Track warm-ups, working sets, and what to aim for next time.',v:vTourLog(d)},
+    {t:'Log smarter workouts',m:'Track warm-ups and working sets. The AI recommends what to aim for next time.',v:vTourLog(d)},
     {t:'AI that uses your history',m:'Forma’s AI uses your actual logs, not generic advice.',v:vTourAI(d)},
     {t:'Progress that explains itself',m:'See what’s improving, what’s stalled, and why.',v:vTourStats(d)}
   ];
