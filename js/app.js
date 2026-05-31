@@ -1,3 +1,4 @@
+// Before adding major features, check docs/architecture.md to keep Forma modular.
 // App rendering, navigation, global input helpers, and startup orchestration.
 
 // ── RENDER ────────────────────────────────────────────────────
