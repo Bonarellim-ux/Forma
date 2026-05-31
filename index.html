@@ -444,6 +444,11 @@ const EX_SUBS={
 function normExName(name){return String(name||'').trim().toLowerCase().replace(/[-_]/g,' ').replace(/\s+/g,' ');}
 function makeSub(name,muscle,pattern,reason){return{name:name,muscle:muscle,pattern:pattern,reason:reason};}
 function getExerciseSubstitutions(name){
+  if(S&&S.tourActive&&name==='Bulgarian Split Squat')return[
+    makeSub('Reverse Lunge','quads/glutes','unilateral squat','Same unilateral squat pattern, same quad/glute target, and easier to load when balance is limiting.'),
+    makeSub('Step-Up','quads/glutes','unilateral squat','Same single-leg role with a stable box height and similar knee/hip action.'),
+    makeSub('Split Squat','quads/glutes','unilateral squat','Same lower-body pattern with less balance demand than the rear-foot-elevated version.')
+  ];
   const exact=EX_SUBS[name];
   if(exact)return exact.filter(function(o){return o&&o.name&&o.name!==name;});
   const n=normExName(name);
@@ -941,7 +946,7 @@ function getOverloadSuggestion(exName,currentInputW){
     const sugKg=S.unit==='lbs'?sugDisp/KG2LB:sugDisp;
     const currentDisp=parseFloat(currentInputW)>0?toDisp(parseFloat(currentInputW)):lastWDisp;
     if(Math.abs(sugDisp-currentDisp)>0.5){
-      const detail='You averaged '+Math.round(avgReps)+' reps at '+lastWDisp+' '+uLbl()+' across '+sessionsAtWeight+' session'+(sessionsAtWeight!==1?'s':'')+'. Add '+roundToDisp+' '+uLbl()+'.';
+      const detail='You averaged '+Math.round(avgReps)+' reps at '+lastWDisp+' '+uLbl()+' across '+sessionsAtWeight+' session'+(sessionsAtWeight!==1?'s':'')+'. '+(S&&S.tourActive?'I’d recommend adding ':'Add ')+roundToDisp+' '+uLbl()+'.';
       return{dir:'up',weight:sugKg,weightDisp:sugDisp,reason:'Ready to go heavier',detail};
     }
   }
@@ -2088,7 +2093,7 @@ function vLog(){
 
     const subPanel=(S.substituteIdx===i&&!isEditing)?(function(){
       const subs=getExerciseSubstitutions(ex.name).filter(function(o){return o&&o.name&&o.name!==ex.name;}).slice(0,3);
-      return '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px;margin:-4px 0 12px">'+
+      return '<div class="tour-swap-target" style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px;margin:-4px 0 12px">'+
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px">'+
           '<div>'+
             '<div style="font-size:10px;color:var(--sub);letter-spacing:.08em;font-weight:700;text-transform:uppercase">AI-ranked swaps</div>'+
@@ -3819,9 +3824,10 @@ function tourSteps(){
   return [
     {view:'home',selector:'.home-week-strip',title:'Your week, at a glance',text:'See what’s planned, what you completed, and what’s coming next.'},
     {view:'log',selector:'.ex-card',title:'Log smarter workouts',text:'Track warm-ups, working sets, and top sets. Every set you log becomes data I can use.'},
-    {view:'log',selector:'.inline-ai',title:'Recommendations while you train',text:'When I see a clear pattern, I’ll tell you what to aim for before you log the next set.',example:'Bench Press: last top set was 185×7. I’d recommend aiming for 185×8 before increasing weight.'},
-    {view:'chat',selector:'.msg.ai .bubble',title:'AI that uses your history',text:'I use your logs, PRs, schedule, warm-ups, and trends before giving advice.',example:'You: What’s my biggest weakness right now, and what should I do about it?\n\nMe: Your pulling volume is lagging behind your pressing, and rows have stalled for 3 sessions. I’d recommend adding 2–3 hard sets of chest-supported rows this week and keeping bench volume unchanged.'},
-    {view:'progress',selector:'.tour-records-target',title:'Progress that explains itself',text:'See what’s improving, what’s stalled, and what I’d recommend next.',example:'Bench is trending up. Rows are flat. I’d recommend keeping bench the same and prioritizing back volume this week.'}
+    {view:'log',selector:'#sugtip-2',title:'Recommendations while you train',text:'When your history shows a clear pattern, I’ll explain what to do next before you log the set.',example:'You averaged 9 reps at 75 lbs across 3 sessions. I’d recommend adding 5 lbs.'},
+    {view:'log',selector:'.tour-swap-target',title:'Smart exercise swaps',text:'Ask for a replacement and I’ll explain why it fits the same workout goal.',example:'You: What exercise can I do instead of Bulgarian Split Squat?\n\nMe: I’d recommend Reverse Lunges. They train the same unilateral squat pattern, target quads and glutes, and are easier to load if balance is limiting you.\n\nEvidence note: Swap recommendations use movement pattern, target muscles, joint angle, and role in the workout.'},
+    {view:'chat',selector:'.msg.ai .bubble',title:'AI that uses your history',text:'Ask specific questions and I’ll use your logs, PRs, schedule, warm-ups, and trends before giving advice.'},
+    {view:'progress',selector:'.tour-chart-target',title:'Progress you can actually read',text:'Charts make it easier to see what’s improving, what’s flat, and what needs attention.',example:'Bench is trending up, while rows are flat. I’d recommend keeping bench steady and prioritizing back volume this week.'}
   ];
 }
 function applyTourStep(){
@@ -3829,10 +3835,14 @@ function applyTourStep(){
   if(!step)return;
   S.view=step.view;
   S.quickAIOpen=false;
-  S.inlineAIReply=S.tourStep===2?'Bench Press: last top set was **185×7**. I’d recommend aiming for **185×8** before increasing weight.':'';
-  if(step.view==='progress'){S.progressTab='records';}
+  S.inlineAIReply='';
+  S.sugTooltip=null;
+  S.substituteIdx=null;
+  if(step.view==='progress'){S.progressTab='progress';S.selEx='Bench Press';}
   if(step.view==='home')S.workout=null;
   if(step.view==='log'&&!S.workout)S.workout=makeTourActiveWorkout();
+  if(S.tourStep===2)S.sugTooltip='2';
+  if(S.tourStep===3)S.substituteIdx=3;
 }
 function tourNext(){
   if(S.tourStep>=tourSteps().length-1){S.tourStep=tourSteps().length;render();return;}
@@ -3855,8 +3865,14 @@ function makeTourDemoState(){
     return d.toISOString();
   };
   const splits=['push','pull','legs','upper','lower'];
+  const dayKeys=['sun','mon','tue','wed','thu','fri','sat'];
+  const todayIdx=new Date().getDay();
+  const tourSchedule={};
+  ['push','pull','legs','upper','lower','rest','rest'].forEach(function(sp,offset){
+    tourSchedule[dayKeys[(todayIdx+offset)%7]]=sp;
+  });
   const names={
-    push:['Bench Press','Incline Bench','Tricep Pushdown'],
+    push:['Bench Press','Incline Bench','Tricep Pushdown','Bulgarian Split Squat'],
     pull:['Barbell Row','Lat Pulldown','Face Pull'],
     legs:['Squat','Leg Extension','Leg Curl'],
     upper:['Overhead Press','Pull-Up','Chest Press'],
@@ -3872,11 +3888,11 @@ function makeTourDemoState(){
       debrief:i===10?'Bench is moving well. Squat held steady for two leg sessions.':'Tour demo workout.',
       exercises:names[sp].map(function(n,ei){
         const baseW={push:70,pull:55,legs:95,upper:45,lower:115}[sp]+ei*8+bump*2;
-        const top=n==='Bench Press'&&i>8?84:n==='Squat'&&i>9?102:baseW;
+        const top=n==='Tricep Pushdown'?75/KG2LB:(n==='Bench Press'&&i>8?84:n==='Squat'&&i>9?102:baseW);
         return {name:n,sets:[
           {w:Math.max(0,top*.45),r:8,warmup:true},
-          {w:top,r:ei===0?6+bump:10},
-          {w:top,r:ei===0?5+bump:9}
+          {w:top,r:n==='Tricep Pushdown'?9:(ei===0?6+bump:10)},
+          {w:top,r:n==='Tricep Pushdown'?9:(ei===0?5+bump:9)}
         ]};
       })
     });
@@ -3891,10 +3907,10 @@ function makeTourDemoState(){
     workouts:workouts,
     workout:workout,
     workoutStartTime:Date.now(),
-    schedule:{mon:'push',tue:'pull',wed:'legs',thu:'upper',fri:'lower',sat:'rest',sun:'rest'},
+    schedule:tourSchedule,
     splitEx:names,
-    selStripDay:'mon',
-    progressTab:'records',
+    selStripDay:dayKeys[todayIdx],
+    progressTab:'progress',
     selEx:'Bench Press',
     dayPreviewPanel:null,
     exHistoryPanel:null,
@@ -3905,7 +3921,7 @@ function makeTourDemoState(){
     pendingAction:null,
     messages:[
       {role:'user',text:'What’s my biggest weakness right now, and what should I do about it?',time:'Demo',actions:[]},
-      {role:'ai',text:'Your pulling volume is lagging behind your pressing, and rows have stalled for 3 sessions. I’d recommend adding 2–3 hard sets of chest-supported rows this week and keeping bench volume unchanged.',time:'Demo',actions:[]}
+      {role:'ai',text:'Your pulling volume is lagging behind your pressing, and rows have stalled for 3 sessions. I’d recommend adding 2–3 hard sets of chest-supported rows this week while keeping bench volume unchanged.',time:'Demo',actions:[]}
     ],
     profile:{name:'Demo Athlete',goal:'Build muscle and strength',experience:'Intermediate',session_duration:60,exercises_per_session:5,equipment:'Full gym',injuries:'',preferences:''},
     recent:workouts.slice(-3).reverse(),
@@ -3928,7 +3944,8 @@ function makeTourActiveWorkout(){
         {w:83.9,r:7}
       ]},
       {name:'Incline Bench',inputW:'135',inputR:'8',sets:[]},
-      {name:'Tricep Pushdown',inputW:'70',inputR:'10',sets:[]}
+      {name:'Tricep Pushdown',inputW:'75',inputR:'10',sets:[]},
+      {name:'Bulgarian Split Squat',inputW:'45',inputR:'8',sets:[]}
     ]
   };
 }
@@ -3986,7 +4003,13 @@ function positionTourSpotlight(){
   if(!step)return;
   const target=document.querySelector(step.selector);
   if(!target){spot.style.display='none';return;}
-  const r=target.getBoundingClientRect();
+  let r=target.getBoundingClientRect();
+  const coach=document.querySelector('.tour-coach-card');
+  const coachTop=coach?coach.getBoundingClientRect().top:window.innerHeight;
+  if(r.top<72||r.bottom>coachTop-18){
+    try{target.scrollIntoView({block:'center',inline:'nearest'});}catch(e){target.scrollIntoView();}
+    r=target.getBoundingClientRect();
+  }
   const pad=8;
   spot.style.display='block';
   spot.style.left=Math.max(8,r.left-pad)+'px';
@@ -4262,7 +4285,7 @@ function vProgressChart(){
       '</div>'+
     '</div>'+
     // ── Chart ──────────────────────────────────────────
-    '<div style="height:160px;margin-bottom:18px"><canvas id="prog-chart"></canvas></div>'+
+    '<div class="tour-chart-target" style="height:160px;margin-bottom:18px"><canvas id="prog-chart"></canvas></div>'+
     // ── AI analysis ────────────────────────────────────
     analysisHtml+
     // ── History table ──────────────────────────────────
