@@ -262,6 +262,15 @@ body {
 .tour-actions button{flex:1;border-radius:12px;padding:13px 12px;font-size:13px;font-weight:800;font-family:inherit}
 .tour-primary{background:var(--blue);color:#fff}
 .tour-secondary{background:var(--s1);border:1px solid var(--border);color:var(--sub)}
+.tour-live-overlay{position:fixed;inset:0;z-index:10000;pointer-events:auto}
+.tour-live-scrim{position:absolute;inset:0;background:rgba(13,30,46,.26);backdrop-filter:saturate(1.1)}
+.tour-spotlight{position:absolute;border:2px solid rgba(26,158,212,.95);border-radius:18px;box-shadow:0 0 0 9999px rgba(13,30,46,.18),0 12px 36px rgba(26,158,212,.24);transition:all .18s ease;pointer-events:none}
+.tour-coach-card{position:absolute;left:16px;right:16px;bottom:calc(14px + env(safe-area-inset-bottom));background:linear-gradient(180deg,#FFFFFF 0%,#FBFDFF 100%);border:1px solid var(--border);border-radius:16px;padding:14px;box-shadow:0 16px 42px rgba(13,30,46,.18)}
+.tour-coach-title{font-size:17px;font-weight:800;color:var(--white);line-height:1.15;margin-bottom:6px}
+.tour-coach-copy{font-size:13px;color:var(--sub);line-height:1.5}
+.tour-coach-example{background:var(--s2);border-left:3px solid var(--blue);border-radius:0 10px 10px 0;padding:10px 11px;margin-top:10px;font-size:12px;color:var(--white);line-height:1.5}
+.tour-coach-actions{display:flex;gap:8px;margin-top:12px}
+.tour-coach-actions button{flex:1;border-radius:10px;padding:11px 10px;font-size:12px;font-weight:800;font-family:inherit}
 
 .safe-fill,
 .nav::after {
@@ -741,6 +750,8 @@ const S={
   exInstructDraft:'', exInstructChat:[], exInstructChatLoading:false,
 };
 
+let TOUR_REAL_STATE=null;
+
 // ── STORAGE ───────────────────────────────────────────────────
 function apiKey(){return localStorage.getItem('ll_apikey')||'';}
 function hasKey(){return!!apiKey();}
@@ -1163,17 +1174,16 @@ function render(){
     document.getElementById('root').innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--muted)">loading...</div>';
     return;
   }
-  const inTour=S.tourPrompt||S.tourActive;
-  const hasNav=!inTour&&['home','chat','progress','setup'].includes(S.view);
-  const hasBack=!inTour&&['log','feedback','workout-detail'].includes(S.view);
+  const inTourPrompt=S.tourPrompt;
+  const hasNav=!inTourPrompt&&['home','chat','progress','setup'].includes(S.view);
+  const hasBack=!inTourPrompt&&['log','feedback','workout-detail'].includes(S.view);
 
   // Show onboarding if first time and no profile set up
-  const isFirstTime=!inTour&&!S.onboarded&&!S.profile.name&&!S.profile.goal&&S.workouts.length===0;
+  const isFirstTime=!inTourPrompt&&!S.tourActive&&!S.onboarded&&!S.profile.name&&!S.profile.goal&&S.workouts.length===0;
 
   let body='';
   try{
   if(S.tourPrompt)                   body=vFeatureTourPrompt();
-  else if(S.tourActive)              body=vFeatureTour();
   else if(isFirstTime)               body=vOnboarding();
   else if(S.view==='apikey')         body=vApiKey();
   else if(S.view==='home')      body=vHome();
@@ -1219,14 +1229,16 @@ function render(){
         '</button>':'')+
       '</div>')+
       (S.quickAIOpen&&!isFirstTime?(hasNav||S.view==='log'?vQuickAIPanel():''):'')+
-      '<div class="content'+(isFirstTime||inTour?'':hasNav?' has-nav':'')+(S.view==='chat'&&!isFirstTime&&!inTour?' is-chat':'')+(S.restTimer?' style="padding-top:calc(env(safe-area-inset-top) + 58px)"':'')+'">'+body+'</div>'+
+      '<div class="content'+(isFirstTime||inTourPrompt?'':hasNav?' has-nav':'')+(S.view==='chat'&&!isFirstTime&&!inTourPrompt?' is-chat':'')+(S.restTimer?' style="padding-top:calc(env(safe-area-inset-top) + 58px)"':'')+'">'+body+'</div>'+
       (!isFirstTime&&hasNav?vNav():'')+
+      (S.tourActive?vTourOverlay():'')+
     '</div>';
 
   const el2=document.querySelector('.content');
   if(el2&&S.view!=='chat')el2.scrollTop=scrollY;
   if(S.view==='progress'&&S.selEx&&S.progressTab==='progress')setTimeout(drawChart,0);
   if(S.view==='chat')setTimeout(()=>{const m=document.querySelector('.chat-msgs');if(m)m.scrollTop=m.scrollHeight;},0);
+  if(S.tourActive)setTimeout(positionTourSpotlight,0);
 
   // Sticky workout mini-bar — injected into .hdr so it overlays content
   if(S.view==='log'&&S.workout){
@@ -3247,7 +3259,7 @@ function vPRWall(){
   // Top 3 PRs — featured
   const top3=sorted.slice(0,3);
   html+='<span class="lbl" style="margin-bottom:10px">TOP LIFTS</span>'+
-    '<div style="display:flex;gap:8px;margin-bottom:20px">'+
+    '<div class="tour-records-target" style="display:flex;gap:8px;margin-bottom:20px">'+
     top3.map(function(entry,ri){
       const name=entry[0];const pr=entry[1];
       const isRecent=new Date(pr.date)>twoWeeksAgo;
@@ -3766,32 +3778,72 @@ function tourDone(){
 function shouldShowFeatureTour(){
   try{return localStorage.getItem('forma_feature_tour_done')!=='true';}catch(e){return true;}
 }
+function cloneTourState(obj){
+  try{return structuredClone(obj);}catch(e){return JSON.parse(JSON.stringify(obj));}
+}
 function startFeatureTour(){
+  if(!TOUR_REAL_STATE)TOUR_REAL_STATE=cloneTourState(S);
+  const demo=makeTourDemoState();
+  Object.assign(S,demo);
   S.tourPrompt=false;
   S.tourActive=true;
   S.tourStep=0;
+  applyTourStep();
   render();
 }
 function skipFeatureTour(){
   tourDone();
-  S.tourPrompt=false;
-  S.tourActive=false;
-  S.tourStep=0;
-  S.view='home';
+  restoreFeatureTourState();
   render();
 }
 function finishFeatureTour(){
   tourDone();
+  restoreFeatureTourState();
+  render();
+}
+function replayFeatureTour(){
+  startFeatureTour();
+}
+function restoreFeatureTourState(){
+  if(TOUR_REAL_STATE){
+    Object.keys(S).forEach(function(k){delete S[k];});
+    Object.assign(S,TOUR_REAL_STATE);
+    TOUR_REAL_STATE=null;
+  }
   S.tourPrompt=false;
   S.tourActive=false;
   S.tourStep=0;
   S.view='home';
+}
+function tourSteps(){
+  return [
+    {view:'home',selector:'.home-week-strip',title:'Your week, at a glance',text:'See what’s planned, what you completed, and what’s coming next.'},
+    {view:'log',selector:'.ex-card',title:'Log smarter workouts',text:'Track warm-ups, working sets, and top sets. Every set you log becomes data I can use.'},
+    {view:'log',selector:'.inline-ai',title:'Recommendations while you train',text:'When I see a clear pattern, I’ll tell you what to aim for before you log the next set.',example:'Bench Press: last top set was 185×7. I’d recommend aiming for 185×8 before increasing weight.'},
+    {view:'chat',selector:'.msg.ai .bubble',title:'AI that uses your history',text:'I use your logs, PRs, schedule, warm-ups, and trends before giving advice.',example:'You: What’s my biggest weakness right now, and what should I do about it?\n\nMe: Your pulling volume is lagging behind your pressing, and rows have stalled for 3 sessions. I’d recommend adding 2–3 hard sets of chest-supported rows this week and keeping bench volume unchanged.'},
+    {view:'progress',selector:'.tour-records-target',title:'Progress that explains itself',text:'See what’s improving, what’s stalled, and what I’d recommend next.',example:'Bench is trending up. Rows are flat. I’d recommend keeping bench the same and prioritizing back volume this week.'}
+  ];
+}
+function applyTourStep(){
+  const step=tourSteps()[S.tourStep];
+  if(!step)return;
+  S.view=step.view;
+  S.quickAIOpen=false;
+  S.inlineAIReply=S.tourStep===2?'Bench Press: last top set was **185×7**. I’d recommend aiming for **185×8** before increasing weight.':'';
+  if(step.view==='progress'){S.progressTab='records';}
+  if(step.view==='home')S.workout=null;
+  if(step.view==='log'&&!S.workout)S.workout=makeTourActiveWorkout();
+}
+function tourNext(){
+  if(S.tourStep>=tourSteps().length-1){S.tourStep=tourSteps().length;render();return;}
+  S.tourStep++;
+  applyTourStep();
   render();
 }
-function replayFeatureTour(){
-  S.tourPrompt=false;
-  S.tourActive=true;
-  S.tourStep=0;
+function tourBack(){
+  if(S.tourStep<=0)return;
+  S.tourStep--;
+  applyTourStep();
   render();
 }
 function makeTourDemoState(){
@@ -3829,9 +3881,33 @@ function makeTourDemoState(){
       })
     });
   }
+  workouts.reverse();
+  const workout=makeTourActiveWorkout();
   return {
+    loaded:true,
+    view:'home',
+    onboarded:true,
+    unit:'lbs',
     workouts:workouts,
+    workout:workout,
+    workoutStartTime:Date.now(),
     schedule:{mon:'push',tue:'pull',wed:'legs',thu:'upper',fri:'lower',sat:'rest',sun:'rest'},
+    splitEx:names,
+    selStripDay:'mon',
+    progressTab:'records',
+    selEx:'Bench Press',
+    dayPreviewPanel:null,
+    exHistoryPanel:null,
+    exInstructPanel:null,
+    scoreDetail:null,
+    restTimer:null,
+    quickAIOpen:false,
+    pendingAction:null,
+    messages:[
+      {role:'user',text:'What’s my biggest weakness right now, and what should I do about it?',time:'Demo',actions:[]},
+      {role:'ai',text:'Your pulling volume is lagging behind your pressing, and rows have stalled for 3 sessions. I’d recommend adding 2–3 hard sets of chest-supported rows this week and keeping bench volume unchanged.',time:'Demo',actions:[]}
+    ],
+    profile:{name:'Demo Athlete',goal:'Build muscle and strength',experience:'Intermediate',session_duration:60,exercises_per_session:5,equipment:'Full gym',injuries:'',preferences:''},
     recent:workouts.slice(-3).reverse(),
     prs:[
       {name:'Bench Press',from:'170×8',to:'185×7'},
@@ -3842,12 +3918,26 @@ function makeTourDemoState(){
     ai:'Bench has been steady at 185×7 for three sessions. Keep the weight and aim for 185×8 next time.'
   };
 }
+function makeTourActiveWorkout(){
+  return {
+    date:new Date().toISOString(),
+    split:'push',
+    exercises:[
+      {name:'Bench Press',inputW:'185',inputR:'8',sets:[
+        {w:43.1,r:8,warmup:true},
+        {w:83.9,r:7}
+      ]},
+      {name:'Incline Bench',inputW:'135',inputR:'8',sets:[]},
+      {name:'Tricep Pushdown',inputW:'70',inputR:'10',sets:[]}
+    ]
+  };
+}
 function vFeatureTourPrompt(){
   return '<div class="tour-wrap" style="justify-content:center;padding-bottom:calc(34px + env(safe-area-inset-bottom))">'+
     '<div class="tour-card">'+
       '<div class="tour-kicker">OPTIONAL TOUR</div>'+
       '<div class="tour-title">Want a quick tour?</div>'+
-      '<div class="tour-copy">Forma gets smarter after you log workouts. This 60-second tour shows how to get the most out of it.</div>'+
+      '<div class="tour-copy">I’ll show you how Forma gets more useful after you log workouts.</div>'+
       '<div style="display:flex;gap:8px;margin-top:18px">'+
         '<button class="tour-primary" onclick="startFeatureTour()" style="flex:1;border-radius:12px;padding:14px;font-size:14px;font-weight:800">Show me</button>'+
         '<button class="tour-secondary" onclick="skipFeatureTour()" style="flex:1;border-radius:12px;padding:14px;font-size:14px;font-weight:800">Skip</button>'+
@@ -3855,89 +3945,54 @@ function vFeatureTourPrompt(){
     '</div>'+
   '</div>';
 }
-function tourMiniHeader(title,msg,step){
-  return '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px">'+
-    '<div>'+
-      '<div class="tour-kicker">'+(step+1)+' of 4</div>'+
-      '<div class="tour-title">'+title+'</div>'+
-      '<div class="tour-copy">'+msg+'</div>'+
-    '</div>'+
-    '<button onclick="skipFeatureTour()" style="background:none;border:none;color:var(--muted);font-size:12px;font-weight:800;padding:4px">Skip</button>'+
-  '</div>';
-}
-function vTourHome(d){
-  const days=DAYS.map(function(day){
-    const sp=d.schedule[day], col=spCol(sp), rest=sp==='rest';
-    return '<div style="flex:1;text-align:center;min-width:0">'+
-      '<div style="font-size:10px;font-weight:800;color:var(--muted);margin-bottom:5px;line-height:1">'+DAY_FULL[day][0]+'</div>'+
-      '<div style="height:36px;border-radius:13px;background:'+(rest?'#fff':hexA(col,.1))+';border:1px solid '+(rest?'var(--border)':hexA(col,.25))+';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:'+(rest?'var(--dim)':col)+';overflow:hidden;white-space:nowrap">'+(rest?'—':spLbl(sp))+'</div>'+
-    '</div>';
-  }).join('');
-  return '<div class="tour-preview">'+
-    '<div class="card tour-highlight" style="background:linear-gradient(135deg,#0D1E2E,#124A6A);border-radius:16px;margin-bottom:11px;padding:14px"><div class="lbl" style="color:#8EB4CA">TODAY</div><div style="font-size:22px;font-weight:800;color:#fff;line-height:1.1">Push Day</div><div style="font-size:12px;color:#8EB4CA;margin-top:5px">Bench Press, Incline Bench, Pushdowns</div></div>'+
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="home-week-title">THIS WEEK</span><span style="font-size:11px;color:var(--blue);font-weight:800">Edit schedule</span></div>'+
-    '<div class="tour-highlight" style="display:flex;gap:5px;border-radius:15px;padding:8px;margin-bottom:11px;background:rgba(255,255,255,.68)">'+days+'</div>'+
-    '<div class="card" style="margin-bottom:0">'+
-      '<span class="lbl">RECENT</span>'+
-      d.recent.map(function(w){return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--dim)"><b style="font-size:12px;color:'+spCol(w.split)+'">'+spLbl(w.split)+'</b><span style="font-size:11px;color:var(--sub)">3 exercises</span></div>';}).join('')+
-    '</div>'+
-  '</div>';
-}
-function vTourLog(d){
-  return '<div class="tour-preview">'+
-    '<div class="inline-ai tour-highlight" style="border-radius:16px;padding:14px;margin-bottom:12px"><div class="inline-ai-hdr" style="margin-bottom:9px"><div style="width:3px;height:14px;background:var(--blue);border-radius:2px"></div><span style="font-size:11px;font-weight:800;color:var(--blue)">PROGRESSION TARGET</span></div><div class="inline-ai-reply" style="margin-bottom:0">Bench Press: last top set was <b>185×7</b>. Aim for <b>190×5–6</b>.</div></div>'+
-    '<div class="ex-card" style="margin-bottom:0">'+
-      '<div class="ex-hdr"><div class="ex-name">Bench Press</div><div class="ex-last">last<br><span class="mono">185 lbs×7</span></div></div>'+
-      '<div style="margin-bottom:12px">'+
-        '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--dim)"><span style="font-size:11px;color:#E8693A" class="mono">#1 <b>WU</b></span><span class="mono" style="font-weight:800">95 lbs × 8</span></div>'+
-        '<div class="tour-highlight" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:10px;margin-top:6px"><span style="font-size:11px;color:var(--sub)" class="mono">#2</span><span class="mono" style="font-weight:800">185 lbs × 7</span></div>'+
-      '</div>'+
-      '<button class="btn-accent" style="padding:11px">Log Set</button>'+
-    '</div>'+
-  '</div>';
-}
-function vTourAI(d){
-  return '<div class="tour-preview">'+
-    '<div class="msg ai" style="margin-bottom:10px"><div class="avatar">L</div><div><div class="bubble tour-highlight">'+
-      '<b>RECOMMENDATION</b><br>'+escH(d.ai)+'<br><br><b>EVIDENCE</b><br>- Last 3 bench top sets: 185×7<br>- Performance is near your best<br>- No pain or recovery flags'+
-    '</div></div></div>'+
-    '<div class="card" style="margin-bottom:0"><span class="lbl">WHY IT IS DIFFERENT</span><div style="font-size:13px;color:var(--sub);line-height:1.55">The coach reads workouts, warm-ups, PRs, frequency, and trends before giving advice.</div></div>'+
-  '</div>';
-}
-function vTourStats(d){
-  return '<div class="tour-preview">'+
-    '<div class="card tour-highlight" style="margin-bottom:11px;border-radius:16px"><span class="lbl">TOP LIFTS</span>'+
-      d.prs.map(function(p){return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--dim)"><b style="font-size:13px">'+p.name+'</b><span class="mono" style="color:var(--blue);font-weight:800">'+p.to+'</span></div>';}).join('')+
-    '</div>'+
-    '<div class="card" style="margin-bottom:0;border-radius:16px"><span class="lbl">WHAT I NOTICE</span><div style="font-size:13px;color:var(--sub);line-height:1.55">'+d.plateau.name+' '+d.plateau.note+'</div></div>'+
-  '</div>';
-}
-function vFeatureTour(){
-  const d=makeTourDemoState();
-  const steps=[
-    {t:'Your week, at a glance',m:'See what’s planned, what you completed, and what’s coming next.',v:vTourHome(d)},
-    {t:'Log smarter workouts',m:'Track warm-ups and working sets. The AI recommends what to aim for next time.',v:vTourLog(d)},
-    {t:'AI that uses your history',m:'Forma’s AI uses your actual logs, not generic advice.',v:vTourAI(d)},
-    {t:'Progress that explains itself',m:'See what’s improving, what’s stalled, and why.',v:vTourStats(d)}
-  ];
+function vTourOverlay(){
+  const steps=tourSteps();
   if(S.tourStep>=steps.length){
-    return '<div class="tour-wrap" style="justify-content:center">'+
-      '<div class="tour-card">'+
-        '<div class="tour-kicker">DONE</div><div class="tour-title">You’re ready</div>'+
-        '<div class="tour-copy">Start logging. Forma gets more useful every session.</div>'+
-        '<button class="tour-primary" onclick="finishFeatureTour()" style="width:100%;border-radius:12px;padding:14px;font-size:14px;font-weight:800;margin-top:18px">Start using Forma</button>'+
+    return '<div class="tour-live-overlay">'+
+      '<div class="tour-live-scrim"></div>'+
+      '<div class="tour-coach-card">'+
+        '<div class="tour-kicker">DONE</div>'+
+        '<div class="tour-coach-title">You’re ready</div>'+
+        '<div class="tour-coach-copy">Start logging. I get more useful every session.</div>'+
+        '<div class="tour-coach-actions">'+
+          '<button class="tour-primary" onclick="finishFeatureTour()">Start using Forma</button>'+
+        '</div>'+
       '</div>'+
     '</div>';
   }
-  const cur=steps[S.tourStep];
-  return '<div class="tour-wrap">'+
-    tourMiniHeader(cur.t,cur.m,S.tourStep)+
-    cur.v+
-    '<div class="tour-actions">'+
-      '<button class="tour-secondary" onclick="skipFeatureTour()">Skip</button>'+
-      '<button class="tour-primary" onclick="S.tourStep++;render()">'+(S.tourStep===steps.length-1?'Finish':'Next')+'</button>'+
+  const step=steps[S.tourStep];
+  return '<div class="tour-live-overlay">'+
+    '<div class="tour-live-scrim"></div>'+
+    '<div id="tour-spotlight" class="tour-spotlight"></div>'+
+    '<div class="tour-coach-card">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px">'+
+        '<div class="tour-kicker" style="margin-bottom:0">'+(S.tourStep+1)+' of '+steps.length+'</div>'+
+        '<button onclick="skipFeatureTour()" style="background:none;border:none;color:var(--muted);font-size:12px;font-weight:800;padding:4px">Skip</button>'+
+      '</div>'+
+      '<div class="tour-coach-title">'+step.title+'</div>'+
+      '<div class="tour-coach-copy">'+step.text+'</div>'+
+      (step.example?'<div class="tour-coach-example">'+escH(step.example).replace(/\n/g,'<br>')+'</div>':'')+
+      '<div class="tour-coach-actions">'+
+        '<button class="tour-secondary" onclick="tourBack()" '+(S.tourStep===0?'disabled style="opacity:.45"':'')+'>Back</button>'+
+        '<button class="tour-primary" onclick="tourNext()">'+(S.tourStep===steps.length-1?'Finish':'Next')+'</button>'+
+      '</div>'+
     '</div>'+
   '</div>';
+}
+function positionTourSpotlight(){
+  const spot=document.getElementById('tour-spotlight');
+  if(!spot||!S.tourActive)return;
+  const step=tourSteps()[S.tourStep];
+  if(!step)return;
+  const target=document.querySelector(step.selector);
+  if(!target){spot.style.display='none';return;}
+  const r=target.getBoundingClientRect();
+  const pad=8;
+  spot.style.display='block';
+  spot.style.left=Math.max(8,r.left-pad)+'px';
+  spot.style.top=Math.max(8,r.top-pad)+'px';
+  spot.style.width=Math.min(window.innerWidth-16,r.width+pad*2)+'px';
+  spot.style.height=Math.min(window.innerHeight-16,r.height+pad*2)+'px';
 }
 
 function vCalendar(){
@@ -4722,7 +4777,7 @@ function vSetup(){
 }
 
 function vChat(){
-  const keyNotice=!hasKey()?'<div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:4px 0 12px;font-size:12px;color:var(--sub);line-height:1.45">'+aiKeyMessage()+'</div>':'';
+  const keyNotice=(!hasKey()&&!S.tourActive)?'<div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:4px 0 12px;font-size:12px;color:var(--sub);line-height:1.45">'+aiKeyMessage()+'</div>':'';
   const msgs=S.messages.map(function(m){
     if(m.role==='typing'){
       return '<div class="msg ai"><div class="avatar">L</div><div><div class="bubble" style="display:flex;align-items:center;gap:5px;padding:14px 16px"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div></div>';
