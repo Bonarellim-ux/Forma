@@ -1042,6 +1042,11 @@ async function sendInlineAI(){
 // ── EXERCISE RECOMMENDATION ───────────────────────────────────
 async function sendRecommend(){
   if(!S.workout||S.inlineAILoading)return;
+  if(typeof hasJustifiedWorkoutRecommendation==='function'&&!hasJustifiedWorkoutRecommendation()){
+    S.inlineAIReply='I do not see a strong recommendation yet. Log a few working sets first, and I will use your history when there is a clear next move.';
+    render();
+    return;
+  }
   if(!hasKey()){S.inlineAIReply=aiKeyMessage();render();return;}
   S.inlineAIReply='';S.inlineAILoading=true;render();
   try{
@@ -1058,6 +1063,8 @@ async function sendRecommend(){
 
     const sys=
       'You are an evidence-based strength coach. Recommend the single best next exercise based on what the athlete has done today AND their training history.\n\n'+
+      'LOCAL RECOMMENDATION SIGNALS:\n'+
+      (typeof buildWorkoutRecommendationEvidence==='function'?buildWorkoutRecommendationEvidence():'No local evidence summary available.')+'\n\n'+
       'EXERCISE SCIENCE KNOWLEDGE BASE:\n'+
       EXERCISE_KB+'\n\n'+
       'ATHLETE HISTORY CONTEXT:\n'+buildWeekContext()+'\n'+buildExerciseHistory()+'\n\n'+
@@ -1197,4 +1204,3 @@ function saveKey(inputId){
 function clearApiKey(){localStorage.removeItem('ll_apikey');render();}
 
 function resetKey(){clearApiKey();}
-

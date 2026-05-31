@@ -234,65 +234,182 @@ function getLastWorkingSets(name){
   return null;
 }
 
-function getOverloadSuggestion(exName,currentInputW){
-  const ws=getLastWorkingSets(exName);
-  if(!ws||ws.length<2)return null;
-  if(ws.some(s=>s.w===0))return null; // skip BW
+function getRecentExerciseSessions(exName,limit){
+  const target=normExName(exName);
+  return (S.workouts||[])
+    .filter(function(w){return w&&w.date&&Array.isArray(w.exercises);})
+    .slice()
+    .sort(function(a,b){return new Date(b.date)-new Date(a.date);})
+    .map(function(w){
+      const ex=w.exercises.find(function(e){return e&&normExName(e.name)===target;});
+      if(!ex||!Array.isArray(ex.sets))return null;
+      const sets=ex.sets.filter(function(s){return s&&!s.warmup&&Number(s.r)>0&&Number(s.w)>=0;});
+      if(!sets.length)return null;
+      const top=sets.reduce(function(best,set){
+        return e1rm(set.w,set.r)>e1rm(best.w,best.r)?set:best;
+      },sets[0]);
+      return{
+        date:w.date,
+        sets:sets,
+        topW:Number(top.w),
+        topR:Number(top.r),
+        topE1:e1rm(Number(top.w),Number(top.r)),
+        volume:sets.reduce(function(acc,s){return acc+(Number(s.w)||0)*(Number(s.r)||0);},0)
+      };
+    })
+    .filter(Boolean)
+    .slice(0,limit||5);
+}
 
-  const name=exName.toLowerCase();
-  const machine=['machine','cable','pulldown','leg curl','leg extension','calf raise','face pull','lateral raise','pushdown','chest fly','hammer curl','dumbbell curl','incline hammer'];
-  const compound=['squat','deadlift','bench press','barbell row','overhead press','hack squat','leg press','hip thrust','romanian deadlift','barbell'];
-  const isMachine=machine.some(m=>name.includes(m));
-  const isCompound=compound.some(c=>name.includes(c));
+function exerciseProgressionProfile(exName){
+  const n=normExName(exName);
+  const lower=['squat','deadlift','romanian deadlift','rdl','leg press','hack squat','hip thrust','lunge','split squat','leg curl','leg extension','calf'];
+  const compound=['squat','deadlift','bench press','barbell row','overhead press','pull-up','pull ups','pullups','pulldown','row','press','leg press','hack squat','hip thrust'];
+  const isolation=['curl','raise','fly','pushdown','extension','face pull','leg curl','leg extension','calf'];
+  const isLower=lower.some(function(k){return n.includes(k);});
+  const isCompound=compound.some(function(k){return n.includes(k);})&&!isolation.some(function(k){return n.includes(k);});
+  let jump;
+  if(S.unit==='kg')jump=isLower&&isCompound?5:2.5;
+  else jump=isLower&&isCompound?10:(isCompound?5:2.5);
+  return{
+    isLower:isLower,
+    isCompound:isCompound,
+    jump:jump,
+    minTarget:isCompound?6:8,
+    maxTarget:isCompound?10:12
+  };
+}
 
-  // Work in DISPLAY units throughout, then convert back to kg for storage
-  const dispW=s=>toDisp(s.w); // convert stored kg → display unit
-  const roundToDisp=5; // always 5 in display unit (lbs or kg)
-  const roundD=v=>Math.round(v/roundToDisp)*roundToDisp;
+function roundToProgressionJump(value,jump){
+  if(!jump)return value;
+  return Math.round(value/jump)*jump;
+}
 
-  // Find mode weight in display units
-  const counts={};
-  ws.forEach(s=>{const d=roundD(dispW(s)); counts[d]=(counts[d]||0)+1;});
-  const lastWDisp=Number(Object.keys(counts).reduce((a,b)=>counts[a]>=counts[b]?a:b));
+function sameProgressionWeight(a,b,jump){
+  return Math.abs(a-b)<=Math.max(.5,jump/2);
+}
 
-  const avgReps=ws.reduce((a,s)=>a+s.r,0)/ws.length;
-  const minReps=Math.min.apply(null,ws.map(s=>s.r));
-  const maxReps=Math.max.apply(null,ws.map(s=>s.r));
-  const repRange=maxReps-minReps;
+function displayWeightFromKg(kg){
+  return Number(toDisp(Number(kg)||0));
+}
 
-  // Count sessions at roughly this weight
-  const sessionsAtWeight=S.workouts.filter(w=>{
-    const ex=w.exercises&&w.exercises.find(e=>e&&e.name===exName);
-    if(!ex||!Array.isArray(ex.sets))return false;
-    try{
-      const wk=ex.sets.filter(s=>s&&!s.warmup&&s.r>0);
-      return wk.length>0&&Math.abs(roundD(dispW(wk[0]))-lastWDisp)<=roundToDisp;
-    }catch(e){return false;}
+function kgFromDisplayWeight(wDisp){
+  return S.unit==='lbs'?wDisp/KG2LB:wDisp;
+}
+
+function repTrendDeclined(sessions){
+  if(sessions.length<3)return false;
+  const chronological=sessions.slice(0,3).reverse();
+  return chronological[0].topR>chronological[1].topR&&chronological[1].topR>chronological[2].topR;
+}
+
+function e1TrendDeclined(sessions){
+  if(sessions.length<3)return false;
+  const chronological=sessions.slice(0,3).reverse();
+  return chronological[0].topE1>chronological[1].topE1&&chronological[1].topE1>chronological[2].topE1;
+}
+
+function isCompoundExerciseName(exName){
+  return exerciseProgressionProfile(exName).isCompound;
+}
+
+function compoundDeclineCount(){
+  const names=[...new Set((S.workouts||[]).slice(0,5).flatMap(function(w){
+    return (w.exercises||[]).map(function(e){return e&&e.name;}).filter(Boolean);
+  }))];
+  return names.filter(function(name){
+    if(!isCompoundExerciseName(name))return false;
+    const sessions=getRecentExerciseSessions(name,3);
+    return repTrendDeclined(sessions)||e1TrendDeclined(sessions);
   }).length;
+}
 
-  const suggestUp=avgReps>=8&&repRange<=3&&sessionsAtWeight>=2;
-  const suggestDown=minReps<=4&&avgReps<=5;
+function getOverloadSuggestion(exName,currentInputW){
+  const sessions=getRecentExerciseSessions(exName,5);
+  if(sessions.length<3)return null;
+  if(sessions.some(function(s){return s.topW===0;}))return null; // bodyweight loading needs separate logic
 
-  if(!suggestUp&&!suggestDown)return null;
+  const p=exerciseProgressionProfile(exName);
+  const recent3=sessions.slice(0,3);
+  const last=recent3[0];
+  const lastWDisp=roundToProgressionJump(displayWeightFromKg(last.topW),p.jump);
+  const atSameWeight=recent3.filter(function(s){
+    return sameProgressionWeight(roundToProgressionJump(displayWeightFromKg(s.topW),p.jump),lastWDisp,p.jump);
+  });
+  if(atSameWeight.length<3)return null;
 
-  if(suggestUp){
-    const sugDisp=roundD(lastWDisp+roundToDisp);
-    const sugKg=S.unit==='lbs'?sugDisp/KG2LB:sugDisp;
-    const currentDisp=parseFloat(currentInputW)>0?toDisp(parseFloat(currentInputW)):lastWDisp;
+  const reps=atSameWeight.map(function(s){return s.topR;});
+  const minReps=Math.min.apply(null,reps);
+  const maxReps=Math.max.apply(null,reps);
+  const sameReps=minReps===maxReps;
+  const allAtTop=reps.every(function(r){return r>=p.maxTarget;});
+  const nonDeclining=atSameWeight.slice().reverse().every(function(s,i,arr){return i===0||s.topR>=arr[i-1].topR;});
+  const currentDisp=parseFloat(currentInputW)>0?Number(currentInputW):lastWDisp;
+
+  if((repTrendDeclined(recent3)||e1TrendDeclined(recent3))&&(compoundDeclineCount()>=2||isCompoundExerciseName(exName))){
+    const detail='Your recent top sets have dipped for more than one session. I\'d recommend holding '+lastWDisp+' '+uLbl()+' and focusing on clean reps before pushing load.';
+    return{dir:'up',weight:last.topW,weightDisp:lastWDisp,reason:'Hold progression',detail:detail};
+  }
+
+  if(allAtTop){
+    const sugDisp=roundToProgressionJump(lastWDisp+p.jump,p.jump);
+    const sugKg=kgFromDisplayWeight(sugDisp);
     if(Math.abs(sugDisp-currentDisp)>0.5){
-      const detail='You averaged '+Math.round(avgReps)+' reps at '+lastWDisp+' '+uLbl()+' across '+sessionsAtWeight+' session'+(sessionsAtWeight!==1?'s':'')+'. '+(S&&S.tourActive?'I’d recommend adding ':'Add ')+roundToDisp+' '+uLbl()+'.';
-      return{dir:'up',weight:sugKg,weightDisp:sugDisp,reason:'Ready to go heavier',detail};
+      const detail='You have hit '+lastWDisp+' '+uLbl()+' x '+p.maxTarget+' across 3 sessions. I\'d recommend adding '+p.jump+' '+uLbl()+' and aiming for '+p.minTarget+'-'+Math.min(p.minTarget+2,p.maxTarget)+' reps.';
+      return{dir:'up',weight:sugKg,weightDisp:sugDisp,reason:'Ready to go heavier',detail:detail};
     }
   }
-  if(suggestDown){
-    const sugDisp=roundD(lastWDisp-roundToDisp);
-    const sugKg=S.unit==='lbs'?sugDisp/KG2LB:sugDisp;
-    if(sugDisp>0){
-      const detail='You averaged only '+Math.round(avgReps)+' reps at '+lastWDisp+' '+uLbl()+' last session. Drop '+roundToDisp+' '+uLbl()+' to hit your target rep range.';
-      return{dir:'down',weight:sugKg,weightDisp:sugDisp,reason:'Too heavy — drop slightly',detail};
-    }
+
+  if(sameReps&&maxReps<p.maxTarget){
+    const targetReps=maxReps+1;
+    const detail='You have repeated '+lastWDisp+' '+uLbl()+' x '+maxReps+' for 3 sessions. I\'d recommend staying at '+lastWDisp+' '+uLbl()+' and aiming for '+targetReps+' reps before increasing weight.';
+    return{dir:'up',weight:last.topW,weightDisp:lastWDisp,reason:'Build reps first',detail:detail};
   }
+
+  if(nonDeclining&&maxReps<p.maxTarget&&last.topR===maxReps){
+    const targetReps=maxReps+1;
+    const detail='Your reps are moving up at '+lastWDisp+' '+uLbl()+'. I\'d recommend keeping the weight there and aiming for '+targetReps+' reps next.';
+    return{dir:'up',weight:last.topW,weightDisp:lastWDisp,reason:'Rep progression',detail:detail};
+  }
+
   return null;
+}
+
+function hasJustifiedWorkoutRecommendation(){
+  if(!S.workout||!Array.isArray(S.workout.exercises))return false;
+  const exercises=S.workout.exercises;
+  const done=exercises.filter(function(ex){
+    return ex&&Array.isArray(ex.sets)&&ex.sets.some(function(s){return s&&!s.warmup&&Number(s.r)>0;});
+  });
+  if(exercises.length&&done.length===exercises.length)return true; // finishing is the clear next action
+  if(exercises.some(function(ex){return ex&&!isCardioEx(ex.name)&&getOverloadSuggestion(ex.name,ex.inputW);}))return true;
+  if(!done.length)return false;
+  return exercises.some(function(ex){
+    if(!ex||isCardioEx(ex.name))return false;
+    const started=Array.isArray(ex.sets)&&ex.sets.some(function(s){return s&&!s.warmup&&Number(s.r)>0;});
+    return !started&&getRecentExerciseSessions(ex.name,3).length>=3;
+  });
+}
+
+function buildWorkoutRecommendationEvidence(){
+  if(!S.workout||!Array.isArray(S.workout.exercises))return 'No active workout.';
+  const exercises=S.workout.exercises;
+  const lines=[];
+  const done=exercises.filter(function(ex){
+    return ex&&Array.isArray(ex.sets)&&ex.sets.some(function(s){return s&&!s.warmup&&Number(s.r)>0;});
+  });
+  exercises.forEach(function(ex){
+    if(!ex||isCardioEx(ex.name))return;
+    const sug=getOverloadSuggestion(ex.name,ex.inputW);
+    if(sug)lines.push(ex.name+': '+sug.detail);
+  });
+  if(exercises.length&&done.length===exercises.length)lines.push('Every planned exercise has working sets logged; finishing the workout may be the best next action.');
+  exercises.forEach(function(ex){
+    if(!ex||isCardioEx(ex.name))return;
+    const started=Array.isArray(ex.sets)&&ex.sets.some(function(s){return s&&!s.warmup&&Number(s.r)>0;});
+    if(!started&&getRecentExerciseSessions(ex.name,3).length>=3)lines.push(ex.name+': has at least 3 prior sessions available for evidence-based next-set guidance.');
+  });
+  return lines.length?lines.join('\n'):'No strong local recommendation signal.';
 }
 
 function getLastW(name){

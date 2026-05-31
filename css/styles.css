@@ -109,6 +109,11 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .voice-btn{flex:1;background:var(--bg);color:var(--sub);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-family:inherit}
 .voice-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
 .e1rm-preview{margin-top:6px;font-size:11px;min-height:15px;color:var(--sub);font-family:\'Courier New\',monospace}
+.plate-calc{margin-top:4px;display:flex;align-items:center;gap:5px;min-height:14px;color:var(--sub);font-size:9px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.plate-visual{display:inline-flex;align-items:center;gap:2px;flex:0 0 auto;opacity:.9}
+.plate-sleeve{width:14px;height:3px;background:linear-gradient(90deg,#A8C8E4,#5A84A0);border-radius:999px}
+.plate-dot{width:7px;height:11px;border-radius:3px;background:var(--plate-color);border:1px solid rgba(13,30,46,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
+.plate-text{min-width:0;overflow:hidden;text-overflow:ellipsis;font-family:'Courier New',monospace;letter-spacing:.01em;font-weight:600}
 /* Edit mode */
 .edit-mode-lbl{font-size:10px;font-weight:700;color:var(--blue);letter-spacing:.08em;margin-bottom:10px}
 .edit-name-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-weight:600;color:var(--white);outline:none;margin-bottom:10px;font-family:inherit}

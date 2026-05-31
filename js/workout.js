@@ -271,14 +271,7 @@ function vLog(){
             // ── Plate calculator — barbell exercises only ──
             (isBarbell(ex.name)&&parseFloat(ex.inputW)>0?(function(){
               try{
-                const wLbs=S.unit==='lbs'?parseFloat(ex.inputW):parseFloat(ex.inputW)*KG2LB;
-                const plates=calcPlates(wLbs)||[];
-                if(!plates.length)return '';
-                const txt=plates.map(function(p){return (p.n>1?p.n+'×':'')+p.p;}).join(' + ');
-                return '<div style="font-size:10px;color:var(--muted);margin-top:5px;display:flex;align-items:center;gap:4px">'+
-                  '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.6"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>'+
-                  '<span style="font-family:\'Courier New\',monospace;letter-spacing:.02em">'+txt+' <span style="opacity:.5">per side</span></span>'+
-                '</div>';
+                return plateHtml(parseFloat(ex.inputW));
               }catch(e){return '';}
             })():'')+'</div>';
         })()+
@@ -984,7 +977,7 @@ function renameEx(i,name){if(!S.workout)return;flushLogInputs();S.workout.exerci
 function toggleM2(i){if(!S.workout)return;const ex=S.workout.exercises[i];ex.trackM2=!ex.trackM2;render();}
 
 // ── PLATE CALCULATOR ─────────────────────────────────────────
-function calcPlates(dispW){
+function calcWorkoutPlates(dispW){
   const bar=S.unit==='lbs'?45:20;
   const plates=S.unit==='lbs'?[45,35,25,10,5,2.5]:[25,20,15,10,5,2.5,1.25];
   if(dispW<=bar)return null;
@@ -997,18 +990,22 @@ function calcPlates(dispW){
   return{bar,plates:result};
 }
 function plateHtml(dispW){
-  const p=calcPlates(dispW);
+  const p=calcWorkoutPlates(dispW);
   if(!p||!p.plates.length)return '';
-  // Color-code by plate size
-  const colors={45:'#1A9ED4',35:'#E8B84B',25:'#2DAA70',20:'#2DAA70',15:'#E8693A',10:'#9AB8CC',5:'#9AB8CC',2.5:'#C44',1.25:'#C44'};
-  const pills=p.plates.map(function(pl){
+  const colors={45:'#1A9ED4',35:'#D4A020',25:'#2DAA70',20:'#2DAA70',15:'#E8693A',10:'#7B6FE0',5:'#9AB8CC',2.5:'#C44',1.25:'#C44'};
+  const counts={};
+  p.plates.forEach(function(pl){counts[pl]=(counts[pl]||0)+1;});
+  const dots=Object.keys(counts).map(function(pl){
     const c=colors[pl]||'#9AB8CC';
-    return '<span style="background:'+c+'22;border:1px solid '+c+'66;color:'+c+';font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;font-family:\'Courier New\',monospace">'+pl+'</span>';
-  }).join(' ');
-  return '<div style="margin-top:5px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">'+
-    '<span style="font-size:10px;color:var(--muted)">'+p.bar+(S.unit==='lbs'?' lb':' kg')+' bar +</span>'+
-    pills+
-    '<span style="font-size:10px;color:var(--muted)">each side</span>'+
+    return '<span class="plate-dot" style="--plate-color:'+c+'"></span>';
+  }).join('');
+  const txt=Object.keys(counts).map(function(pl){return(counts[pl]>1?counts[pl]+'x':'')+pl;}).join(' + ');
+  return '<div class="plate-calc">'+
+    '<span class="plate-visual" aria-label="Plate calculator">'+
+      '<span class="plate-sleeve"></span>'+
+      dots+
+    '</span>'+
+    '<span class="plate-text">'+p.bar+' '+uLbl()+' bar &middot; '+txt+' per side</span>'+
   '</div>';
 }
 
