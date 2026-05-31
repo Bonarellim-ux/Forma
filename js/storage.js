@@ -1,12 +1,4 @@
-// Storage, API key, import, and export helpers for Forma.
-function apiKey(){return localStorage.getItem('ll_apikey')||'';}
-
-function hasKey(){return!!apiKey();}
-
-function aiKeyMessage(){return 'Add your AI API key in Setup to enable coaching.';}
-
-function apiHeaders(){return{'Content-Type':'application/json','x-api-key':apiKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'};}
-
+// Storage, import, and export helpers for Forma.
 function loadData(){
   try{
     const load=function(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}};
@@ -76,18 +68,11 @@ function saveMessages(){
   persist('ll_messages',clean);
 }
 
-function saveKey(inputId){
-  const inp=document.getElementById(inputId||'api-key-input');
-  const key=inp?inp.value.trim():'';
-  if(!key){const err=document.getElementById('key-err');if(err)err.textContent='Enter an API key first.';return;}
-  localStorage.setItem('ll_apikey',key);
-  if(S.view==='apikey')S.view='home';
-  render();
-}
 
-function clearApiKey(){localStorage.removeItem('ll_apikey');render();}
 
-function resetKey(){clearApiKey();}
+
+
+
 
 function exportData(){
   const data={

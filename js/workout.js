@@ -603,96 +603,9 @@ function vExInstructPanel(){
   '</div>';
 }
 
-async function sendExInstructChat(){
-  const text=S.exInstructDraft.trim();
-  if(!text||S.exInstructChatLoading)return;
-  S.exInstructChat.push({role:'user',text:text});
-  S.exInstructDraft='';
-  if(!hasKey()){S.exInstructChat.push({role:'ai',text:aiKeyMessage()});render();return;}
-  S.exInstructChatLoading=true;
-  render();
-  // Scroll chat to bottom
-  setTimeout(function(){const el=document.getElementById('ex-instruct-scroll');if(el)el.scrollTop=el.scrollHeight;},50);
-  try{
-    const messages=[
-      {role:'user',content:'Here are the instructions for "'+S.exInstructPanel+'":\n\n'+S.exInstructText}
-    ];
-    // Add prior Q&A turns
-    S.exInstructChat.slice(0,-1).forEach(function(m){
-      messages.push({role:m.role==='user'?'user':'assistant',content:m.text});
-    });
-    messages.push({role:'user',content:text});
-    const resp=await fetch(API,{method:'POST',headers:apiHeaders(),body:JSON.stringify({
-      model:MODEL,max_tokens:2500,
-      thinking:{type:'enabled',budget_tokens:1024},
-      system:'You are an expert strength coach. Answer concisely about the exercise "'+S.exInstructPanel+'". Be practical, specific, and under 120 words unless the question genuinely needs more detail.',
-      messages:messages
-    })});
-    const data=await resp.json();
-    if(data.error)throw new Error(data.error.message);
-    S.exInstructChat.push({role:'ai',text:extractText(data.content)});
-  }catch(e){
-    S.exInstructChat.push({role:'ai',text:'Sorry, could not get an answer: '+e.message});
-  }
-  S.exInstructChatLoading=false;
-  render();
-  setTimeout(function(){const el=document.getElementById('ex-instruct-scroll');if(el)el.scrollTop=el.scrollHeight;},50);
-}
 
-async function showExInstruct(name){
-  S.exInstructPanel=name;
-  S.exInstructText=null;
-  S.exInstructLoading=hasKey();
-  S.exInstructChat=[];
-  S.exInstructDraft='';
-  S.exInstructChatLoading=false;
-  render();
-  if(!hasKey()){
-    S.exInstructText=aiKeyMessage();
-    S.exInstructLoading=false;
-    render();
-    return;
-  }
-  // Try with thinking first, then without, then fall back to static content
-  const prompt=
-    'Give concise, expert instructions for how to perform "'+name+'" with perfect form. Structure your response with these sections:\n\n'+
-    '**Setup** — starting position, grip, stance\n'+
-    '**Execution** — step by step movement cues (3-5 bullet points)\n'+
-    '**Key cues** — 2-3 short coaching cues to remember\n'+
-    '**Common mistakes** — 2-3 things to avoid\n\n'+
-    'Keep it practical and actionable. No fluff. Under 200 words total.';
-  const sys='You are an expert strength and conditioning coach. Give clear, practical exercise instructions.';
-  let text=null;
-  // Attempt 1: with thinking (budget ≥1024 required)
-  try{
-    const resp=await fetch(API,{method:'POST',headers:apiHeaders(),body:JSON.stringify({
-      model:MODEL,max_tokens:3000,thinking:{type:'enabled',budget_tokens:1024},
-      stream:false,system:sys,messages:[{role:'user',content:prompt}]
-    })});
-    const raw=await resp.text();
-    console.log('[ExInstruct attempt1 raw]',raw.slice(0,400));
-    const data=JSON.parse(raw);
-    if(!data.error) text=extractText(data.content);
-    else console.warn('[ExInstruct attempt1 api error]',JSON.stringify(data.error));
-  }catch(e){console.warn('[ExInstruct attempt1 catch]',e.message);}
-  // Attempt 2: without thinking
-  if(!text){
-    try{
-      const resp=await fetch(API,{method:'POST',headers:apiHeaders(),body:JSON.stringify({
-        model:MODEL,max_tokens:1000,stream:false,
-        system:sys,messages:[{role:'user',content:prompt}]
-      })});
-      const raw=await resp.text();
-      console.log('[ExInstruct attempt2 raw]',raw.slice(0,400));
-      const data=JSON.parse(raw);
-      if(!data.error) text=extractText(data.content);
-      else console.warn('[ExInstruct attempt2 api error]',JSON.stringify(data.error));
-    }catch(e){console.warn('[ExInstruct attempt2 catch]',e.message);}
-  }
-  S.exInstructText=text||('**'+name+'**\n\nInstructions are unavailable right now. Check your internet connection or API key and try again by closing and reopening this panel.');
-  S.exInstructLoading=false;
-  render();
-}
+
+
 
 function vFeedback(){
   const w=S.lastWorkout||S.workout;
@@ -1232,4 +1145,35 @@ function moveExDown(i){
   if(!S.workout||i>=S.workout.exercises.length-1)return;flushLogInputs();
   const exs=S.workout.exercises;const tmp=exs[i];exs[i]=exs[i+1];exs[i+1]=tmp;
   S.editingExIdx=i+1;syncWorkoutToTemplate();render();
+}
+
+// Set voice
+function toggleSetVoice(i){
+  if(S.setVoiceIdx===i){
+    if(S.setVoiceRec){S.setVoiceRec.stop();S.setVoiceRec=null;}
+    S.setVoiceIdx=null;
+    const b=document.getElementById('vbtn'+i);if(b)b.className='voice-btn';
+    return;
+  }
+  if(S.setVoiceRec){S.setVoiceRec.stop();S.setVoiceRec=null;}
+  S.setVoiceIdx=i;
+  const b=document.getElementById('vbtn'+i);if(b)b.className='voice-btn on';
+  let accum='';
+  S.setVoiceRec=makeVoice(
+    function(fin){
+      accum=(accum+' '+fin).trim();
+      const p=parseSetVoice(accum);
+      if(p){
+        const wi=document.getElementById('w'+i);const ri=document.getElementById('r'+i);
+        if(wi){wi.value=p.w;syncW(i,p.w);}if(ri){ri.value=p.r;syncR(i,p.r);}previewE1(i);
+      }
+    },
+    function(interim){
+      // Show interim in preview
+      const p=parseSetVoice(accum+' '+interim);
+      if(p){const el=document.getElementById('prev'+i);if(el)el.innerHTML='<span style="color:var(--blue)">'+p.w+' '+uLbl()+' &times; '+p.r+'</span> <span style="color:var(--muted);font-size:9px">listening...</span>';}
+    },
+    function(){S.setVoiceIdx=null;S.setVoiceRec=null;accum='';const b=document.getElementById('vbtn'+i);if(b)b.className='voice-btn';}
+  );
+  if(!S.setVoiceRec){S.setVoiceIdx=null;}
 }
