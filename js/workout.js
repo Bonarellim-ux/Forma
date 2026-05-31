@@ -246,18 +246,35 @@ function vLog(){
       '<div class="ex-inputs">'+
         (function(){
           const sug=!isCardio?getOverloadSuggestion(ex.name,ex.inputW):null;
-          const sugChip=sug?
-            '<span style="display:inline-flex;align-items:center;gap:3px;margin-left:6px;position:relative">'+
-              '<button onclick="applyOverloadSug('+i+','+sug.weightDisp+')" style="display:inline-flex;align-items:center;gap:2px;background:rgba(26,158,212,.12);border:1px solid rgba(26,158,212,.35);border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;color:var(--blue);cursor:pointer;font-family:inherit;line-height:1">'+
-                (sug.dir==='up'?'<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>':'<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>')+
+          const sugChip=sug?(function(){
+            const currentDisp=parseFloat(ex.inputW)||0;
+            let badge='';
+            if(sug.action==='add_weight'&&sug.weightDisp>currentDisp){
+              badge='<button onclick="applyOverloadSug('+i+','+sug.weightDisp+')" style="display:inline-flex;align-items:center;gap:2px;background:rgba(26,158,212,.12);border:1px solid rgba(26,158,212,.35);border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;color:var(--blue);cursor:pointer;font-family:inherit;line-height:1">'+
+                '<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>'+
                 sug.weightDisp+
-              '</button>'+
+              '</button>';
+            }else if(sug.action==='reduce_weight'&&sug.weightDisp<currentDisp){
+              badge='<button onclick="applyOverloadSug('+i+','+sug.weightDisp+')" style="display:inline-flex;align-items:center;gap:2px;background:rgba(26,158,212,.12);border:1px solid rgba(26,158,212,.35);border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;color:var(--blue);cursor:pointer;font-family:inherit;line-height:1">'+
+                '<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>'+
+                sug.weightDisp+
+              '</button>';
+            }else if(sug.action==='add_reps'&&sug.repTarget){
+              badge='<span style="display:inline-flex;align-items:center;gap:2px;background:rgba(26,158,212,.10);border:1px solid rgba(26,158,212,.28);border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;color:var(--blue);font-family:inherit;line-height:1">'+sug.repTarget+' reps</span>';
+            }else if(sug.action==='hold_weight'||sug.action==='recovery'){
+              badge='<span style="display:inline-flex;align-items:center;gap:2px;background:rgba(26,158,212,.08);border:1px solid rgba(26,158,212,.22);border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;color:var(--blue);font-family:inherit;line-height:1">hold</span>';
+            }
+            if(!badge&&sug.action!=='add_weight'&&sug.action!=='reduce_weight'&&sug.action!=='add_reps'&&sug.action!=='hold_weight'&&sug.action!=='recovery')return '';
+            return badge?
+            '<span style="display:inline-flex;align-items:center;gap:3px;margin-left:6px;position:relative">'+
+              badge+
               '<button onclick="S.sugTooltip=(S.sugTooltip===\''+i+'\'?null:\''+i+'\');render();setTimeout(function(){var el=document.getElementById(\'sugtip-'+i+'\');if(el){var r=el.getBoundingClientRect();if(r.right>window.innerWidth)el.style.left=\'auto\',el.style.right=\'0\';}},0)" style="width:14px;height:14px;border-radius:50%;background:var(--s2);border:1px solid var(--border);color:var(--muted);font-size:8px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;padding:0;font-family:inherit">?</button>'+
               (S.sugTooltip===String(i)?
                 '<div id="sugtip-'+i+'" style="position:absolute;top:20px;left:0;z-index:99;width:200px;background:var(--s1);border:1px solid rgba(26,158,212,.3);border-radius:8px;padding:9px 11px;font-size:11px;line-height:1.55;color:var(--sub);box-shadow:0 4px 16px rgba(0,0,0,.3)">'+sug.detail+'</div>':
                 '')+
-            '</span>':
-            '';
+            '</span>':'';
+          })():
+          '';
           return '<div style="flex:1;min-width:0">'+
             '<div style="display:flex;align-items:center;height:18px;margin-bottom:5px">'+
               '<span class="lbl" style="margin-bottom:0;line-height:1">'+uLbl().toUpperCase()+'</span>'+

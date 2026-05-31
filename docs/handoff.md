@@ -114,6 +114,8 @@ Priority:
 4. Test AI action handling for workout/cardio logging.
 5. Prepare for real user testing.
 6. Plan accounts/cloud sync later.
+7. Build out `docs/exercise-database.md` into a real structured exercise database.
+8. Use the exercise database to improve substitutions and AI coach reasoning.
 
 ## Notes For Future Sessions
 

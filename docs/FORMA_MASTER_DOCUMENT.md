@@ -59,6 +59,25 @@ Forma is an evidence-based training coach that uses personal workout history and
 | Helps during and after workouts | Coaching can happen in the moment or through later analysis. |
 | Matches substitutions carefully | Swaps consider muscle, movement pattern, joint function, angle, and workout role. |
 
+## What Forma Is Not
+
+Forma is not:
+
+- A generic AI chatbot.
+- A random workout generator.
+- A calorie tracker.
+- A social media platform.
+- An app that gives advice without evidence.
+- A replacement for medical, physical therapy, or injury diagnosis.
+
+Forma is:
+
+- An evidence-based training coach.
+- A workout analysis platform.
+- A progression assistant.
+- A decision-making tool for strength and hypertrophy training.
+- A system that explains why it recommends something.
+
 ## Target User
 
 Forma is designed for:
@@ -184,6 +203,27 @@ Forma is designed for:
 - Avoid giving away codebase or IP without clear ownership terms.
 
 ## Roadmap
+
+## Current Sprint
+
+**Goal:** Improve recommendation quality.
+
+**Focus:**
+
+- Rep progression logic.
+- Weight progression logic.
+- Hold/recovery recommendations.
+- Plateau detection.
+- Recommendation explanations.
+- Reducing unnecessary recommendation frequency.
+
+**Success Criteria:**
+
+- Recommendations only appear when useful.
+- Users understand why recommendations are made.
+- Warm-ups are ignored.
+- The app recommends reps, weight, hold, or recovery appropriately.
+- No recommendation appears when evidence is weak.
 
 ### Current Priorities
 

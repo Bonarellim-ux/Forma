@@ -266,17 +266,23 @@ function exerciseProgressionProfile(exName){
   const lower=['squat','deadlift','romanian deadlift','rdl','leg press','hack squat','hip thrust','lunge','split squat','leg curl','leg extension','calf'];
   const compound=['squat','deadlift','bench press','barbell row','overhead press','pull-up','pull ups','pullups','pulldown','row','press','leg press','hack squat','hip thrust'];
   const isolation=['curl','raise','fly','pushdown','extension','face pull','leg curl','leg extension','calf'];
+  const unilateral=['lunge','split squat','step-up','step up'];
   const isLower=lower.some(function(k){return n.includes(k);});
-  const isCompound=compound.some(function(k){return n.includes(k);})&&!isolation.some(function(k){return n.includes(k);});
+  const isUnilateral=unilateral.some(function(k){return n.includes(k);});
+  const isCompound=compound.some(function(k){return n.includes(k);})&&!isolation.some(function(k){return n.includes(k);})&&!isUnilateral;
+  const isLowerIsolation=isLower&&!isCompound&&!isUnilateral;
   let jump;
   if(S.unit==='kg')jump=isLower&&isCompound?5:2.5;
-  else jump=isLower&&isCompound?10:(isCompound?5:2.5);
+  else jump=isLower&&isCompound?10:(isLowerIsolation?5:(isCompound?5:2.5));
   return{
     isLower:isLower,
     isCompound:isCompound,
+    isUnilateral:isUnilateral,
+    isLowerIsolation:isLowerIsolation,
+    isIsolation:!isCompound,
     jump:jump,
-    minTarget:isCompound?6:8,
-    maxTarget:isCompound?10:12
+    minTarget:isCompound&&!isUnilateral?6:8,
+    maxTarget:isCompound&&!isUnilateral?10:12
   };
 }
 
@@ -295,6 +301,87 @@ function displayWeightFromKg(kg){
 
 function kgFromDisplayWeight(wDisp){
   return S.unit==='lbs'?wDisp/KG2LB:wDisp;
+}
+
+function fmtRecWeight(kg){
+  return roundToProgressionJump(displayWeightFromKg(kg),S.unit==='lbs'?2.5:1)+' '+uLbl();
+}
+
+function fmtTopSet(session){
+  return fmtRecWeight(session.topW)+' x '+session.topR;
+}
+
+function recentTopSetText(sessions){
+  return sessions.slice().reverse().map(fmtTopSet).join(' -> ');
+}
+
+function sessionDisplayWeight(session,profile){
+  return roundToProgressionJump(displayWeightFromKg(session.topW),profile.jump);
+}
+
+function repsAtWeight(sessions,weightDisp,profile){
+  return sessions.filter(function(s){return sameProgressionWeight(sessionDisplayWeight(s,profile),weightDisp,profile.jump);}).map(function(s){return s.topR;});
+}
+
+function recentWeightRangeText(sessions,profile){
+  const chronological=sessions.slice().reverse();
+  const first=sessionDisplayWeight(chronological[0],profile);
+  const last=sessionDisplayWeight(chronological[chronological.length-1],profile);
+  return first+' to '+last+' '+uLbl();
+}
+
+function topE1NonDeclining(sessions){
+  if(sessions.length<3)return true;
+  const chronological=sessions.slice(0,Math.min(5,sessions.length)).reverse();
+  let declines=0;
+  for(let i=1;i<chronological.length;i++){
+    if(chronological[i].topE1<chronological[i-1].topE1*.98)declines++;
+  }
+  return declines<2;
+}
+
+function clearRegressionAtRecentHigh(sessions,profile){
+  if(sessions.length<4)return false;
+  const recent=sessions.slice(0,4);
+  const last=sessionDisplayWeight(recent[0],profile);
+  const highest=Math.max.apply(null,recent.map(function(s){return sessionDisplayWeight(s,profile);}));
+  if(!sameProgressionWeight(last,highest,profile.jump))return false;
+  const sameHigh=repsAtWeight(recent,highest,profile);
+  if(sameHigh.length<2)return false;
+  return sameHigh[0]<sameHigh[sameHigh.length-1]-1&&sameHigh[0]<profile.minTarget;
+}
+
+function successfulHigherWeight(sessions,currentDisp,profile){
+  return sessions.some(function(s){
+    const w=sessionDisplayWeight(s,profile);
+    return w>currentDisp+.5&&s.topR>=profile.minTarget;
+  });
+}
+
+function e1TrendText(sessions){
+  if(sessions.length<3)return '';
+  const chronological=sessions.slice(0,3).reverse();
+  const first=chronological[0].topE1;
+  const last=chronological[chronological.length-1].topE1;
+  if(last>first)return 'Your estimated 1RM is trending up.';
+  if(last<first)return 'Your estimated 1RM is trending down.';
+  return 'Your estimated 1RM has stayed about the same.';
+}
+
+function recommendationDetail(action,whyLines){
+  return action+'<br><br>Why:<br>'+whyLines.filter(Boolean).join('<br>');
+}
+
+function jumpLabel(jump){
+  return jump+' '+(uLbl()==='lbs'?'lb':'kg');
+}
+
+function weightIncreaseRepTarget(profile,maxReps){
+  if(profile.isIsolation){
+    if(maxReps>profile.maxTarget)return{min:8,max:12,label:'8-12'};
+    return{min:8,max:10,label:'8-10'};
+  }
+  return{min:profile.minTarget,max:Math.min(profile.minTarget+2,profile.maxTarget),label:profile.minTarget+'-'+Math.min(profile.minTarget+2,profile.maxTarget)};
 }
 
 function repTrendDeclined(sessions){
@@ -325,7 +412,7 @@ function compoundDeclineCount(){
 }
 
 function getOverloadSuggestion(exName,currentInputW){
-  const sessions=getRecentExerciseSessions(exName,5);
+  const sessions=getRecentExerciseSessions(exName,6);
   if(sessions.length<3)return null;
   if(sessions.some(function(s){return s.topW===0;}))return null; // bodyweight loading needs separate logic
 
@@ -333,43 +420,117 @@ function getOverloadSuggestion(exName,currentInputW){
   const recent3=sessions.slice(0,3);
   const last=recent3[0];
   const lastWDisp=roundToProgressionJump(displayWeightFromKg(last.topW),p.jump);
-  const atSameWeight=recent3.filter(function(s){
-    return sameProgressionWeight(roundToProgressionJump(displayWeightFromKg(s.topW),p.jump),lastWDisp,p.jump);
+  const currentDisp=parseFloat(currentInputW)>0?Number(currentInputW):lastWDisp;
+  const atSameWeight=sessions.filter(function(s){
+    return sameProgressionWeight(sessionDisplayWeight(s,p),lastWDisp,p.jump);
   });
-  if(atSameWeight.length<3)return null;
+  const sameRecent=atSameWeight.slice(0,3);
+  const recentHigh=Math.max.apply(null,sessions.map(function(s){return sessionDisplayWeight(s,p);}));
+  const lastIsRecentHigh=sameProgressionWeight(lastWDisp,recentHigh,p.jump);
+  const currentBelowRecentSuccess=successfulHigherWeight(sessions,currentDisp,p);
+  const broadHistory=recentTopSetText(sessions.slice(0,Math.min(6,sessions.length)));
 
-  const reps=atSameWeight.map(function(s){return s.topR;});
+  const reps=(sameRecent.length>=2?sameRecent:atSameWeight).map(function(s){return s.topR;});
+  if(!reps.length)return null;
   const minReps=Math.min.apply(null,reps);
   const maxReps=Math.max.apply(null,reps);
+  const repRange=maxReps-minReps;
   const sameReps=minReps===maxReps;
   const allAtTop=reps.every(function(r){return r>=p.maxTarget;});
-  const nonDeclining=atSameWeight.slice().reverse().every(function(s,i,arr){return i===0||s.topR>=arr[i-1].topR;});
-  const currentDisp=parseFloat(currentInputW)>0?Number(currentInputW):lastWDisp;
+  const nonDeclining=sessions.slice(0,Math.min(5,sessions.length)).slice().reverse().every(function(s,i,arr){return i===0||s.topE1>=arr[i-1].topE1*.97;});
+  const topSetHistory=recentTopSetText(sameRecent.length>=2?sameRecent:recent3);
+  const e1Text=e1TrendText(recent3);
+  const regressing=clearRegressionAtRecentHigh(sessions,p)||(!topE1NonDeclining(sessions)&&repTrendDeclined(recent3));
 
-  if((repTrendDeclined(recent3)||e1TrendDeclined(recent3))&&(compoundDeclineCount()>=2||isCompoundExerciseName(exName))){
-    const detail='Your recent top sets have dipped for more than one session. I\'d recommend holding '+lastWDisp+' '+uLbl()+' and focusing on clean reps before pushing load.';
-    return{dir:'up',weight:last.topW,weightDisp:lastWDisp,reason:'Hold progression',detail:detail};
+  if(regressing&&compoundDeclineCount()>=2){
+    const action='I\'d recommend holding progression today.';
+    const detail=recommendationDetail(action,[
+      'Your recent sessions show a performance drop: '+broadHistory+'.',
+      'Multiple compound lifts are showing decline signals, so pushing load now may not be the best move.',
+      e1TrendDeclined(recent3)?e1Text:''
+    ]);
+    return{dir:'same',type:'recovery',action:'recovery',weight:last.topW,weightDisp:lastWDisp,reason:'Recovery signal',detail:detail};
   }
 
-  if(allAtTop){
+  if(regressing){
+    const action='I\'d recommend holding '+lastWDisp+' '+uLbl()+' for now.';
+    const detail=recommendationDetail(action,[
+      'Your recent sessions show a real drop in performance: '+broadHistory+'.',
+      'The next goal is to stabilize clean reps before increasing.',
+      e1TrendDeclined(recent3)?e1Text:''
+    ]);
+    return{dir:'same',type:'hold_weight',action:'hold_weight',weight:last.topW,weightDisp:lastWDisp,reason:'Hold progression',detail:detail};
+  }
+
+  if(currentBelowRecentSuccess){
+    const action='I\'d recommend returning to '+recentHigh+' '+uLbl()+' and aiming for '+p.minTarget+'-'+p.maxTarget+' reps.';
+    const detail=recommendationDetail(action,[
+      'You have already performed a higher recent working weight successfully: '+broadHistory+'.',
+      'Since that higher weight is working, I would not drop the target unless performance clearly declines.'
+    ]);
+    return{dir:'up',type:'add_weight',action:'add_weight',weight:kgFromDisplayWeight(recentHigh),weightDisp:recentHigh,repTarget:p.minTarget+'-'+p.maxTarget,reason:'Use recent successful weight',detail:detail};
+  }
+
+  if(allAtTop&&lastIsRecentHigh){
     const sugDisp=roundToProgressionJump(lastWDisp+p.jump,p.jump);
     const sugKg=kgFromDisplayWeight(sugDisp);
-    if(Math.abs(sugDisp-currentDisp)>0.5){
-      const detail='You have hit '+lastWDisp+' '+uLbl()+' x '+p.maxTarget+' across 3 sessions. I\'d recommend adding '+p.jump+' '+uLbl()+' and aiming for '+p.minTarget+'-'+Math.min(p.minTarget+2,p.maxTarget)+' reps.';
-      return{dir:'up',weight:sugKg,weightDisp:sugDisp,reason:'Ready to go heavier',detail:detail};
+    if(sugDisp>currentDisp+0.5){
+      const target=weightIncreaseRepTarget(p,maxReps);
+      const action='I\'d recommend increasing to '+sugDisp+' '+uLbl()+' and aiming for '+target.label+' reps.';
+      const stableLine=p.isIsolation?
+        'You\'ve hit '+lastWDisp+' '+uLbl()+' for '+maxReps+' reps across multiple sessions, which is '+(maxReps>p.maxTarget?'above':'at')+' your target range.':
+        'You\'ve hit '+lastWDisp+' '+uLbl()+' x '+p.maxTarget+' for 3 sessions: '+topSetHistory+'.';
+      const resetLine=p.isIsolation?
+        'A '+jumpLabel(p.jump)+' jump should still keep you in a productive rep zone.':
+        'Performance has stayed stable at the top of the target range.';
+      const detail=recommendationDetail(action,[
+        stableLine,
+        resetLine
+      ]);
+      return{dir:'up',type:'add_weight',action:'add_weight',weight:sugKg,weightDisp:sugDisp,repTarget:target.label,reason:'Ready to go heavier',detail:detail};
     }
   }
 
-  if(sameReps&&maxReps<p.maxTarget){
+  if(sameRecent.length>=3&&sameReps&&maxReps<p.maxTarget){
     const targetReps=maxReps+1;
-    const detail='You have repeated '+lastWDisp+' '+uLbl()+' x '+maxReps+' for 3 sessions. I\'d recommend staying at '+lastWDisp+' '+uLbl()+' and aiming for '+targetReps+' reps before increasing weight.';
-    return{dir:'up',weight:last.topW,weightDisp:lastWDisp,reason:'Build reps first',detail:detail};
+    const action='I\'d recommend keeping '+lastWDisp+' '+uLbl()+' and aiming for '+targetReps+' reps.';
+    const detail=recommendationDetail(action,[
+      'You\'ve repeated '+lastWDisp+' '+uLbl()+' x '+maxReps+' for 3 sessions: '+topSetHistory+'.',
+      'You are still below the top of the target range, so reps should come before weight.',
+      e1Text
+    ]);
+    return{dir:'same',type:'add_reps',action:'add_reps',weight:last.topW,weightDisp:lastWDisp,repTarget:String(targetReps),reason:'Build reps first',detail:detail};
   }
 
-  if(nonDeclining&&maxReps<p.maxTarget&&last.topR===maxReps){
+  if(sameRecent.length>=2&&nonDeclining&&maxReps<p.maxTarget&&last.topR===maxReps){
     const targetReps=maxReps+1;
-    const detail='Your reps are moving up at '+lastWDisp+' '+uLbl()+'. I\'d recommend keeping the weight there and aiming for '+targetReps+' reps next.';
-    return{dir:'up',weight:last.topW,weightDisp:lastWDisp,reason:'Rep progression',detail:detail};
+    const action='I\'d recommend keeping '+lastWDisp+' '+uLbl()+' and aiming for '+targetReps+' reps.';
+    const detail=recommendationDetail(action,[
+      'You\'ve moved from '+minReps+' to '+maxReps+' reps over your recent sessions: '+topSetHistory+'.',
+      'You are still below the top of the target range, so the next progression is another rep.',
+      e1Text
+    ]);
+    return{dir:'same',type:'add_reps',action:'add_reps',weight:last.topW,weightDisp:lastWDisp,repTarget:String(targetReps),reason:'Rep progression',detail:detail};
+  }
+
+  if(lastIsRecentHigh&&last.topR>=p.minTarget&&last.topR<p.maxTarget){
+    const targetReps=Math.min(p.maxTarget,last.topR+1);
+    const action='I\'d recommend staying at '+lastWDisp+' '+uLbl()+' and aiming for '+targetReps+' reps.';
+    const detail=recommendationDetail(action,[
+      'You\'ve progressed from '+recentWeightRangeText(sessions.slice(0,Math.min(5,sessions.length)),p)+' while staying in a strong rep range.',
+      'That higher weight is working, so the next useful target is beating '+last.topR+' reps before increasing.'
+    ]);
+    return{dir:'same',type:'add_reps',action:'add_reps',weight:last.topW,weightDisp:lastWDisp,repTarget:String(targetReps),reason:'Keep successful weight',detail:detail};
+  }
+
+  if(sameRecent.length>=3&&repRange>=2){
+    const action='I\'d recommend holding '+lastWDisp+' '+uLbl()+' for now.';
+    const detail=recommendationDetail(action,[
+      'Your recent reps have been inconsistent at this weight: '+topSetHistory+'.',
+      'The next goal is to stabilize clean reps before increasing.',
+      e1Text
+    ]);
+    return{dir:'same',type:'hold_weight',action:'hold_weight',weight:last.topW,weightDisp:lastWDisp,reason:'Stabilize reps',detail:detail};
   }
 
   return null;
