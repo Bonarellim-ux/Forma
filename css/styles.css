@@ -314,7 +314,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 .rec-row-copy{min-width:0;flex:1}
 .rec-row-label{font-size:8.5px;font-weight:800;color:var(--blue);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
 .rec-row.applied .rec-row-label{color:#2DAA70}
-.rec-row-action{font-size:13.5px;font-weight:600;color:var(--white);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.005em}
+.rec-row-action{font-size:12px;font-weight:600;color:var(--white);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.005em}
 .rec-why-btn{background:rgba(14,123,196,.07);border:1px solid rgba(14,123,196,.16);border-radius:999px;color:var(--blue);font-size:10.5px;font-weight:700;padding:4px 9px;flex-shrink:0}
 .rec-row-why{border-top:1px solid rgba(14,123,196,.12);margin-top:7px;padding-top:7px;font-size:11px;line-height:1.5;color:var(--sub)}
 .rec-row-why span{color:var(--blue);font-weight:700}
