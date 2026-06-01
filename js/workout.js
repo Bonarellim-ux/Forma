@@ -65,34 +65,70 @@ function recommendationRepTargetValue(sug){
   return m?parseInt(m[0],10):null;
 }
 
+function recommendationTargetMatches(ex,sug){
+  if(!ex||!sug)return false;
+  let hasTarget=false;
+  if(sug.weightDisp!==undefined&&sug.weightDisp!==null){
+    hasTarget=true;
+    const cur=parseFloat(ex.inputW);
+    const target=parseFloat(sug.weightDisp);
+    if(!Number.isFinite(cur)||!Number.isFinite(target)||Math.abs(cur-target)>0.01)return false;
+  }
+  const reps=recommendationRepTargetValue(sug);
+  if(reps){
+    hasTarget=true;
+    if(parseInt(ex.inputR,10)!==reps)return false;
+  }
+  return hasTarget;
+}
+
+function recommendationNeedsApply(ex,sug){
+  if(!ex||!sug)return false;
+  return !recommendationTargetMatches(ex,sug);
+}
+
+function rememberAppliedRecommendation(ex,sug){
+  if(!ex||!sug)return;
+  ex._appliedRec={
+    detail:sug.detail,
+    repTarget:sug.repTarget,
+    weightDisp:sug.weightDisp
+  };
+}
+
+function appliedRecommendationSnapshot(ex){
+  if(!ex||!ex._appliedRec)return null;
+  return recommendationTargetMatches(ex,ex._appliedRec)?ex._appliedRec:null;
+}
+
 function applyExerciseRecommendation(i){
   if(!S.workout||!S.workout.exercises||!S.workout.exercises[i])return;
   const ex=S.workout.exercises[i];
-  const sug=getOverloadSuggestion(ex.name,ex.inputW);
+  const sug=getOverloadSuggestion(ex.name,ex.inputW)||appliedRecommendationSnapshot(ex);
   if(!sug)return;
   if(sug.weightDisp!==undefined&&sug.weightDisp!==null)ex.inputW=String(sug.weightDisp);
   const reps=recommendationRepTargetValue(sug);
   if(reps)ex.inputR=String(reps);
+  rememberAppliedRecommendation(ex,sug);
   S.recAppliedIdx=i;
   render();
-  setTimeout(function(){
-    if(S.recAppliedIdx===i){S.recAppliedIdx=null;render();}
-  },1400);
 }
 
-function vExerciseRecommendationRow(sug,i){
+function vExerciseRecommendationRow(sug,i,ex){
   if(!sug)return '';
   const action=recommendationActionText(sug);
   const why=recommendationWhyText(sug);
   if(!action)return '';
   const open=S.recWhyIdx===i;
-  const applied=S.recAppliedIdx===i;
+  const applied=S.recAppliedIdx===i||recommendationTargetMatches(ex,sug);
+  const needsApply=recommendationNeedsApply(ex,sug);
   return '<div class="rec-row'+(applied?' applied':'')+'" onclick="applyExerciseRecommendation('+i+')" title="Apply recommendation">'+
     '<div class="rec-row-main">'+
       '<div class="rec-row-mark">'+(applied?'✓':'→')+'</div>'+
       '<div class="rec-row-copy">'+
         '<div class="rec-row-label">'+(applied?'Applied':'Recommendation')+'</div>'+
         '<div class="rec-row-action">'+escH(action)+'</div>'+
+        (needsApply?'<div class="rec-row-hint">Tap to apply</div>':'')+
       '</div>'+
       (why?'<button class="rec-why-btn" onclick="event.stopPropagation();S.recWhyIdx='+(open?'null':i)+';render()">'+(open?'Hide':'Why?')+'</button>':'')+
     '</div>'+
@@ -207,8 +243,8 @@ function vLog(){
     const isCardio=isCardioEx(ex.name)||isCardioSplit(w.split);
     const cm=isCardio?cardioMetrics(ex.name):null;
     const showM2=isCardio?(ex.trackM2===true):false; // default: time only
-    const recSug=!isTemplate&&!isCardio?getOverloadSuggestion(ex.name,ex.inputW):null;
-    const recRow=vExerciseRecommendationRow(recSug,i);
+    const recSug=!isTemplate&&!isCardio?(appliedRecommendationSnapshot(ex)||getOverloadSuggestion(ex.name,ex.inputW)):null;
+    const recRow=vExerciseRecommendationRow(recSug,i,ex);
 
     // ── Logged sets / sessions ─────────────────
     const setsHtml=ex.sets.length?
@@ -966,7 +1002,11 @@ function saveTemplate(){
 async function finishWorkout(){
   if(!S.workout)return;
   flushLogInputs();
-  const clean={...S.workout,exercises:S.workout.exercises.filter(function(e){return e.sets.length>0;})};
+  const clean={...S.workout,exercises:S.workout.exercises.filter(function(e){return e.sets.length>0;}).map(function(e){
+    const copy={...e};
+    delete copy._appliedRec;
+    return copy;
+  })};
   if(!clean.exercises.length)return;
 
   // ── Compute summary stats before saving ───────────────────
