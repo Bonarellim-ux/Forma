@@ -47,6 +47,59 @@ function fireRestDoneNotif(){
   }catch(e){}
 }
 
+function recommendationActionText(sug){
+  if(!sug||!sug.detail)return '';
+  const text=String(sug.detail).split('<br><br>Why:<br>')[0].replace(/^I'd recommend /,'').replace(/\.$/,'');
+  return text.charAt(0).toUpperCase()+text.slice(1);
+}
+
+function recommendationWhyText(sug){
+  if(!sug||!sug.detail)return '';
+  const parts=String(sug.detail).split('<br><br>Why:<br>');
+  return parts.length>1?parts[1]:'';
+}
+
+function recommendationRepTargetValue(sug){
+  if(!sug||!sug.repTarget)return null;
+  const m=String(sug.repTarget).match(/\d+/);
+  return m?parseInt(m[0],10):null;
+}
+
+function applyExerciseRecommendation(i){
+  if(!S.workout||!S.workout.exercises||!S.workout.exercises[i])return;
+  const ex=S.workout.exercises[i];
+  const sug=getOverloadSuggestion(ex.name,ex.inputW);
+  if(!sug)return;
+  if(sug.weightDisp!==undefined&&sug.weightDisp!==null)ex.inputW=String(sug.weightDisp);
+  const reps=recommendationRepTargetValue(sug);
+  if(reps)ex.inputR=String(reps);
+  S.recAppliedIdx=i;
+  render();
+  setTimeout(function(){
+    if(S.recAppliedIdx===i){S.recAppliedIdx=null;render();}
+  },1400);
+}
+
+function vExerciseRecommendationRow(sug,i){
+  if(!sug)return '';
+  const action=recommendationActionText(sug);
+  const why=recommendationWhyText(sug);
+  if(!action)return '';
+  const open=S.recWhyIdx===i;
+  const applied=S.recAppliedIdx===i;
+  return '<div class="rec-row'+(applied?' applied':'')+'" onclick="applyExerciseRecommendation('+i+')" title="Apply recommendation">'+
+    '<div class="rec-row-main">'+
+      '<div class="rec-row-mark">'+(applied?'✓':'→')+'</div>'+
+      '<div class="rec-row-copy">'+
+        '<div class="rec-row-label">'+(applied?'Applied':'Recommendation')+'</div>'+
+        '<div class="rec-row-action">'+escH(action)+'</div>'+
+      '</div>'+
+      (why?'<button class="rec-why-btn" onclick="event.stopPropagation();S.recWhyIdx='+(open?'null':i)+';render()">'+(open?'Hide':'Why?')+'</button>':'')+
+    '</div>'+
+    (open&&why?'<div class="rec-row-why"><span>Why:</span> '+why+'</div>':'')+
+  '</div>';
+}
+
 // ── REST TIMER (timestamp-based — survives backgrounding) ──────
 function startRestTimer(secs,exName){
   requestNotifPermission();
@@ -154,6 +207,8 @@ function vLog(){
     const isCardio=isCardioEx(ex.name)||isCardioSplit(w.split);
     const cm=isCardio?cardioMetrics(ex.name):null;
     const showM2=isCardio?(ex.trackM2===true):false; // default: time only
+    const recSug=!isTemplate&&!isCardio?getOverloadSuggestion(ex.name,ex.inputW):null;
+    const recRow=vExerciseRecommendationRow(recSug,i);
 
     // ── Logged sets / sessions ─────────────────
     const setsHtml=ex.sets.length?
@@ -245,40 +300,9 @@ function vLog(){
       '</div>':
       '<div class="ex-inputs">'+
         (function(){
-          const sug=!isCardio?getOverloadSuggestion(ex.name,ex.inputW):null;
-          const sugChip=sug?(function(){
-            const currentDisp=parseFloat(ex.inputW)||0;
-            let badge='';
-            if(sug.action==='add_weight'&&sug.weightDisp>currentDisp){
-              badge='<button onclick="applyOverloadSug('+i+','+sug.weightDisp+')" style="display:inline-flex;align-items:center;gap:2px;background:rgba(26,158,212,.12);border:1px solid rgba(26,158,212,.35);border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;color:var(--blue);cursor:pointer;font-family:inherit;line-height:1">'+
-                '<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>'+
-                sug.weightDisp+
-              '</button>';
-            }else if(sug.action==='reduce_weight'&&sug.weightDisp<currentDisp){
-              badge='<button onclick="applyOverloadSug('+i+','+sug.weightDisp+')" style="display:inline-flex;align-items:center;gap:2px;background:rgba(26,158,212,.12);border:1px solid rgba(26,158,212,.35);border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;color:var(--blue);cursor:pointer;font-family:inherit;line-height:1">'+
-                '<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>'+
-                sug.weightDisp+
-              '</button>';
-            }else if(sug.action==='add_reps'&&sug.repTarget){
-              badge='<span style="display:inline-flex;align-items:center;gap:2px;background:rgba(26,158,212,.10);border:1px solid rgba(26,158,212,.28);border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;color:var(--blue);font-family:inherit;line-height:1">'+sug.repTarget+' reps</span>';
-            }else if(sug.action==='hold_weight'||sug.action==='recovery'){
-              badge='<span style="display:inline-flex;align-items:center;gap:2px;background:rgba(26,158,212,.08);border:1px solid rgba(26,158,212,.22);border-radius:4px;padding:2px 7px;font-size:9px;font-weight:700;color:var(--blue);font-family:inherit;line-height:1">hold</span>';
-            }
-            if(!badge&&sug.action!=='add_weight'&&sug.action!=='reduce_weight'&&sug.action!=='add_reps'&&sug.action!=='hold_weight'&&sug.action!=='recovery')return '';
-            return badge?
-            '<span style="display:inline-flex;align-items:center;gap:3px;margin-left:6px;position:relative">'+
-              badge+
-              '<button onclick="S.sugTooltip=(S.sugTooltip===\''+i+'\'?null:\''+i+'\');render();setTimeout(function(){var el=document.getElementById(\'sugtip-'+i+'\');if(el){var r=el.getBoundingClientRect();if(r.right>window.innerWidth)el.style.left=\'auto\',el.style.right=\'0\';}},0)" style="width:14px;height:14px;border-radius:50%;background:var(--s2);border:1px solid var(--border);color:var(--muted);font-size:8px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;padding:0;font-family:inherit">?</button>'+
-              (S.sugTooltip===String(i)?
-                '<div id="sugtip-'+i+'" style="position:absolute;top:20px;left:0;z-index:99;width:200px;background:var(--s1);border:1px solid rgba(26,158,212,.3);border-radius:8px;padding:9px 11px;font-size:11px;line-height:1.55;color:var(--sub);box-shadow:0 4px 16px rgba(0,0,0,.3)">'+sug.detail+'</div>':
-                '')+
-            '</span>':'';
-          })():
-          '';
           return '<div style="flex:1;min-width:0">'+
             '<div style="display:flex;align-items:center;height:18px;margin-bottom:5px">'+
               '<span class="lbl" style="margin-bottom:0;line-height:1">'+uLbl().toUpperCase()+'</span>'+
-              sugChip+
             '</div>'+
             '<div class="num-row">'+
               '<button onclick="nudgeW('+i+',-'+step()+')">&minus;</button>'+
@@ -375,6 +399,7 @@ function vLog(){
       'ontouchend="exTouchEnd(event)">'+
       hdr+
       subPanel+
+      recRow+
       (isTemplate?'':metricToggle)+
       setsHtml+
       (isTemplate?'':inputsHtml)+
@@ -621,6 +646,7 @@ function vFeedback(){
   const w=S.lastWorkout||S.workout;
   if(!w)return '';
   const sm=S.workoutSummary||{};
+  const quick=(sm.quick&&sm.quick.length?sm.quick:['Workout logged. Your history is getting stronger.']);
 
   // ── Stats row ─────────────────────────────────────────────
   const statsRow=(function(){
@@ -651,8 +677,16 @@ function vFeedback(){
       }).join('')+
     '</div>':'';
 
-  return '<span class="lbl" style="margin-bottom:14px">SESSION COMPLETE</span>'+
-    statsRow+prRow+
+  const quickCard='<div class="quick-summary card">'+
+      '<div class="quick-summary-title">Great session</div>'+
+      '<div class="quick-summary-lines">'+quick.slice(0,2).map(function(line){return '<div>'+escH(line)+'</div>';}).join('')+'</div>'+
+      '<div class="quick-summary-actions">'+
+        '<button class="btn-ghost" onclick="go(\'home\')">Done</button>'+
+        '<button class="btn-accent" onclick="requestWorkoutDebrief()">Ask AI for full debrief</button>'+
+      '</div>'+
+    '</div>';
+
+  const debriefCard=(S.feedbackLoading||S.feedback)?
     '<div class="card" style="margin-bottom:18px">'+
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'+
         '<div style="width:3px;height:14px;background:var(--blue);border-radius:2px"></div>'+
@@ -664,9 +698,55 @@ function vFeedback(){
           '<span style="font-size:12px;color:var(--muted)">Analyzing your session...</span>'+
         '</div>':
         '<div style="font-size:13px;line-height:1.75;color:var(--white)">'+renderMd(S.feedback||'')+'</div>')+
-    '</div>'+
-    '<button class="btn-accent" style="width:100%;margin-bottom:8px" onclick="go(\'home\')">&#8592; Back to Home</button>'+
+    '</div>':'';
+
+  return '<span class="lbl" style="margin-bottom:14px">SESSION COMPLETE</span>'+
+    statsRow+prRow+
+    quickCard+debriefCard+
     '<div style="font-size:11px;color:var(--muted);text-align:center">Saved to your calendar.</div>';
+}
+
+function bestWorkingSet(ex){
+  const sets=(ex&&Array.isArray(ex.sets)?ex.sets:[]).filter(function(s){return s&&!s.warmup&&s.w>0&&s.r>0;});
+  if(!sets.length)return null;
+  return sets.reduce(function(best,set){
+    return e1rm(set.w,set.r)>e1rm(best.w,best.r)?set:best;
+  },sets[0]);
+}
+
+function lastPreviousExerciseSet(exName){
+  for(const w of S.workouts){
+    const ex=w.exercises&&w.exercises.find(function(e){return e&&e.name===exName;});
+    const best=bestWorkingSet(ex);
+    if(best)return best;
+  }
+  return null;
+}
+
+function buildQuickWorkoutSummary(clean,prs){
+  const highlights=[];
+  clean.exercises.forEach(function(ex){
+    if(highlights.length>=2)return;
+    const best=bestWorkingSet(ex);
+    const prev=lastPreviousExerciseSet(ex.name);
+    if(!best||!prev)return;
+    const bestDisp=toDisp(best.w);
+    const prevDisp=toDisp(prev.w);
+    if(Math.abs(bestDisp-prevDisp)<.6&&Number(best.r)>Number(prev.r)){
+      highlights.push(ex.name+': +'+(Number(best.r)-Number(prev.r))+' rep'+(Number(best.r)-Number(prev.r)!==1?'s':'')+' from last time');
+      return;
+    }
+    if(bestDisp>prevDisp+.6&&Number(best.r)>=Math.max(1,Number(prev.r)-2)){
+      highlights.push(ex.name+': +'+Math.round((bestDisp-prevDisp)*10)/10+' '+uLbl());
+    }
+  });
+  const prLines=(prs||[]).slice(0,2).map(function(pr){
+    return 'New '+pr.name+' PR: '+pr.weight+' x '+pr.reps;
+  });
+  const lines=prLines.concat(highlights.filter(function(h){
+    return !prLines.some(function(p){return p.indexOf(h.split(':')[0])>=0;});
+  })).slice(0,2);
+  return lines.length?lines:['Workout logged. Your history is getting stronger.'];
 }
 
 function startWorkout(split){
@@ -908,21 +988,34 @@ async function finishWorkout(){
       if(!pws.length)return best;
       return Math.max(best,Math.max.apply(null,pws.map(function(s){return e1rm(s.w,s.r);})));
     },0);
-    if(todayBest>prevBest*1.005) prs.push({name:ex.name,e1rm:Math.round(toDisp(todayBest)*10)/10});
+    const bestSet=workSets.reduce(function(best,set){return e1rm(set.w,set.r)>e1rm(best.w,best.r)?set:best;},workSets[0]);
+    if(prevBest>0&&todayBest>prevBest*1.005) prs.push({
+      name:ex.name,
+      e1rm:Math.round(toDisp(todayBest)*10)/10,
+      weight:toDisp(bestSet.w),
+      reps:bestSet.r
+    });
   });
+  const quick=buildQuickWorkoutSummary(clean,prs);
 
   syncWorkoutToTemplate();
   const updated=[clean,...S.workouts];
   S.workouts=updated;
   persist('ll_workouts',updated);
   S.lastWorkout={...clean};
-  S.workoutSummary={totalSets,totalVol,durationMin,prs};
+  S.workoutSummary={totalSets,totalVol,durationMin,prs,quick};
   S.workoutStartTime=null;
   stopWorkoutTick();
   S.workout=null;
-  S.feedback=null;S.feedbackLoading=true;go('feedback');
+  S.feedback=null;S.feedbackLoading=false;go('feedback');
+}
+
+async function requestWorkoutDebrief(){
+  const clean=S.lastWorkout||S.workouts[0];
+  if(!clean)return;
+  S.feedback=null;S.feedbackLoading=true;render();
   try{
-    if(!hasKey())throw new Error(aiKeyMessage());
+    if(!hasKey()){S.feedback=aiKeyMessage();S.feedbackLoading=false;render();return;}
     const cleanDisplay={
       split:clean.split,
       date:fmtD(clean.date),
@@ -941,7 +1034,6 @@ async function finishWorkout(){
         };
       })
     };
-    const history=updated.slice(1,5).map(function(w){return{date:w.date,split:w.split,exercises:w.exercises.map(function(e){return{name:e.name,best_e1rm:Math.max.apply(null,e.sets.map(function(s){return e1rm(s.w,s.r);})),sets:e.sets};})};});
     const weekCtx=buildWeekContext();
     const resp=await fetch(API,{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:MODEL,max_tokens:1200,messages:[{role:'user',content:
       'You are an expert strength coach. Analyze this workout and give structured feedback using markdown.\n\n'+

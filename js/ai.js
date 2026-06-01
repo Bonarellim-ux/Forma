@@ -1,6 +1,6 @@
 // AI coach, API calls, API key handling, prompts, and AI voice/input flows.
 
-const API='https://api.anthropic.com/v1/messages';
+const API='https://forma-proxy.YOUR_SUBDOMAIN.workers.dev';
 const MODEL='claude-sonnet-4-6';
 
 // ── EXERCISE SCIENCE KNOWLEDGE BASE ──────────────────────────
@@ -147,11 +147,11 @@ Only recommend ★★★ or ★★☆.
 
 function apiKey(){return localStorage.getItem('ll_apikey')||'';}
 
-function hasKey(){return!!apiKey();}
+function hasKey(){return true;}
 
 function aiKeyMessage(){return 'Add your AI API key in Setup to enable coaching.';}
 
-function apiHeaders(){return{'Content-Type':'application/json','x-api-key':apiKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'};}
+function apiHeaders(){return{'Content-Type':'application/json'};}
 
 function vQuickAIPanel(){
   return '<div style="position:absolute;top:calc(env(safe-area-inset-top) + 56px);left:12px;right:12px;z-index:200;background:var(--s1);border:1px solid var(--border2);border-radius:16px;padding:14px;box-shadow:0 4px 20px rgba(13,30,46,.12)">'+
