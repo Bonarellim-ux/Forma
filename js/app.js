@@ -238,27 +238,7 @@ if('serviceWorker' in navigator){
   }catch(e){}
 }
 
-// Scroll-hide bottom nav — hide on scroll down, show on scroll up
-(function(){
-  var lastY=0, ticking=false;
-  document.addEventListener('scroll', handleScroll, {passive:true, capture:true});
-  function handleScroll(e){
-    var el=e.target;
-    if(!el||!el.classList||!el.classList.contains('content'))return;
-    if(ticking)return;
-    ticking=true;
-    requestAnimationFrame(function(){
-      var y=el.scrollTop;
-      var nav=document.querySelector('.nav');
-      if(nav){
-        if(y>lastY+6&&y>60) nav.classList.add('nav-hidden');
-        else if(y<lastY-6) nav.classList.remove('nav-hidden');
-      }
-      lastY=y;
-      ticking=false;
-    });
-  }
-  })();
+// Bottom nav stays fixed at all times (no scroll-hide) — like Strava.
 }
 
 document.addEventListener('DOMContentLoaded',initApp);
