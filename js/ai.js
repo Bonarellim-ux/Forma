@@ -1086,26 +1086,87 @@ function aiCurrentWorkoutContext(){
   }).join(' | ');
 }
 
+function aiConfidenceLabel(conf){
+  conf=String(conf||'medium').toLowerCase();
+  if(conf==='high')return 'High confidence';
+  if(conf==='low')return 'Low confidence';
+  return 'Medium confidence';
+}
+
+function aiCleanRecommendationText(text){
+  return String(text||'')
+    .replace(/<br\s*\/?>/g,' ')
+    .replace(/\s+/g,' ')
+    .replace(/^I'd recommend /,'')
+    .trim();
+}
+
+function aiRecommendationActionText(rec){
+  if(!rec||!rec.detail)return '';
+  return aiCleanRecommendationText(String(rec.detail).split('Why:')[0]).replace(/\.$/,'');
+}
+
+function aiRecommendationWhyText(rec){
+  if(!rec||!rec.detail)return '';
+  const parts=String(rec.detail).split('Why:');
+  return parts.length>1?aiCleanRecommendationText(parts[1]):'';
+}
+
+function aiCurrentInputForExercise(name){
+  if(!S.workout||!Array.isArray(S.workout.exercises))return null;
+  const ex=S.workout.exercises.find(function(e){return e&&e.name===name;});
+  return ex?ex.inputW:null;
+}
+
+function aiRecommendationEngineLines(names,limit){
+  if(typeof getOverloadSuggestion!=='function')return [];
+  const seen={};
+  return (names||[]).filter(Boolean).map(function(name){
+    if(seen[name])return null;
+    seen[name]=true;
+    const rec=getOverloadSuggestion(name,aiCurrentInputForExercise(name));
+    if(!rec)return null;
+    const action=aiRecommendationActionText(rec);
+    const why=aiRecommendationWhyText(rec);
+    return name+': '+action+'. '+aiConfidenceLabel(rec.confidence)+'. Engine state: '+(rec.state||rec.trend||rec.action||'recommendation')+'. Evidence: '+(why||rec.reason||'recent working-set history supports this.');
+  }).filter(Boolean).slice(0,limit||8);
+}
+
+function aiRecommendationCandidates(question,intent){
+  const names=aiRelevantExercises(question,intent);
+  if(names.length)return names;
+  if(intent==='today_plan'){
+    const today=todayKey();
+    const sp=S.workout?S.workout.split:S.schedule[today];
+    return (S.workout?S.workout.exercises.map(function(e){return e.name;}):(S.splitEx[sp]||[])).slice(0,10);
+  }
+  if(intent==='progression'||intent==='overall_progress'||intent==='weakness'){
+    return aiExerciseTrendSummaries(12).map(function(t){return t.name;});
+  }
+  return aiAllExerciseNames().slice(0,12);
+}
+
+function aiRecommendationEngineContext(question,intent){
+  const lines=aiRecommendationEngineLines(aiRecommendationCandidates(question,intent),8);
+  return lines.length?'Forma recommendation engine signals:\n'+lines.join('\n'):'Forma recommendation engine signals: none strong enough to show.';
+}
+
 function aiTodayPlanContext(question){
   const today=todayKey();
   const sp=S.workout?S.workout.split:S.schedule[today];
   const exs=S.workout?S.workout.exercises.map(function(e){return e.name;}):(S.splitEx[sp]||[]);
-  const recs=exs.map(function(name){
-    const current=S.workout?(S.workout.exercises.find(function(e){return e.name===name;})||{}).inputW:null;
-    const rec=typeof getOverloadSuggestion==='function'?getOverloadSuggestion(name,current):null;
-    return rec?name+': '+String(rec.detail||rec.reason||'').replace(/<br>/g,' ').replace(/I\'d recommend /,''):null;
-  }).filter(Boolean).slice(0,8);
-  return 'INTENT: today_plan\nToday: '+DAY_FULL[today]+' / '+spLbl(sp)+'\nExercises: '+exs.join(', ')+'\nCurrent workout: '+aiCurrentWorkoutContext()+'\nRecommendations: '+(recs.length?recs.join(' | '):'No strong local recommendation for every exercise')+'\nRecent history for today exercises:\n'+exs.slice(0,8).map(function(name){
+  return 'INTENT: today_plan\nToday: '+DAY_FULL[today]+' / '+spLbl(sp)+'\nExercises: '+exs.join(', ')+'\nCurrent workout: '+aiCurrentWorkoutContext()+'\nRecent history for today exercises:\n'+exs.slice(0,8).map(function(name){
     const rows=aiExerciseSessions(name,4);
     return name+': '+(rows.length?rows.map(function(r){return r.date+' '+r.top;}).join(' -> '):'no working-set history');
-  }).join('\n');
+  }).join('\n')+'\n'+aiRecommendationEngineContext(question,'today_plan');
 }
 
 function aiProgressionContext(intent){
   const trends=aiExerciseTrendSummaries(12);
   return 'INTENT: '+intent+'\nExercise trend summaries (working sets only):\n'+
     (trends.length?trends.map(function(t){return '- '+t.line;}).join('\n'):'No exercise trends yet')+
-    '\nRecent sessions:\n'+aiRecentSessions(8).join('\n');
+    '\nRecent sessions:\n'+aiRecentSessions(8).join('\n')+
+    '\n'+aiRecommendationEngineContext('',intent);
 }
 
 function aiWeaknessContext(){
@@ -1115,7 +1176,8 @@ function aiWeaknessContext(){
   return 'INTENT: weakness\nMuscle group status:\n'+(aiMuscleGroupStatus().join('\n')||'Not enough grouped data')+
     '\nLagging/declining exercises:\n'+(lagging.length?lagging.map(function(t){return '- '+t.line;}).join('\n'):'No clear declines')+
     '\nTop improving exercises for comparison:\n'+(improving.length?improving.map(function(t){return '- '+t.line;}).join('\n'):'No clear improvements')+
-    '\nRecent sessions:\n'+aiRecentSessions(6).join('\n');
+    '\nRecent sessions:\n'+aiRecentSessions(6).join('\n')+
+    '\n'+aiRecommendationEngineContext('', 'weakness');
 }
 
 function aiGoalContext(){
@@ -1137,7 +1199,8 @@ function aiSwapContext(question,intent){
       const subs=typeof getExerciseSubstitutions==='function'?getExerciseSubstitutions(name).slice(0,4).map(function(s){return s.name;}).join(', '):'';
       const rows=aiExerciseSessions(name,4).map(function(r){return r.date+' '+r.top;}).join(' -> ');
       return name+': '+(rows||'no recent working-set history')+(subs?'\nGood local substitutions: '+subs:'');
-    }).join('\n'):'No target named. Ask for the exercise if needed before prescribing a swap.');
+    }).join('\n'):'No target named. Ask for the exercise if needed before prescribing a swap.')+
+    '\n'+aiRecommendationEngineContext(question,intent);
 }
 
 function aiRecoveryContext(){
@@ -1146,7 +1209,8 @@ function aiRecoveryContext(){
   const declines=trends.filter(function(t){return t.e1_change<0;}).slice(0,6);
   return 'INTENT: recovery\nProfile limitations/pain notes: '+(S.profile.injuries||'none saved')+
     '\nRecent frequency: '+sessions.length+' sessions in recent context\nRecent sessions:\n'+sessions.join('\n')+
-    '\nDecline signals:\n'+(declines.length?declines.map(function(t){return '- '+t.line;}).join('\n'):'No clear multi-exercise decline in compact context');
+    '\nDecline signals:\n'+(declines.length?declines.map(function(t){return '- '+t.line;}).join('\n'):'No clear multi-exercise decline in compact context')+
+    '\n'+aiRecommendationEngineContext('', 'recovery');
 }
 
 function buildCompactAIContext(question,intent){
@@ -1156,7 +1220,7 @@ function buildCompactAIContext(question,intent){
   if(intent==='goal_inference')return aiGoalContext();
   if(intent==='exercise_swap'||intent==='replacement')return aiSwapContext(question,intent);
   if(intent==='recovery')return aiRecoveryContext();
-  return 'INTENT: general\nProfile:\n'+aiProfileContext()+'\nSchedule: '+aiScheduleContext()+'\nCurrent workout: '+aiCurrentWorkoutContext()+'\nCompact recent sessions:\n'+aiRecentSessions(6).join('\n')+'\nTop exercise trends:\n'+aiExerciseTrendSummaries(8).map(function(t){return '- '+t.line;}).join('\n');
+  return 'INTENT: general\nProfile:\n'+aiProfileContext()+'\nSchedule: '+aiScheduleContext()+'\nCurrent workout: '+aiCurrentWorkoutContext()+'\nCompact recent sessions:\n'+aiRecentSessions(6).join('\n')+'\nTop exercise trends:\n'+aiExerciseTrendSummaries(8).map(function(t){return '- '+t.line;}).join('\n')+'\n'+aiRecommendationEngineContext(question,intent);
 }
 
 function buildSysPrompt(question){
@@ -1172,6 +1236,9 @@ function buildSysPrompt(question){
     'COMPACT DATA CONTEXT\n'+compactCtx+'\n\n'+
     'CORE COACHING RULES\n'+
     '- Use the workout data before asking questions. Cite actual weights, reps, sessions, trends, or missing-data limits.\n'+
+    '- If COMPACT DATA CONTEXT includes "Forma recommendation engine signals" with a real recommendation, explicitly reference it before adding your own coaching context. Example: "Forma\'s recommendation engine currently suggests increasing OHP to 115 lbs because..."\n'+
+    '- Every recommendation must include a visible confidence label: "Confidence: High", "Confidence: Medium", or "Confidence: Low". Use the recommendation engine confidence when available. If you are making your own recommendation, base confidence on data quality, history length, agreement across signals, and whether warm-ups were excluded.\n'+
+    '- High confidence requires repeated working-set evidence or multiple independent signals. Medium confidence means useful evidence exists but is incomplete. Low confidence means evidence is weak; prefer monitoring over a strong prescription.\n'+
     '- Ignore warm-up sets for progress, PR, weakness, and recommendation judgments unless the user asks about warm-ups.\n'+
     '- Be decisive when multiple signals support the same conclusion. If evidence is weak, say that briefly and avoid vague advice.\n'+
     '- Follow double progression: build reps first, add weight only after repeated top-range success, then reset reps realistically.\n'+

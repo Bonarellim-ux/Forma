@@ -65,6 +65,13 @@ function recommendationRepTargetValue(sug){
   return m?parseInt(m[0],10):null;
 }
 
+function recommendationConfidenceText(sug){
+  const c=String((sug&&sug.confidence)||'medium').toLowerCase();
+  if(c==='high')return 'High confidence';
+  if(c==='low')return 'Low confidence';
+  return 'Medium confidence';
+}
+
 function recommendationTargetMatches(ex,sug){
   if(!ex||!sug)return false;
   let hasTarget=false;
@@ -128,7 +135,7 @@ function vExerciseRecommendationRow(sug,i,ex){
       '<div class="rec-row-copy">'+
         '<div class="rec-row-label">'+(applied?'Applied':'Recommendation')+'</div>'+
         '<div class="rec-row-action">'+escH(action)+'</div>'+
-        (needsApply?'<div class="rec-row-hint">Tap to apply</div>':'')+
+        '<div class="rec-row-hint">'+(needsApply?'Tap to apply · ':'')+recommendationConfidenceText(sug)+'</div>'+
       '</div>'+
       (why?'<button class="rec-why-btn" onclick="event.stopPropagation();S.recWhyIdx='+(open?'null':i)+';render()">'+(open?'Hide':'Why?')+'</button>':'')+
     '</div>'+

@@ -749,15 +749,25 @@ function vWorkoutDetail(){
   const totalSets=w.exercises.reduce(function(acc,e){return acc+e.sets.filter(function(s){return !s.warmup;}).length;},0);
   const totalVol=w.exercises.reduce(function(acc,e){return acc+e.sets.filter(function(s){return !s.warmup&&!isCardioEx(e.name);}).reduce(function(a,s){return a+s.w*s.r;},0);},0);
   const edit=S.editPastMode;
+  const splitEditStyle='width:100%;background:var(--s1);border:1px solid '+hexA(col,.35)+';border-radius:10px;padding:9px 10px;font-size:12px;color:var(--white);outline:none;font-family:inherit;box-shadow:0 2px 8px rgba(13,30,46,.05)';
   const splitSelect=edit?
-    '<label style="display:block;margin-top:8px">'+
-      '<span class="lbl" style="margin-bottom:5px">WORKOUT TYPE</span>'+
-      '<select onchange="savePastSplit(this.value)" style="width:100%;background:var(--s2);border:1px solid var(--blue);border-radius:6px;padding:6px 8px;font-size:11px;color:var(--white);outline:none;font-family:inherit">'+
-        pastSplitOptions(w.split).map(function(sp){
-          return '<option value="'+escH(sp)+'" '+(cleanSplit(w.split)===sp?'selected':'')+'>'+escH(spLbl(sp))+'</option>';
-        }).join('')+
-      '</select>'+
-    '</label>':'';
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;min-width:230px">'+
+      '<label style="display:block">'+
+        '<span class="lbl" style="margin-bottom:5px">DATE</span>'+
+        '<input type="date" id="past-date" value="'+new Date(w.date).toISOString().slice(0,10)+'" onchange="savePastDate(this.value)" style="'+splitEditStyle+'">'+
+      '</label>'+
+      '<label style="display:block">'+
+        '<span class="lbl" style="margin-bottom:5px">WORKOUT TYPE</span>'+
+        '<div style="position:relative">'+
+          '<select onchange="savePastSplit(this.value)" style="'+splitEditStyle+';appearance:none;-webkit-appearance:none;padding-right:28px">'+
+            pastSplitOptions(w.split).map(function(sp){
+              return '<option value="'+escH(sp)+'" '+(cleanSplit(w.split)===sp?'selected':'')+'>'+escH(spLbl(sp))+'</option>';
+            }).join('')+
+          '</select>'+
+          '<span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:10px;color:'+col+';pointer-events:none">&#9662;</span>'+
+        '</div>'+
+      '</label>'+
+    '</div>':'';
 
   const exCards=w.exercises.map(function(ex,ei){
     if(!edit&&!ex.sets.length)return '';
@@ -862,9 +872,7 @@ function vWorkoutDetail(){
   return '<div style="background:'+hexA(col,.08)+';border:1px solid '+hexA(col,.25)+';border-radius:12px;padding:16px;margin-bottom:18px">'+
     '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">'+
       '<div>'+pill(w.split)+
-        (edit?
-          '<input type="date" id="past-date" value="'+new Date(w.date).toISOString().slice(0,10)+'" onchange="savePastDate(this.value)" style="display:block;margin-top:6px;background:var(--s2);border:1px solid var(--blue);border-radius:6px;padding:5px 8px;font-size:11px;color:var(--white);outline:none;font-family:inherit">'+splitSelect:
-          '<div style="font-size:12px;color:var(--sub);margin-top:6px">'+fullDate+'</div>')+
+        (edit?splitSelect:'<div style="font-size:12px;color:var(--sub);margin-top:6px">'+fullDate+'</div>')+
       '</div>'+
       '<div style="display:flex;gap:6px;align-items:center">'+
         '<button onclick="S.editPastMode=!S.editPastMode;S.editPastExIdx=null;S.editPastSetIdx=null;S.editPastAddingEx=null;render()" '+
