@@ -8,9 +8,14 @@
   --blue:#0E7BC4;
   --blue2:#2E9AD8;
   --white:#09131C;
-  --muted:#8AA4BC;
+  /* --muted: secondary text. Darkened to clear WCAG AA (~4.6:1 on --bg) so
+     labels stay legible mid-set in bright gym light. */
+  --muted:#5A7388;
   --sub:#476A84;
+  /* --dim: hairlines / faint fills ONLY. Never use as text (fails contrast). */
   --dim:#E4EEF7;
+  /* --mono: tabular data (weights, e1RM, timers). Sharp, athletic, monospaced. */
+  --mono:ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,monospace;
   /* ── Shadow scale ────────────────────────────────────────── */
   --sh-xs:0 1px 3px rgba(9,19,28,.05),0 2px 8px rgba(9,19,28,.04);
   --sh-sm:0 1px 4px rgba(9,19,28,.06),0 6px 18px rgba(9,19,28,.06);
@@ -139,7 +144,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 
 /* ── Typography helpers ──────────────────────────────────────── */
 .lbl{font-size:10px;color:var(--sub);letter-spacing:.1em;display:block;margin-bottom:5px;text-transform:uppercase;font-weight:600}
-.mono{font-family:'Courier New',monospace}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 
 /* ── Pills & tags ────────────────────────────────────────────── */
 .pill{display:inline-block;padding:3px 11px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em}
@@ -195,7 +200,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 }
 .num-row button{background:none;border:none;color:var(--sub);padding:8px 15px;font-size:20px;line-height:1;cursor:pointer;flex-shrink:0;transition:color .1s}
 .num-row button:active{color:var(--blue)}
-.num-row input{flex:1;background:none;border:none;color:var(--white);text-align:center;font-size:16px;font-family:'Courier New',monospace;outline:none;min-width:0;padding:4px 0;font-weight:700}
+.num-row input{flex:1;background:none;border:none;color:var(--white);text-align:center;font-size:16px;font-family:var(--mono);outline:none;min-width:0;padding:4px 0;font-weight:700}
 
 /* ── Stat tabs ───────────────────────────────────────────────── */
 .stabs{
@@ -294,8 +299,8 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 .ex-last{font-size:10px;color:var(--sub);text-align:right;line-height:1.55;flex-shrink:0}
 .ex-sets{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
 .set-chip{display:flex;align-items:center;gap:5px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:4px 9px}
-.set-chip-txt{font-size:12px;color:var(--white);font-family:'Courier New',monospace;font-weight:600}
-.set-chip-e{font-size:10px;color:var(--blue);font-family:'Courier New',monospace;font-weight:600}
+.set-chip-txt{font-size:12px;color:var(--white);font-family:var(--mono);font-weight:600}
+.set-chip-e{font-size:10px;color:var(--blue);font-family:var(--mono);font-weight:600}
 .set-del{background:none;border:none;color:var(--dim);font-size:14px;cursor:pointer;padding:0;line-height:1;transition:color .15s}
 .set-del:active{color:#d94c4c}
 .ex-inputs{display:flex;gap:8px;margin-bottom:6px}
@@ -353,12 +358,12 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 .log-btn:active{transform:scale(.97);opacity:.9}
 .voice-btn{flex:1;background:var(--bg);color:var(--sub);border:1.5px solid var(--border);border-radius:10px;padding:10px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-family:inherit;transition:border-color .15s,color .15s}
 .voice-btn.on{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 8px rgba(14,123,196,.22)}
-.e1rm-preview{margin-top:6px;font-size:11px;min-height:15px;color:var(--sub);font-family:'Courier New',monospace}
+.e1rm-preview{margin-top:6px;font-size:11px;min-height:15px;color:var(--sub);font-family:var(--mono)}
 .plate-calc{margin-top:4px;display:flex;align-items:center;gap:5px;min-height:14px;color:var(--sub);font-size:9px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .plate-visual{display:inline-flex;align-items:center;gap:2px;flex:0 0 auto;opacity:.9}
 .plate-sleeve{width:14px;height:3px;background:linear-gradient(90deg,var(--border2),var(--sub));border-radius:999px}
 .plate-dot{width:7px;height:11px;border-radius:3px;background:var(--plate-color);border:1px solid rgba(9,19,28,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
-.plate-text{min-width:0;overflow:hidden;text-overflow:ellipsis;font-family:'Courier New',monospace;letter-spacing:.01em;font-weight:600}
+.plate-text{min-width:0;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono);letter-spacing:.01em;font-weight:600}
 
 /* ── Edit mode ───────────────────────────────────────────────── */
 .edit-mode-lbl{font-size:10px;font-weight:700;color:var(--blue);letter-spacing:.08em;margin-bottom:10px}
@@ -387,7 +392,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
   box-shadow:0 6px 24px rgba(9,19,28,.22);
   min-width:210px;justify-content:center;
 }
-.rest-timer .rt-time{font-family:'Courier New',monospace;font-size:22px;font-weight:800;letter-spacing:.04em;min-width:52px;text-align:center}
+.rest-timer .rt-time{font-family:var(--mono);font-size:22px;font-weight:800;letter-spacing:.04em;min-width:52px;text-align:center}
 .rest-timer .rt-btn{background:none;border:1.5px solid currentColor;border-radius:7px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;opacity:.75;transition:opacity .15s}
 .rest-timer .rt-btn:active{opacity:1}
 .rest-timer.done{background:#2DAA70;animation:pulse .6s ease-in-out 3}

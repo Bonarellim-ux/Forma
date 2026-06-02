@@ -273,7 +273,7 @@ function vStrengthScore(){
       '<circle cx="50" cy="50" r="36" fill="none" stroke="var(--border)" stroke-width="7"/>'+
       '<circle cx="50" cy="50" r="36" fill="none" stroke="'+LEVEL_COLORS[overallLevelIdx]+'" stroke-width="7" '+
         'stroke-dasharray="'+dash+' '+(circ-dash)+'" stroke-dashoffset="'+circ/4+'" stroke-linecap="round"/>'+
-      '<text x="50" y="46" text-anchor="middle" font-size="22" font-weight="800" fill="var(--white)" font-family="\'Courier New\',monospace">'+overallScore+'</text>'+
+      '<text x="50" y="46" text-anchor="middle" font-size="22" font-weight="800" fill="var(--white)" font-family="ui-monospace,Menlo,monospace">'+overallScore+'</text>'+
       '<text x="50" y="59" text-anchor="middle" font-size="8" fill="var(--muted)" font-family="inherit" letter-spacing="1.5">SCORE</text>'+
     '</svg>'+
     '<div style="font-size:16px;font-weight:700;color:'+LEVEL_COLORS[overallLevelIdx]+';margin-top:2px">'+LEVELS[overallLevelIdx]+'</div>'+
@@ -320,7 +320,7 @@ function vScoreDetailPanel(r){
         (isCurrent?'<span style="font-size:9px;color:'+r.levelColor+';font-weight:700"> ← YOU</span>':'')+
         (isNext&&r.level<5?'<span style="font-size:9px;color:var(--muted)"> next</span>':'')+
       '</div>'+
-      '<span style="font-size:12px;font-weight:'+(isCurrent?700:400)+';color:'+(isCurrent?r.levelColor:'var(--sub)')+';font-family:\'Courier New\',monospace">'+target+' '+uLbl()+'</span>'+
+      '<span style="font-size:12px;font-weight:'+(isCurrent?700:400)+';color:'+(isCurrent?r.levelColor:'var(--sub)')+';font-family:var(--mono)">'+target+' '+uLbl()+'</span>'+
     '</div>';
   }).join(''):null;
 
@@ -372,7 +372,7 @@ function vScoreDetailPanel(r){
         '</div>'+
         '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">'+
           '<span style="font-size:13px;font-weight:800;color:'+r.levelColor+';background:'+hexA(r.levelColor,.12)+';border:1px solid '+hexA(r.levelColor,.3)+';padding:4px 12px;border-radius:20px">'+r.levelName+'</span>'+
-          (r.val>0&&!r.isVol?'<span style="font-size:11px;color:var(--muted);font-family:\'Courier New\',monospace">'+r.val+' '+uLbl()+' e1RM</span>':'')+ 
+          (r.val>0&&!r.isVol?'<span style="font-size:11px;color:var(--muted);font-family:var(--mono)">'+r.val+' '+uLbl()+' e1RM</span>':'')+ 
         '</div>'+
       '</div>'+
 
@@ -414,7 +414,7 @@ function vScoreDetailPanel(r){
               loggedExs.slice(0,4).map(function(ex){
                 return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border-radius:8px">'+
                   '<span style="font-size:12px;font-weight:600;color:var(--white)">'+ex.name+'</span>'+
-                  '<span style="font-size:12px;font-weight:700;color:'+col+';font-family:\'Courier New\',monospace">'+Math.round(ex.e1rm)+' '+uLbl()+'</span>'+
+                  '<span style="font-size:12px;font-weight:700;color:'+col+';font-family:var(--mono)">'+Math.round(ex.e1rm)+' '+uLbl()+'</span>'+
                 '</div>';
               }).join('')+
             '</div>'+
@@ -730,7 +730,7 @@ function vCalendar(){
         '</div>'+
         '<div style="display:flex;flex-wrap:wrap;gap:5px">'+
           ex.sets.map(function(s){
-            return '<span style="font-size:10px;font-family:\'Courier New\',monospace;color:'+(s.warmup?'#E8693A':'var(--sub)')+';background:var(--bg);border:1px solid '+(s.warmup?'#E8693A44':'var(--dim)')+';padding:2px 7px;border-radius:4px">'+
+            return '<span style="font-size:10px;font-family:var(--mono);color:'+(s.warmup?'#E8693A':'var(--sub)')+';background:var(--bg);border:1px solid '+(s.warmup?'#E8693A44':'var(--dim)')+';padding:2px 7px;border-radius:4px">'+
               (isCardio?s.w+'min':(toDisp(s.w)+uLbl()+'×'+s.r))+
               (s.warmup?' WU':'')+
             '</span>';

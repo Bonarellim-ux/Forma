@@ -278,12 +278,12 @@ function vLog(){
             return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--dim)">'+
               '<div style="display:flex;align-items:center;gap:6px">'+
                 '<button onclick="toggleSetWarmup('+i+','+si+')" title="Toggle warm-up" style="background:none;border:none;padding:0;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px">'+
-                  '<span style="font-size:11px;color:'+(s.warmup?'#E8693A':'var(--sub)')+';font-family:\'Courier New\',monospace">#'+(si+1)+'</span>'+
+                  '<span style="font-size:11px;color:'+(s.warmup?'#E8693A':'var(--sub)')+';font-family:var(--mono)">#'+(si+1)+'</span>'+
                   (s.warmup?'<span style="font-size:9px;font-weight:700;color:#E8693A;background:#E8693A18;border:1px solid #E8693A44;padding:1px 5px;border-radius:4px">WU</span>':
                    '<span style="font-size:9px;color:var(--dim);border:1px dashed var(--dim);padding:1px 5px;border-radius:4px;opacity:.5">WU</span>')+
                 '</button>'+
               '</div>'+
-              (s.w===0?'<span style="font-size:14px;font-weight:700;color:var(--white);font-family:\'Courier New\',monospace">BW <span style="font-size:10px;font-weight:400;color:var(--sub)">&times; '+s.r+'</span></span>':'<span style="font-size:14px;font-weight:700;color:var(--white);font-family:\'Courier New\',monospace">'+toDisp(s.w)+'<span style="font-size:10px;font-weight:400;color:var(--sub)"> '+uLbl()+'</span> &times; '+s.r+'</span>')+
+              (s.w===0?'<span style="font-size:14px;font-weight:700;color:var(--white);font-family:var(--mono)">BW <span style="font-size:10px;font-weight:400;color:var(--sub)">&times; '+s.r+'</span></span>':'<span style="font-size:14px;font-weight:700;color:var(--white);font-family:var(--mono)">'+toDisp(s.w)+'<span style="font-size:10px;font-weight:400;color:var(--sub)"> '+uLbl()+'</span> &times; '+s.r+'</span>')+
               '<div style="display:flex;align-items:center;gap:6px">'+
                 (isPR&&!s.warmup?'<span style="font-size:9px;font-weight:800;color:#2DAA70;background:rgba(45,170,112,.1);border:1px solid rgba(45,170,112,.3);padding:1px 5px;border-radius:4px">PR</span>':'')+
                 '<button style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px;line-height:1" onclick="delSet('+i+','+si+')">&#215;</button>'+
@@ -575,7 +575,7 @@ function vExHistoryPanel(name){
         '</div>'+
         (allTimeMax>0?'<div style="text-align:right">'+
           '<div style="font-size:11px;color:var(--muted);margin-bottom:2px">All-time best</div>'+
-          '<div style="font-size:18px;font-weight:700;color:var(--blue);font-family:\'Courier New\',monospace">'+toDisp(allTimeMax)+' <span style="font-size:11px;font-weight:400">'+uLbl()+'</span></div>'+
+          '<div style="font-size:18px;font-weight:700;color:var(--blue);font-family:var(--mono)">'+toDisp(allTimeMax)+' <span style="font-size:11px;font-weight:400">'+uLbl()+'</span></div>'+
         '</div>':'')+
       '</div>'+
 
@@ -599,10 +599,10 @@ function vExHistoryPanel(name){
                   return '<div style="display:flex;align-items:center;justify-content:space-between;opacity:'+(isWU?0.72:1)+'">'+
                     '<span style="font-size:10px;font-weight:700;letter-spacing:.04em;color:'+(isWU?'#E8693A':'var(--muted)')+';background:'+(isWU?'#E8693A18':'transparent')+';border:'+(isWU?'1px solid #E8693A44':'1px solid transparent')+';border-radius:999px;padding:'+(isWU?'2px 7px':'2px 0')+';min-width:'+(isWU?'68px':'50px')+';text-align:'+(isWU?'center':'left')+'">'+label+'</span>'+
                     '<div style="display:flex;align-items:center;gap:10px">'+
-                      '<span style="font-size:'+(isWU?'12px':'14px')+';font-weight:'+(isTopSet?700:isWU?400:500)+';color:'+(isTopSet?'var(--white)':'var(--sub)')+';font-family:\'Courier New\',monospace">'+
+                      '<span style="font-size:'+(isWU?'12px':'14px')+';font-weight:'+(isTopSet?700:isWU?400:500)+';color:'+(isTopSet?'var(--white)':'var(--sub)')+';font-family:var(--mono)">'+
                         (isCardio?s.w+' min':toDisp(s.w)+' '+uLbl()+' × '+s.r)+
                       '</span>'+
-                      (isTopSet&&!isCardio?'<span style="font-size:11px;color:var(--blue);font-family:\'Courier New\',monospace">'+toDisp(e1rm(s.w,s.r))+'</span>':'')+
+                      (isTopSet&&!isCardio?'<span style="font-size:11px;color:var(--blue);font-family:var(--mono)">'+toDisp(e1rm(s.w,s.r))+'</span>':'')+
                     '</div>'+
                   '</div>';
                 }).join('')+
@@ -715,7 +715,7 @@ function vFeedback(){
       sm.prs.map(function(pr){
         return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'+
           '<span style="font-size:13px;font-weight:600;color:var(--white)">'+pr.name+'</span>'+
-          '<span style="font-size:12px;font-weight:700;color:#2DAA70;font-family:\'Courier New\',monospace">'+pr.e1rm+' '+uLbl()+' e1RM</span>'+
+          '<span style="font-size:12px;font-weight:700;color:#2DAA70;font-family:var(--mono)">'+pr.e1rm+' '+uLbl()+' e1RM</span>'+
         '</div>';
       }).join('')+
     '</div>':'';
