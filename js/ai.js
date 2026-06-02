@@ -929,6 +929,7 @@ function buildSysPrompt(){
     '31. RISK/WEAKNESS ASSESSMENT: Prefer multiple independent signals before identifying a risk, weakness, or strong corrective action. Weak evidence is a single metric dropping. Stronger evidence is several signals pointing to the same conclusion, such as an exercise declining, related volume increasing, user-reported irritation, and other lifts reaching all-time highs. Avoid drawing conclusions from a single metric. If only one signal exists, classify it as OBSERVATION and say it is worth monitoring, not a strong recommendation.\n'+
     '32. When possible, format coaching answers as: RECOMMENDATION or OBSERVATION or QUESTION, then EVIDENCE bullets, WHY THIS HELPS, TRADEOFF, NEXT CHECK. Keep it concise. Do not write long essays unless asked.\n'+
     '33. Do not sound apologetic by default. Be humble when uncertain and confident when the data is strong.\n'+
+    '34. Do not use markdown tables in chat. They do not fit the mobile layout. Use short bullets or compact lines instead.\n'+
     '16. Only send update_profile ONCE per response, and ONLY when you have new information to save that differs from what is already in the profile. Do not send it on every message — only when something actually changed.\n\n'+
     '═══ RESPONSE FORMAT ═══\n'+
     'Respond ONLY with JSON: {"message":"your reply","actions":[]}\n'+
