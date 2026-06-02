@@ -1228,15 +1228,19 @@ function buildSysPrompt(question){
   const today=todayKey();
   const profileCtx=aiProfileContext();
   const compactCtx=buildCompactAIContext(question,intent);
+  const coachingCtx=typeof formatCoachingAnalysisForPrompt==='function'?formatCoachingAnalysisForPrompt(buildCoachingAnalysis()):'COACHING ANALYSIS: unavailable.';
   const scheduleLog=S.scheduleHistory&&S.scheduleHistory.length?
     '\nRecent schedule history: '+S.scheduleHistory.slice().reverse().slice(0,2).map(function(h){return h.ts+' '+DAYS.map(function(d){return d+':'+h.schedule[d];}).join(', ');}).join(' | '):'';
 
   return 'You are Forma, an expert AI strength coach. Coach in first person with concise, practical, evidence-based answers.\n\n'+
     'ATHLETE BASICS\n'+profileCtx+'\nToday: '+DAY_FULL[today]+' / '+spLbl(S.schedule[today])+'\nSchedule: '+aiScheduleContext()+scheduleLog+'\n\n'+
-    'COMPACT DATA CONTEXT\n'+compactCtx+'\n\n'+
+    'COACHING ANALYSIS\n'+coachingCtx+'\n\n'+
+    'RECOMMENDATION ENGINE AND COMPACT DATA\n'+compactCtx+'\n\n'+
     'CORE COACHING RULES\n'+
+    '- Reason in this order: Coaching Analysis, Forma recommendation engine, then raw workout history. Do not let one isolated negative exercise outrank a stronger pattern-level issue.\n'+
+    '- If COACHING ANALYSIS identifies conflicting signals, discuss the conflict directly instead of collapsing it into one negative exercise.\n'+
     '- Use the workout data before asking questions. Cite actual weights, reps, sessions, trends, or missing-data limits.\n'+
-    '- If COMPACT DATA CONTEXT includes "Forma recommendation engine signals" with a real recommendation, explicitly reference it before adding your own coaching context. Example: "Forma\'s recommendation engine currently suggests increasing OHP to 115 lbs because..."\n'+
+    '- If RECOMMENDATION ENGINE AND COMPACT DATA includes "Forma recommendation engine signals" with a real recommendation, explicitly reference it before adding your own coaching context. Example: "Forma\'s recommendation engine currently suggests increasing OHP to 115 lbs because..."\n'+
     '- Every recommendation must include a visible confidence label: "Confidence: High", "Confidence: Medium", or "Confidence: Low". Use the recommendation engine confidence when available. If you are making your own recommendation, base confidence on data quality, history length, agreement across signals, and whether warm-ups were excluded.\n'+
     '- High confidence requires repeated working-set evidence or multiple independent signals. Medium confidence means useful evidence exists but is incomplete. Low confidence means evidence is weak; prefer monitoring over a strong prescription.\n'+
     '- Ignore warm-up sets for progress, PR, weakness, and recommendation judgments unless the user asks about warm-ups.\n'+
