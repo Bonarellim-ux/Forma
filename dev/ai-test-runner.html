@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Forma AI Test Runner</title>
+<style>
+  :root{--blue:#1A9ED4;--ink:#0D1E2E;--muted:#5A7890;--border:#D9E8F2;--bg:#F5F8FB;--card:#fff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.5}
+  main{max-width:980px;margin:0 auto;padding:28px 18px 48px}
+  h1{font-size:26px;margin:0 0 6px;letter-spacing:-.03em}
+  .note{background:#FFF8E8;border:1px solid #F0D79A;color:#6C4D00;border-radius:10px;padding:10px 12px;font-size:13px;margin:14px 0 18px}
+  .panel,.result{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 2px 12px rgba(13,30,46,.06)}
+  .panel{padding:16px;margin-bottom:16px}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer;font-family:inherit}
+  .primary{background:var(--blue);color:#fff}
+  .secondary{background:#EAF4FB;color:#0E7BC4;border:1px solid #CBE3F4}
+  button:disabled{opacity:.55;cursor:not-allowed}
+  .status{font-size:13px;color:var(--muted);margin-top:10px;min-height:20px}
+  .run-options{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:13px;color:var(--muted)}
+  .run-options input{width:84px;min-height:34px;margin:0}
+  .questions{display:grid;gap:8px;margin-top:12px;font-size:13px;color:var(--muted)}
+  .question-check{display:flex;align-items:flex-start;gap:8px;background:#F8FBFE;border:1px solid var(--border);border-radius:9px;padding:8px 10px}
+  .question-check input{width:auto;min-height:0;margin:3px 0 0}
+  .result{padding:16px;margin-bottom:14px}
+  .q{font-size:15px;font-weight:800;margin-bottom:10px}
+  .answer{white-space:pre-wrap;font-size:14px;border-left:3px solid var(--blue);padding:10px 12px;background:#F7FBFE;border-radius:0 8px 8px 0;color:#173047}
+  .error{border-left-color:#D9534F;background:#FFF4F4;color:#8A2420}
+  .score{display:grid;grid-template-columns:repeat(4,minmax(110px,1fr));gap:10px;margin-top:14px}
+  label{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+  input,textarea{width:100%;margin-top:5px;border:1px solid var(--border);border-radius:8px;padding:8px 9px;font:inherit;background:#fff;color:var(--ink)}
+  input{min-height:38px}
+  textarea{min-height:74px;resize:vertical}
+  .notes{grid-column:1/-1}
+  .small{font-size:12px;color:var(--muted);margin-top:8px}
+  @media(max-width:700px){.score{grid-template-columns:1fr 1fr}main{padding:18px 12px 36px}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Forma AI Test Runner</h1>
+  <div class="note">Dev-only AI test runner. Do not use for production UX.</div>
+
+  <section class="panel">
+    <div class="actions">
+      <button id="run-btn" class="primary">Run AI Test</button>
+      <button id="copy-btn" class="secondary" disabled>Copy Results</button>
+    </div>
+    <div class="run-options">
+      <label>Delay seconds<input id="delay-input" type="number" min="0" max="60" value="10"></label>
+      <button id="select-all-btn" class="secondary" type="button">Select All</button>
+      <button id="select-none-btn" class="secondary" type="button">Select None</button>
+    </div>
+    <div id="status" class="status">Ready. This reads Forma data from localStorage and sends questions through the configured proxy.</div>
+    <div class="questions" id="questions"></div>
+  </section>
+
+  <section id="results"></section>
+</main>
+
+<script>
+const DAYS=['mon','tue','wed','thu','fri','sat','sun'];
+const DAY_FULL={mon:'Monday',tue:'Tuesday',wed:'Wednesday',thu:'Thursday',fri:'Friday',sat:'Saturday',sun:'Sunday'};
+const SPLITS=['push','pull','legs','upper','lower','rest'];
+const SPLIT_LBL={push:'Push',pull:'Pull',legs:'Legs',upper:'Upper',lower:'Lower',rest:'Rest'};
+const DEF_SCHED={mon:'push',tue:'pull',wed:'legs',thu:'upper',fri:'lower',sat:'rest',sun:'rest'};
+const DEF_EX={
+  push:['Bench Press','Overhead Press','Incline Bench','Tricep Pushdown','Lateral Raise'],
+  pull:['Deadlift','Barbell Row','Pull-ups','Face Pull','Bicep Curl'],
+  legs:['Squat','Romanian Deadlift','Leg Press','Leg Curl','Calf Raise'],
+  upper:['Bench Press','Barbell Row','Overhead Press','Pull-ups','Lateral Raise'],
+  lower:['Squat','Romanian Deadlift','Leg Press','Leg Curl','Hip Thrust'],
+  rest:[],
+  cardio:['Walking'],
+  hiit:['HIIT Session'],
+  core:['Plank','Crunches','Leg Raises','Russian Twist','Ab Wheel'],
+  arms:['Bicep Curl','Hammer Curl','Tricep Pushdown','Skull Crushers','Preacher Curl']
+};
+const ALL_EX=[...new Set(Object.values(DEF_EX).flat())];
+const CARDIO_METRICS={Walking:{m1:'MIN',m2:'KM'},Running:{m1:'MIN',m2:'KM'},Cycling:{m1:'MIN',m2:'KM'},Swimming:{m1:'MIN',m2:'LAPS'},Rowing:{m1:'MIN',m2:'KM'},'Jump Rope':{m1:'MIN',m2:'SETS'},'Stair Climber':{m1:'MIN',m2:'FLR'},Hiking:{m1:'MIN',m2:'KM'},Elliptical:{m1:'MIN',m2:'KM'},'HIIT Session':{m1:'MIN',m2:'RNDS'},'Cardio Session':{m1:'MIN',m2:'KM'}};
+const CARDIO_SPLITS=['cardio','hiit','running','cycling','swimming','walking'];
+function spLbl(sp){return SPLIT_LBL[sp]||(sp?sp.charAt(0).toUpperCase()+sp.slice(1):'?');}
+function cleanSplit(s){return String(s||'').trim().toLowerCase();}
+function normalizeSplitsData(){
+  const merged={};
+  Object.keys(S.splitEx||{}).forEach(function(k){
+    const ck=cleanSplit(k);
+    if(!ck)return;
+    merged[ck]=[...new Set([...(merged[ck]||[]),...((S.splitEx||{})[k]||[])])];
+  });
+  S.splitEx=Object.assign({},JSON.parse(JSON.stringify(DEF_EX)),merged);
+  Object.keys(S.schedule||{}).forEach(function(d){S.schedule[d]=cleanSplit(S.schedule[d]);});
+}
+function isCardioSplit(sp){return CARDIO_SPLITS.includes((sp||'').toLowerCase());}
+function isCardioEx(name){return!!(CARDIO_METRICS[name]);}
+function cardioMetrics(name){return CARDIO_METRICS[name]||{m1:'MIN',m2:'DIST'};}
+const S={
+  view:'home',loaded:true,workouts:[],schedule:{...DEF_SCHED},scheduleHistory:[],
+  splitEx:JSON.parse(JSON.stringify(DEF_EX)),workout:null,lastWorkout:null,unit:'lbs',
+  messages:[],profile:{name:'',goal:'',experience:'',session_duration:60,exercises_per_session:5,equipment:'',injuries:'',preferences:''},
+  progressTab:'calendar',selEx:'',chart:null,scoreDetail:null,_scoreResults:{}
+};
+</script>
+<script src="../js/utils.js"></script>
+<script src="../js/storage.js"></script>
+<script src="../js/recommendations.js"></script>
+<script src="../js/stats.js"></script>
+<script src="../js/ai.js?v=proxy1"></script>
+<script>
+const QUESTIONS=[
+  "What’s my biggest weakness right now?",
+  "What lift is improving the fastest?",
+  "What should I focus on this week?",
+  "Am I progressing overall?",
+  "Which exercise should I prioritize today?",
+  "Am I ready to increase weight on any exercises?",
+  "Is there any exercise in my program that I should consider replacing?",
+  "What is the biggest thing limiting my progress?",
+  "If I could improve only one thing next month, what would it be?",
+  "Based on my history, what do you think my goal is?"
+];
+const results=[];
+
+function readJson(key){
+  try{const v=localStorage.getItem(key);return v?JSON.parse(v):null;}catch(e){return null;}
+}
+
+function loadFormaStateReadOnly(){
+  const workouts=readJson('ll_workouts');
+  if(Array.isArray(workouts)){
+    S.workouts=workouts.filter(Boolean).map(function(w){
+      if(!w||!Array.isArray(w.exercises))return w;
+      return Object.assign({},w,{exercises:w.exercises.filter(Boolean).map(function(ex){
+        return Object.assign({},ex,{sets:Array.isArray(ex.sets)?ex.sets:[]});
+      })});
+    }).filter(Boolean);
+  }
+  const sched=readJson('ll_schedule');if(sched)S.schedule=Object.assign({},S.schedule,sched);
+  const hist=readJson('ll_sched_hist');if(Array.isArray(hist))S.scheduleHistory=hist;
+  const splits=readJson('ll_splits');if(splits)S.splitEx=splits;
+  const unit=readJson('ll_unit');if(unit)S.unit=unit;
+  const profile=readJson('ll_profile');if(profile)S.profile=Object.assign({},S.profile,profile);
+  const active=readJson('ll_active_workout');
+  if(active){
+    S.workout=Object.assign({},active,{
+      exercises:Array.isArray(active.exercises)?active.exercises.filter(Boolean).map(function(ex){
+        return Object.assign({inputW:'',inputR:'5'},ex,{sets:Array.isArray(ex.sets)?ex.sets:[]});
+      }):[]
+    });
+  }
+  normalizeSplitsData();
+}
+
+function escapeHtml(value){
+  return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderQuestionList(){
+  document.getElementById('questions').innerHTML=QUESTIONS.map(function(q,i){
+    return '<label class="question-check"><input type="checkbox" class="question-toggle" data-question="'+i+'" checked><span>'+(i+1)+'. '+escapeHtml(q)+'</span></label>';
+  }).join('');
+}
+
+function renderResult(index, question, answer, error){
+  const el=document.createElement('article');
+  el.className='result';
+  el.dataset.index=String(index);
+  el.innerHTML=
+    '<div class="q">Question '+(index+1)+': '+escapeHtml(question)+'</div>'+
+    '<div class="answer'+(error?' error':'')+'">'+escapeHtml(answer||'')+'</div>'+
+    '<div class="score">'+
+      scoreInput(index,'accuracy','Accuracy 1–10')+
+      scoreInput(index,'usesData','Uses data 1–10')+
+      scoreInput(index,'coachLike','Coach-like 1–10')+
+      scoreInput(index,'trustworthy','Trustworthy 1–10')+
+      '<label class="notes">Notes<textarea data-score="'+index+'" data-field="notes"></textarea></label>'+
+    '</div>';
+  document.getElementById('results').appendChild(el);
+}
+
+function scoreInput(index,field,label){
+  return '<label>'+label+'<input type="number" min="1" max="10" data-score="'+index+'" data-field="'+field+'"></label>';
+}
+
+async function askAI(question){
+  const response=await fetch(API,{
+    method:'POST',
+    headers:apiHeaders(),
+    body:JSON.stringify({
+      model:MODEL,
+      max_tokens:2500,
+      thinking:{type:'enabled',budget_tokens:1024},
+      system:buildSysPrompt(question)+'\n\nMODE: DEV AI RESPONSE TEST. Answer the user question normally, but keep the message concise and suitable for mobile chat. Do not include actions unless truly necessary.',
+      messages:[{role:'user',content:question}]
+    })
+  });
+  const data=await response.json();
+  if(data.error)throw new Error(data.error.message||'API error');
+  const parsed=parseAIResponse(extractText(data.content));
+  return parsed.message||extractText(data.content)||'(empty response)';
+}
+
+function wait(ms){return new Promise(function(resolve){setTimeout(resolve,ms);});}
+
+function selectedQuestions(){
+  return Array.from(document.querySelectorAll('.question-toggle:checked')).map(function(input){
+    const index=Number(input.dataset.question);
+    return {index:index,question:QUESTIONS[index]};
+  });
+}
+
+async function runTests(){
+  if(!hasKey()){
+    document.getElementById('status').textContent=aiKeyMessage();
+    return;
+  }
+  loadFormaStateReadOnly();
+  const selected=selectedQuestions();
+  const delaySeconds=Math.max(0,Number(document.getElementById('delay-input').value)||0);
+  const delayMs=delaySeconds*1000;
+  if(!selected.length){
+    document.getElementById('status').textContent='Select at least one question to run.';
+    return;
+  }
+  results.length=0;
+  document.getElementById('results').innerHTML='';
+  document.getElementById('copy-btn').disabled=true;
+  document.getElementById('run-btn').disabled=true;
+  const estimated=Math.max(0,(selected.length-1)*delaySeconds);
+  document.getElementById('status').textContent='Running '+selected.length+' selected question'+(selected.length===1?'':'s')+'. Estimated pacing wait: '+estimated+'s.';
+  for(let i=0;i<selected.length;i++){
+    const item=selected[i];
+    const q=item.question;
+    document.getElementById('status').textContent='Running '+(i+1)+' of '+selected.length+(delaySeconds&&i<selected.length-1?' • next request waits '+delaySeconds+'s':'');
+    try{
+      const answer=await askAI(q);
+      results.push({question:q,answer:answer,error:null});
+      renderResult(i,q,answer,false);
+    }catch(err){
+      const answer='Error: '+(err&&err.message?err.message:String(err));
+      results.push({question:q,answer:answer,error:answer});
+      renderResult(i,q,answer,true);
+    }
+    if(delayMs&&i<selected.length-1){
+      document.getElementById('status').textContent='Completed '+(i+1)+' of '+selected.length+'. Waiting '+delaySeconds+'s before the next request.';
+      await wait(delayMs);
+    }
+  }
+  document.getElementById('status').textContent='Done. '+results.length+' results generated.';
+  document.getElementById('copy-btn').disabled=false;
+  document.getElementById('run-btn').disabled=false;
+}
+
+function buildMarkdownResults(){
+  return results.map(function(r,i){
+    const fields={};
+    document.querySelectorAll('[data-score="'+i+'"]').forEach(function(input){
+      fields[input.dataset.field]=input.value.trim();
+    });
+    let md='## Question '+(i+1)+'\n'+r.question+'\n\n## Answer\n'+r.answer+'\n';
+    md+='\n## Scores\n';
+    md+='- Accuracy: '+(fields.accuracy||'')+'\n';
+    md+='- Uses data: '+(fields.usesData||'')+'\n';
+    md+='- Coach-like: '+(fields.coachLike||'')+'\n';
+    md+='- Trustworthy: '+(fields.trustworthy||'')+'\n';
+    md+='- Notes: '+(fields.notes||'')+'\n';
+    return md;
+  }).join('\n---\n\n');
+}
+
+async function copyResults(){
+  const md=buildMarkdownResults();
+  try{
+    await navigator.clipboard.writeText(md);
+    document.getElementById('status').textContent='Copied results to clipboard.';
+  }catch(e){
+    const ta=document.createElement('textarea');
+    ta.value=md;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
+    document.getElementById('status').textContent='Copied results to clipboard.';
+  }
+}
+
+renderQuestionList();
+loadFormaStateReadOnly();
+document.getElementById('run-btn').addEventListener('click',runTests);
+document.getElementById('copy-btn').addEventListener('click',copyResults);
+document.getElementById('select-all-btn').addEventListener('click',function(){
+  document.querySelectorAll('.question-toggle').forEach(function(input){input.checked=true;});
+});
+document.getElementById('select-none-btn').addEventListener('click',function(){
+  document.querySelectorAll('.question-toggle').forEach(function(input){input.checked=false;});
+});
+</script>
+</body>
+</html>
