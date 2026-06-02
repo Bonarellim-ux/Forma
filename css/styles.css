@@ -318,8 +318,20 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 .rec-row-action{font-size:12px;font-weight:600;color:var(--white);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.005em}
 .rec-row-hint{font-size:9px;font-weight:700;color:var(--muted);line-height:1.2;margin-top:2px;letter-spacing:.02em}
 .rec-why-btn{background:rgba(14,123,196,.07);border:1px solid rgba(14,123,196,.16);border-radius:999px;color:var(--blue);font-size:10.5px;font-weight:700;padding:4px 9px;flex-shrink:0}
-.rec-row-why{border-top:1px solid rgba(14,123,196,.12);margin-top:7px;padding-top:7px;font-size:11px;line-height:1.5;color:var(--sub)}
-.rec-row-why span{color:var(--blue);font-weight:700}
+.rec-row-why{
+  margin-top:8px;
+  padding:8px 9px;
+  border-radius:9px;
+  background:rgba(14,123,196,.045);
+  border:1px solid rgba(14,123,196,.1);
+  font-size:11px;
+  line-height:1.48;
+  color:#476A84;
+}
+.rec-row.applied .rec-row-why{background:rgba(45,170,112,.055);border-color:rgba(45,170,112,.13)}
+.rec-row-why-label{font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:4px}
+.rec-row.applied .rec-row-why-label{color:#2DAA70}
+.rec-row-why-text{font-weight:500}
 
 /* ── Quick workout summary ───────────────────────────────────── */
 .quick-summary{margin-bottom:16px}

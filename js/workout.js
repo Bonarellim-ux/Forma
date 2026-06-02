@@ -132,7 +132,7 @@ function vExerciseRecommendationRow(sug,i,ex){
       '</div>'+
       (why?'<button class="rec-why-btn" onclick="event.stopPropagation();S.recWhyIdx='+(open?'null':i)+';render()">'+(open?'Hide':'Why?')+'</button>':'')+
     '</div>'+
-    (open&&why?'<div class="rec-row-why"><span>Why:</span> '+why+'</div>':'')+
+    (open&&why?'<div class="rec-row-why"><div class="rec-row-why-label">Why</div><div class="rec-row-why-text">'+why+'</div></div>':'')+
   '</div>';
 }
 
