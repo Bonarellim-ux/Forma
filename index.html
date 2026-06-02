@@ -1031,14 +1031,16 @@ function vSetup(){
     '<div style="font-size:11px;color:var(--muted);margin-top:8px">'+(isKg?'Showing weights in kilograms':'Showing weights in pounds &mdash; stored as kg')+'</div>'+
   '</div>';
 
+  const proxyReady=typeof aiProxyConfigured==='function'&&aiProxyConfigured();
+  const hasOldKey=!!localStorage.getItem('ll_apikey');
   const apiCard='<div class="card" style="margin-top:14px">'+
-    '<span class="lbl" style="margin-bottom:8px">AI API Key</span>'+
-    '<div style="font-size:11px;color:var(--muted);line-height:1.45;margin-bottom:9px">Stored only in this browser. It is not included in backups.</div>'+
-    '<input id="setup-api-key-input" type="password" placeholder="'+(hasKey()?'API key saved':'Paste your API key')+'" onkeydown="if(event.key===\'Enter\')saveKey(\'setup-api-key-input\')" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--white);outline:none;font-family:\'Courier New\',monospace;margin-bottom:8px">'+
-    '<div style="display:flex;gap:8px;align-items:center">'+
-      '<button onclick="saveKey(\'setup-api-key-input\')" style="flex:1;background:var(--blue);border:none;color:#fff;border-radius:8px;padding:9px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Save AI API Key</button>'+
-      '<button onclick="clearApiKey()" style="background:none;border:1px solid var(--border);color:var(--sub);border-radius:8px;padding:9px 12px;font-size:11px;cursor:pointer;font-family:inherit">Clear API Key</button>'+
+    '<span class="lbl" style="margin-bottom:8px">AI Connection</span>'+
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
+      '<span style="width:8px;height:8px;border-radius:50%;background:'+(proxyReady?'#2DAA70':'#E8A33A')+';box-shadow:0 0 0 4px '+(proxyReady?'rgba(45,170,112,.12)':'rgba(232,163,58,.12)')+'"></span>'+
+      '<div style="font-size:13px;font-weight:800;color:var(--white)">'+(proxyReady?'Connected through Forma proxy':'Proxy setup needed')+'</div>'+
     '</div>'+
+    '<div style="font-size:11px;color:var(--muted);line-height:1.45;margin-bottom:'+(hasOldKey?'10px':'0')+'">Anthropic API keys are stored only as encrypted Cloudflare Worker secrets. They are not saved in this browser or included in backups.</div>'+
+    (hasOldKey?'<button onclick="clearApiKey()" style="background:var(--s2);border:1px solid var(--border);color:var(--sub);border-radius:8px;padding:8px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Remove old browser key</button>':'')+
     '<div id="key-err" style="color:#E05050;font-size:11px;margin-top:7px;min-height:14px"></div>'+
   '</div>';
 

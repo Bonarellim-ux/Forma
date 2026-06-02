@@ -22,7 +22,7 @@ export default {
 
     // CORS preflight
     if (request.method === 'OPTIONS') {
-      return reply(null, 204, origin);
+      return isAllowedOrigin(origin) ? reply(null, 204, origin) : reply('Forbidden', 403, origin);
     }
 
     if (request.method !== 'POST') {
@@ -31,9 +31,12 @@ export default {
 
     // ── ORIGIN CHECK (first abuse layer) ─────────────────────────
     // Stops casual scrapers. Not spoofproof — the gate below will be.
-    const originAllowed = ALLOWED_ORIGINS.some(o => origin.startsWith(o));
-    if (!originAllowed) {
+    if (!isAllowedOrigin(origin)) {
       return reply('Forbidden', 403, origin);
+    }
+
+    if (!env.ANTHROPIC_API_KEY) {
+      return reply('Proxy missing ANTHROPIC_API_KEY secret', 500, origin);
     }
 
     // ── FUTURE GATE ───────────────────────────────────────────────
@@ -86,9 +89,8 @@ async function readBody(request) {
 }
 
 function corsHeaders(origin) {
-  const allowed = ALLOWED_ORIGINS.some(o => origin.startsWith(o));
   return {
-    'Access-Control-Allow-Origin': allowed ? origin : 'null',
+    'Access-Control-Allow-Origin': isAllowedOrigin(origin) ? origin : 'null',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
@@ -99,4 +101,15 @@ function reply(body, status, origin) {
     status,
     headers: corsHeaders(origin),
   });
+}
+
+function isAllowedOrigin(origin) {
+  try {
+    const url = new URL(origin);
+    if (url.protocol === 'https:' && url.hostname === 'bonarellim-ux.github.io') return true;
+    if (url.protocol === 'http:' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1')) return true;
+  } catch {
+    return false;
+  }
+  return false;
 }

@@ -23,7 +23,7 @@ https://bonarellim-ux.github.io/Forma/
 | `index.html` | Static shell, metadata, script loading, and remaining legacy globals/view code. |
 | `css/styles.css` | Visual styling, layout, mobile/PWA safe-area behavior, component styling. |
 | `js/app.js` | App initialization, render orchestration, navigation, global handlers. |
-| `js/ai.js` | AI coach, API key handling, prompts, chat, response parsing, AI actions. |
+| `js/ai.js` | AI coach, proxy configuration, prompts, chat, response parsing, AI actions. |
 | `js/workout.js` | Workout sessions, logging UI, sets, warm-ups, rest timer, exercise editing. |
 | `js/recommendations.js` | In-workout recommendations, progression logic, exercise substitutions. |
 | `js/stats.js` | Stats, charts, PRs, records, calendar, heatmap, e1RM, trends. |
@@ -48,7 +48,8 @@ Before any code change, read:
 - Keep GitHub Pages compatibility.
 - Do not rename localStorage keys.
 - Do not hardcode API keys.
-- API key is stored in localStorage only.
+- Anthropic API keys are stored only as Cloudflare Worker encrypted secrets.
+- Do not store Anthropic API keys in the browser.
 - Do not export API key.
 - All weights are stored internally in kg.
 - Warm-ups use `warmup:true`.
@@ -90,7 +91,7 @@ Before any code change, read:
 - Feature tour refinement.
 - iPhone bottom nav safe-area polish.
 - Future account/cloud sync needed.
-- localStorage API key approach is prototype-only.
+- Cloudflare Worker proxy needs production URL/secret verification before wider testing.
 - AI action handling should be tested carefully.
 
 ## Development Workflow

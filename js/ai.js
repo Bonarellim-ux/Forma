@@ -1,6 +1,6 @@
-// AI coach, API calls, API key handling, prompts, and AI voice/input flows.
+// AI coach, proxy API calls, prompts, and AI voice/input flows.
 
-const API='https://forma-proxy.YOUR_SUBDOMAIN.workers.dev';
+const API='https://forma-proxy.bonarelli-m.workers.dev';
 const MODEL='claude-sonnet-4-6';
 
 // ── EXERCISE SCIENCE KNOWLEDGE BASE ──────────────────────────
@@ -145,11 +145,17 @@ EVIDENCE RATINGS:
 Only recommend ★★★ or ★★☆.
 `;
 
-function apiKey(){return localStorage.getItem('ll_apikey')||'';}
+function aiProxyConfigured(){return API&&API.indexOf('YOUR_SUBDOMAIN')===-1;}
 
-function hasKey(){return true;}
+function apiKey(){return '';}
 
-function aiKeyMessage(){return 'Add your AI API key in Setup to enable coaching.';}
+function hasKey(){return aiProxyConfigured();}
+
+function aiKeyMessage(){
+  return aiProxyConfigured()?
+    'AI is temporarily unavailable. Please try again soon.':
+    'AI proxy is not configured yet. Deploy the Forma Cloudflare Worker and set the proxy URL in js/ai.js.';
+}
 
 function apiHeaders(){return{'Content-Type':'application/json'};}
 
@@ -284,11 +290,11 @@ function vApiKey(){
     '<div style="font-size:13px;color:var(--muted);margin-bottom:36px">Your AI-powered strength coach</div>'+
     '<div style="width:100%;max-width:360px;text-align:left">'+
       '<div class="card" style="margin-bottom:14px">'+
-        '<span class="lbl" style="margin-bottom:10px">AI API Key</span>'+
-        '<input id="api-key-input" type="password" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--white);outline:none;font-family:\'Courier New\',monospace;margin-bottom:8px" placeholder="Paste your API key" onkeydown="if(event.key===\'Enter\')saveKey()">'+
-        '<div style="font-size:11px;color:var(--muted);line-height:1.5">Stored only in this browser. For personal use only; long term, AI calls should go through a backend.</div>'+
+        '<span class="lbl" style="margin-bottom:10px">AI Connection</span>'+
+        '<div style="font-size:13px;color:var(--white);line-height:1.55;margin-bottom:8px">'+(aiProxyConfigured()?'AI is connected through the Forma proxy.':'AI proxy setup is needed before coaching can run.')+'</div>'+
+        '<div style="font-size:11px;color:var(--muted);line-height:1.5">Forma does not store Anthropic API keys in the browser. The key belongs in the Cloudflare Worker secret.</div>'+
       '</div>'+
-      '<button class="btn-accent" onclick="saveKey()">CONNECT &amp; START &rarr;</button>'+
+      '<button class="btn-accent" onclick="go(\'home\')">CONTINUE &rarr;</button>'+
       '<div id="key-err" style="color:#E05050;font-size:12px;text-align:center;margin-top:10px;min-height:16px"></div>'+
     '</div>'+
   '</div>';
@@ -1186,18 +1192,15 @@ async function showExInstruct(name){
       else console.warn('[ExInstruct attempt2 api error]',JSON.stringify(data.error));
     }catch(e){console.warn('[ExInstruct attempt2 catch]',e.message);}
   }
-  S.exInstructText=text||('**'+name+'**\n\nInstructions are unavailable right now. Check your internet connection or API key and try again by closing and reopening this panel.');
+  S.exInstructText=text||('**'+name+'**\n\nInstructions are unavailable right now. Check your internet connection or AI proxy status and try again by closing and reopening this panel.');
   S.exInstructLoading=false;
   render();
 }
 
-// API key setup helpers.
+// Legacy browser-key cleanup helpers. Current AI calls use the Forma proxy.
 function saveKey(inputId){
-  const inp=document.getElementById(inputId||'api-key-input');
-  const key=inp?inp.value.trim():'';
-  if(!key){const err=document.getElementById('key-err');if(err)err.textContent='Enter an API key first.';return;}
-  localStorage.setItem('ll_apikey',key);
-  if(S.view==='apikey')S.view='home';
+  const err=document.getElementById('key-err');
+  if(err)err.textContent='API keys are managed by the Forma proxy, not saved in the browser.';
   render();
 }
 

@@ -167,7 +167,8 @@ Forma is designed for:
 
 ### Setup
 
-- API key saved in localStorage only.
+- AI connection status.
+- Anthropic API key stored only as a Cloudflare Worker encrypted secret.
 - No hardcoded keys.
 - Replay feature tour.
 - Import/export backup controls.
@@ -268,4 +269,4 @@ Forma is designed for:
 - iPhone Home Screen PWA bottom nav gap needs polish.
 - AI action handling should be tested carefully.
 - Accounts/cloud sync not yet implemented.
-- API key localStorage approach is only acceptable for personal/prototype use, not long-term commercial use.
+- Cloudflare Worker proxy production URL/secret should be verified before wider testing.

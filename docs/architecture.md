@@ -6,6 +6,8 @@ This document controls how Forma stays modular as the product grows. Read it bef
 
 Forma is currently a static GitHub Pages PWA built with vanilla HTML, CSS, and JavaScript. It must remain compatible with GitHub Pages unless the architecture is explicitly changed.
 
+AI requests are routed through a small Cloudflare Worker in `proxy/`. The GitHub Pages app remains static; the Worker owns the Anthropic API secret.
+
 ## Current File Structure
 
 ```text
@@ -19,6 +21,8 @@ js/stats.js
 js/onboarding.js
 js/storage.js
 js/utils.js
+proxy/worker.js
+proxy/wrangler.toml
 docs/architecture.md
 docs/FORMA_MASTER_DOCUMENT.md
 docs/training-principles.md
@@ -32,13 +36,15 @@ docs/handoff.md
 | `index.html` | Static HTML shell, meta tags, CSS link, script loading order, global constants/state that have not yet been split out, and remaining legacy view/setup code. No new major feature logic should live here unless there is no better owner. |
 | `css/styles.css` | All visual styling, responsive layout, mobile/PWA safe-area behavior, bottom nav, cards, component classes, and tour styling. No app logic. |
 | `js/app.js` | App initialization, main render orchestration, navigation/view switching, app-level event handlers, shared UI input helpers, service worker registration, and startup flow. |
-| `js/ai.js` | AI chat, API constants, API key handling, prompt/context building, quick AI, inline AI, response parsing, AI action handling, and AI-related voice flows. |
+| `js/ai.js` | AI chat, proxy API constants, prompt/context building, quick AI, inline AI, response parsing, AI action handling, and AI-related voice flows. |
 | `js/workout.js` | Starting/resuming/finishing/canceling workouts, active session state, workout logging UI, exercise cards, set logging, warm-up handling, rest timer, exercise editing/reordering, cardio/simple workout logging, and workout panels. |
 | `js/recommendations.js` | In-workout recommendations, progressive overload logic, double progression, rep vs weight recommendations, plateau/decline detection, and exercise substitution rules. |
 | `js/stats.js` | PRs, records, e1RM calculations, charts, calendar/heatmap stats, streaks, strength scores, progress indicators, volume/trend calculations, and exercise history stats. |
 | `js/onboarding.js` | Onboarding quiz, unit setup, profile setup, feature tour, demo tour state, tour restoration, and replay tour. |
 | `js/storage.js` | localStorage load/save, persistence helpers, import/export, data restoration, sanitization, and localStorage compatibility. |
 | `js/utils.js` | Shared helpers, formatting, unit conversion, date helpers, HTML escaping, markdown rendering, and generic utilities. |
+| `proxy/worker.js` | Cloudflare Worker proxy for Anthropic API requests. Owns CORS checks, request forwarding, and server-side API key usage. |
+| `proxy/wrangler.toml` | Cloudflare Worker deployment metadata. Does not contain secrets. |
 
 ## Architecture Rules
 
@@ -64,8 +70,10 @@ docs/handoff.md
 - Warm-up sets use `warmup:true`.
 - Warm-up sets must remain visible as warm-ups in history.
 - Working-set calculations should ignore warm-ups unless a feature explicitly intends otherwise.
-- API key must stay in localStorage only.
-- API key must never be hardcoded, exported, logged, committed, or included in prompts.
+- Anthropic API keys must not be stored in the browser.
+- Anthropic API keys belong only in the Cloudflare Worker encrypted secret `ANTHROPIC_API_KEY`.
+- API keys must never be hardcoded, exported, logged, committed, or included in prompts.
+- The GitHub Pages app may contain the public Worker URL, but never the API key.
 
 ## Split Rules
 
