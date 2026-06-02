@@ -27,7 +27,17 @@ const OB_STEPS=[
       {val:'General fitness and health',  svg:'<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>'},
       {val:'Athletic performance',        svg:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>'},
     ]},
-  // 6 — experience (single)
+  // 7 — priority muscles (multi-select)
+  {type:'choice', multi:true, key:'priority_muscles', title:'Any priority muscle groups?', subtitle:'Optional, but this helps Forma bias volume toward what matters most.',
+    options:[
+      {val:'Arms',        svg:'<path d="M7 14c2-5 5-7 10-7M6 18c4-1 7-3 10-7"/>'},
+      {val:'Upper Chest', svg:'<path d="M4 11c4-5 12-5 16 0M7 14h10"/>'},
+      {val:'Back',        svg:'<path d="M6 4v8a6 6 0 0012 0V4"/>'},
+      {val:'Shoulders',   svg:'<path d="M5 12h14M8 8l-3 4 3 4M16 8l3 4-3 4"/>'},
+      {val:'Quads',       svg:'<path d="M8 3v7l-2 11M16 3v7l2 11"/>'},
+      {val:'Glutes/Hamstrings', svg:'<path d="M7 4c4 5 5 10 3 17M17 4c-4 5-5 10-3 17"/>'},
+    ]},
+  // 8 — experience (single)
   {type:'choice', multi:false, key:'experience', title:'How long have you been training?', subtitle:'Be honest — this shapes exercise selection.',
     options:[
       {val:'Just starting out (< 6 months)', svg:'<circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>'},
@@ -35,7 +45,7 @@ const OB_STEPS=[
       {val:'3–5 years',                      svg:'<circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>'},
       {val:'5+ years, advanced lifter',      svg:'<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>'},
     ]},
-  // 7 — days per week (single)
+  // 9 — days per week (single)
   {type:'choice', multi:false, key:'days_per_week', title:'How many days can you train?', subtitle:'Be realistic with your schedule.',
     options:[
       {val:'2 days per week', svg:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'},
@@ -44,7 +54,7 @@ const OB_STEPS=[
       {val:'5 days per week', svg:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'},
       {val:'6 days per week', svg:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'},
     ]},
-  // 8 — session length (single)
+  // 10 — session length (single)
   {type:'choice', multi:false, key:'session_duration', title:'How long are your sessions?', subtitle:'Determines how many exercises to programme.',
     options:[
       {val:'30–45 minutes',  svg:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'},
@@ -52,7 +62,7 @@ const OB_STEPS=[
       {val:'60–75 minutes',  svg:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'},
       {val:'75–90+ minutes', svg:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'},
     ]},
-  // 9 — equipment (multi-select)
+  // 11 — equipment (multi-select)
   {type:'choice', multi:true, key:'equipment', title:'What equipment do you have?', subtitle:'Select everything available to you.',
     options:[
       {val:'Full commercial gym',          svg:'<rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>'},
@@ -61,9 +71,13 @@ const OB_STEPS=[
       {val:'Cables & machines',            svg:'<rect x="2" y="2" width="20" height="20" rx="3"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="22"/>'},
       {val:'Bodyweight only',              svg:'<circle cx="12" cy="5" r="3"/><path d="M6.5 8h11l-1 7h-3l-1 5h-2l-1-5H7l-1-7z"/>'},
     ]},
-  // 10 — injuries (text, optional)
+  // 12 — exercise preferences (text, optional)
+  {type:'text', key:'exercise_preferences', title:'Any exercises you like?', subtitle:'Optional. I\'ll try to keep these when they fit your goal.', placeholder:'e.g. dumbbells, machines, pull-ups, no barbell bench…', keyboard:'text', optional:true},
+  // 13 — exercise dislikes (text, optional)
+  {type:'text', key:'exercise_dislikes', title:'Any exercises you dislike?', subtitle:'Optional. I\'ll avoid these when good alternatives exist.', placeholder:'e.g. burpees, back squat, overhead press…', keyboard:'text', optional:true},
+  // 14 — injuries (text, optional)
   {type:'text', key:'injuries', title:'Any injuries or limitations?', subtitle:'The AI will work around these. Leave blank if none.', placeholder:'e.g. bad lower back, left shoulder pain…', keyboard:'text', optional:true},
-  // 11 — split preference (single)
+  // 15 — split preference (single)
   {type:'choice', multi:false, key:'split_pref', title:'Training split preference?', subtitle:'The AI will pick the best one if you\'re unsure.',
     options:[
       {val:'Push / Pull / Legs',   svg:'<circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/>'},
@@ -72,7 +86,7 @@ const OB_STEPS=[
       {val:'Bro split',            svg:'<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l7.78-7.78a5.5 5.5 0 000-7.78z"/>'},
       {val:'Let the AI decide',    svg:'<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>'},
     ]},
-  // 12 — generating
+  // 16 — generating
   {type:'generating'},
 ];
 
@@ -385,48 +399,251 @@ function obNext(){
   }
 }
 
+function obNum(val,fallback){
+  const m=String(val||'').match(/\d+/);
+  return m?Number(m[0]):fallback;
+}
+function obDuration(val,fallback){
+  const nums=(String(val||'').match(/\d+/g)||[]).map(Number);
+  if(nums.length>=2)return Math.round((nums[0]+nums[1])/2);
+  return nums.length?nums[0]:fallback;
+}
+function obList(val){
+  return String(val||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+}
+function obHas(text,words){
+  text=String(text||'').toLowerCase();
+  return words.some(function(w){return text.indexOf(w)>=0;});
+}
+function obCanonicalProfile(d){
+  const duration=obDuration(d.session_duration,60);
+  const goals=obList(d.goal);
+  const primaryGoal=goals[0]||'General fitness';
+  return{
+    name:d.name||'',
+    age:d.age||'',
+    primaryGoal:primaryGoal,
+    secondaryGoal:goals.slice(1).join(', '),
+    experience:d.experience||'',
+    trainingAge:d.experience||'',
+    daysPerWeek:obNum(d.days_per_week,3),
+    duration:duration,
+    exercisesPerSession:duration<=45?4:duration<=60?5:duration<=75?6:7,
+    equipment:d.equipment||'',
+    priorityMuscles:obList(d.priority_muscles),
+    limitations:d.injuries?obList(d.injuries):[],
+    exercisePreferences:d.exercise_preferences||'',
+    exerciseDislikes:d.exercise_dislikes||'',
+    splitPreference:d.split_pref||''
+  };
+}
+function obSplitSequence(kind,days){
+  const map={
+    'Full Body':days<=2?['full','full']:days===3?['full','full','full']:['full','upper','lower','full','full','upper'].slice(0,days),
+    'Upper/Lower':days<=2?['upper','lower']:days===3?['upper','lower','full']:['upper','lower','upper','lower','full','upper'].slice(0,days),
+    'PPL':days<=3?['push','pull','legs']:['push','pull','legs','push','pull','legs'].slice(0,days),
+    'PPL + Upper/Lower':days<=4?['push','pull','legs','upper']:['push','pull','legs','upper','lower','push'].slice(0,days),
+    'Arnold':days<=3?['chest_back','shoulders_arms','legs']:['chest_back','shoulders_arms','legs','chest_back','shoulders_arms','legs'].slice(0,days),
+    'Custom Hybrid':days<=3?['full','upper','lower']:days===4?['upper','lower','priority','full']:['push','pull','legs','priority','upper','lower'].slice(0,days)
+  };
+  return map[kind]||map['Full Body'];
+}
+function obScoreSplit(kind,p){
+  let score=5;
+  const goal=String(p.primaryGoal+' '+p.secondaryGoal).toLowerCase();
+  const exp=String(p.experience).toLowerCase();
+  const pref=String(p.splitPreference).toLowerCase();
+  const eq=String(p.equipment).toLowerCase();
+  const lim=String(p.limitations.join(' ')).toLowerCase();
+  const pri=p.priorityMuscles.map(function(m){return m.toLowerCase();}).join(' ');
+  const reasons=[];
+  if(kind==='Full Body'){
+    score+=p.daysPerWeek<=3?1.8:-1.2;
+    if(exp.indexOf('starting')>=0)score+=1.2;
+    if(goal.indexOf('health')>=0||goal.indexOf('fat')>=0)score+=.7;
+    reasons.push('Strong when training days are limited and whole-body frequency matters.');
+  }
+  if(kind==='Upper/Lower'){
+    score+=p.daysPerWeek===4?1.6:p.daysPerWeek===3?1:p.daysPerWeek===5?.5:0;
+    if(goal.indexOf('strength')>=0)score+=.9;
+    reasons.push('Balances frequency, recovery, and simple progression.');
+  }
+  if(kind==='PPL'){
+    score+=p.daysPerWeek>=5?1.2:p.daysPerWeek===3?.5:-.8;
+    if(goal.indexOf('muscle')>=0)score+=.9;
+    reasons.push('Gives clear movement focus but can underdose frequency at lower day counts.');
+  }
+  if(kind==='PPL + Upper/Lower'){
+    score+=p.daysPerWeek===5?2.2:p.daysPerWeek===6?1.4:p.daysPerWeek===4?.4:-1.5;
+    if(goal.indexOf('muscle')>=0)score+=1;
+    if(pri.indexOf('arms')>=0||pri.indexOf('upper chest')>=0)score+=1;
+    reasons.push('Combines focused PPL days with extra weekly frequency for priority muscles.');
+  }
+  if(kind==='Arnold'){
+    score+=p.daysPerWeek>=5?1.1:-1.4;
+    if(pri.indexOf('arms')>=0||pri.indexOf('shoulders')>=0)score+=.9;
+    if(lim.indexOf('shoulder')>=0)score-=.8;
+    reasons.push('Useful for upper-body specialization but less conservative for shoulders.');
+  }
+  if(kind==='Custom Hybrid'){
+    score+=p.priorityMuscles.length?1.3:.2;
+    if(lim)score+=.8;
+    if(p.daysPerWeek===5)score+=.5;
+    reasons.push('Best when priorities or limitations require a non-template structure.');
+  }
+  if(pref&&pref.indexOf('let')<0&&kind.toLowerCase().indexOf(pref.split('/')[0].trim())>=0){score+=.7;reasons.push('Matches the split preference you selected.');}
+  if(pref.indexOf('bro')>=0&&kind==='Arnold'){score+=1.5;reasons.push('Closest match to the body-part split preference you selected.');}
+  if(eq.indexOf('bodyweight')>=0&&(kind==='PPL + Upper/Lower'||kind==='Arnold'))score-=1.2;
+  if(p.duration<=45&&(kind==='PPL + Upper/Lower'||kind==='Arnold'))score-=.5;
+  return{split:kind,score:Math.round(score*10)/10,reasons:reasons};
+}
+function obTrainingDays(days){
+  const map={2:['mon','thu'],3:['mon','wed','fri'],4:['mon','tue','thu','fri'],5:['mon','tue','wed','thu','fri'],6:['mon','tue','wed','thu','fri','sat']};
+  return map[Math.max(2,Math.min(6,days))]||map[3];
+}
+function obExercise(name,reason,targets,goal,alternative){return{name:name,reason:reason,targets:targets,goal:goal,alternative:alternative};}
+function obFilterExercises(items,p){
+  const dislike=String(p.exerciseDislikes||'').toLowerCase();
+  const norm=function(n){return typeof caNormName==='function'?caNormName(n):String(n||'').toLowerCase();};
+  const dislikes=dislike.split(/[,;]+/).map(function(s){return norm(s);}).filter(Boolean);
+  if(!dislikes.length)return items;
+  return items.filter(function(item){
+    const n=norm(item.name);
+    return !dislikes.some(function(d){return n.indexOf(d)>=0||d.indexOf(n)>=0;});
+  });
+}
+function obExercisePool(split,p){
+  const goal=p.primaryGoal;
+  const eq=String(p.equipment).toLowerCase();
+  const lim=String(p.limitations.join(' ')).toLowerCase();
+  const pri=p.priorityMuscles.join(' ').toLowerCase();
+  const dislike=String(p.exerciseDislikes||'').toLowerCase();
+  const body=eq.indexOf('bodyweight')>=0;
+  const fullGym=eq.indexOf('full')>=0||eq.indexOf('commercial')>=0;
+  const avoidCableMachine=obHas(dislike,['machine','machines','cable','cables']);
+  const avoidFreeWeights=obHas(dislike,['free weight','free weights']);
+  const avoidBarbell=avoidFreeWeights||obHas(dislike,['barbell']);
+  const avoidDb=avoidFreeWeights||obHas(dislike,['dumbbell','dumbbells']);
+  const hasCable=(fullGym||eq.indexOf('cable')>=0||eq.indexOf('machine')>=0)&&!avoidCableMachine;
+  const hasBarbell=(fullGym||eq.indexOf('barbell')>=0||eq.indexOf('rack')>=0)&&!avoidBarbell;
+  const hasDb=(fullGym||eq.indexOf('dumbbell')>=0)&&!avoidDb;
+  const limited=(body||hasDb)&&!fullGym&&!hasCable&&!hasBarbell;
+  const shoulder=lim.indexOf('shoulder')>=0;
+  const upperChest=pri.indexOf('upper chest')>=0;
+  const arms=pri.indexOf('arms')>=0;
+  const pressMain=limited?(hasDb?'Dumbbell Floor Press':'Push-Up'):(shoulder?(hasDb?'Dumbbell Bench Press':hasCable?'Chest Press Machine':'Push-Up'):hasBarbell?'Bench Press':hasCable?'Chest Press Machine':hasDb?'Dumbbell Floor Press':'Push-Up');
+  const pressMainWhy=limited?'Chosen to match dumbbell/bodyweight equipment.':shoulder?'Chosen over barbell bench to reduce shoulder stress.':'Chosen because it is easy to progressively overload.';
+  const inclinePress=limited?(hasDb?'Incline Push-Up':'Push-Up'):(upperChest||shoulder?(hasDb?'Incline Dumbbell Press':hasCable?'Incline Chest Press Machine':'Incline Push-Up'):hasBarbell?'Incline Bench':hasCable?'Incline Chest Press Machine':hasDb?'Incline Dumbbell Press':'Incline Push-Up');
+  const verticalPress=limited?(hasDb?'Dumbbell Shoulder Press':'Pike Push-Up'):(shoulder?(hasBarbell?'Landmine Press':hasDb?'Dumbbell Shoulder Press':hasCable?'Shoulder Press Machine':'Pike Push-Up'):hasBarbell?'Overhead Press':hasCable?'Shoulder Press Machine':hasDb?'Dumbbell Shoulder Press':'Pike Push-Up');
+  const chestAccessory=limited?(arms?'Close-Grip Push-Up':hasDb?'Dumbbell Fly':'Push-Up'):arms?(hasCable?'Tricep Pushdown':hasDb?'Dumbbell Skull Crusher':'Close-Grip Push-Up'):(hasCable?'Cable Fly':hasDb?'Dumbbell Fly':'Push-Up');
+  const tricepsAccessory=hasCable?'Overhead Cable Tricep Extension':hasDb?'Dumbbell Skull Crusher':'Close-Grip Push-Up';
+  const chestFly=hasCable?'Cable Fly':hasDb?'Dumbbell Fly':'Push-Up';
+  const pressVolume=hasCable?'Chest Press Machine':hasDb?'Dumbbell Floor Press':'Push-Up';
+  const sideDelt=hasCable?'Cable Lateral Raise':hasDb||fullGym?'Lateral Raise':hasBarbell?'Plate Raise':'Pike Push-Up Hold';
+  const verticalPull=body?'Pull-ups':hasCable?'Lat Pulldown':hasDb?'Dumbbell Pullover':'Inverted Row';
+  const horizontalPull=limited?(hasDb?'One-Arm Dumbbell Row':'Inverted Row'):hasCable?'Seated Cable Row':hasBarbell?'Barbell Row':hasDb?'One-Arm Dumbbell Row':'Inverted Row';
+  const rowAccessory=hasCable?'Chest-Supported Row':hasBarbell?'Pendlay Row':hasDb?'Chest-Supported Dumbbell Row':'Inverted Row';
+  const rearDelt=hasCable?'Face Pull':hasDb?'Rear Delt Fly':'Band Pull-Apart';
+  const curl=hasBarbell&&!hasDb&&!hasCable?'Barbell Curl':'Bicep Curl';
+  const hinge=hasBarbell?'Romanian Deadlift':hasDb?'Dumbbell Romanian Deadlift':hasCable?'Cable Pull-Through':'Single-Leg Glute Bridge';
+  const heavyHinge=hasBarbell?'Deadlift':hasDb?'Dumbbell Romanian Deadlift':hasCable?'Cable Pull-Through':'Hip Thrust';
+  const squatPattern=body?'Bulgarian Split Squat':hasBarbell?'Squat':hasCable?'Leg Press':hasDb?'Bulgarian Split Squat':'Bodyweight Squat';
+  const quadAccessory=body?'Reverse Lunge':hasCable?'Leg Extension':hasDb?'Goblet Squat':'Step-Up';
+  const hamAccessory=hasCable?'Leg Curl':hasDb?'Dumbbell Hip Thrust':'Glute Bridge';
+  const push=[
+    obExercise(pressMain,'Main horizontal press for '+goal+'.', 'Chest, triceps',goal,pressMainWhy),
+    obExercise(inclinePress,'Adds upper-chest volume and a different pressing angle.','Upper chest, front delts',goal,'Chosen over flat-only pressing to match your priorities.'),
+    obExercise(verticalPress,'Trains vertical pressing without duplicating bench work.','Shoulders, triceps',goal,shoulder?'Chosen over strict OHP because it is usually more shoulder-friendly.':'Chosen for clear strength progression.'),
+    obExercise(sideDelt,'Direct side-delt work with low joint cost.','Shoulders',goal,'Chosen over another heavy press to manage fatigue.'),
+    obExercise(chestAccessory,'Adds targeted accessory volume where compounds are less specific.','Triceps/chest',goal,'Chosen as the accessory slot after compounds.'),
+    obExercise(tricepsAccessory,'Adds a second triceps angle when session time allows.','Triceps',goal,'Chosen over another press to add direct arm volume without more heavy pressing.'),
+    obExercise(arms?chestFly:pressVolume,'Adds chest volume without another heavy compound.','Chest',goal,'Chosen as a low-fatigue finisher for longer push sessions.')
+  ];
+  const pull=[
+    obExercise(verticalPull,'Vertical pull for lat width and shoulder balance.','Back, biceps',goal,body?'Chosen because bodyweight equipment is available.':'Chosen because load is easy to scale.'),
+    obExercise(horizontalPull,'Horizontal pull to balance pressing volume.','Mid-back, lats',goal,'Chosen over another pulldown for movement balance.'),
+    obExercise(rearDelt,'Rear-delt and upper-back work to support shoulder health.','Rear delts, upper back',goal,'Chosen because it pairs well with pressing volume.'),
+    obExercise(curl,'Direct elbow-flexion work for arm priority and tracking.','Biceps',goal,'Chosen over more back work to include direct arm volume.'),
+    obExercise(arms?'Hammer Curl':heavyHinge,'Adds arm/brachialis work or a heavy hinge depending on priority.','Biceps/forearms or posterior chain',goal,'Chosen to match priority muscles and weekly fatigue.'),
+    obExercise(hasCable?'Straight-Arm Pulldown':'Hammer Curl','Adds lat isolation or an arm-friendly accessory when time allows.','Lats/biceps',goal,'Chosen over extra rowing to reduce overlap.'),
+    obExercise(rowAccessory,'Adds another back slot for longer pull sessions.','Back, biceps',goal,'Chosen over unrelated filler to keep the day pull-focused.')
+  ];
+  const legs=[
+    obExercise(squatPattern,'Primary squat-pattern lift.','Quads, glutes',goal,'Chosen over machines when skill and loading matter.'),
+    obExercise(hinge,'Primary hinge for hamstrings and glutes.','Hamstrings, glutes',goal,'Chosen over conventional deadlift for hypertrophy-friendly tension.'),
+    obExercise(quadAccessory,'Extra quad volume without as much skill demand as squats.','Quads, glutes',goal,'Chosen to add volume while managing fatigue.'),
+    obExercise(hamAccessory,'Direct posterior-chain accessory work.','Hamstrings/glutes',goal,'Chosen because hinges do not fully cover this function.'),
+    obExercise('Calf Raise','Direct calf work with simple progression.','Calves',goal,'Chosen as a low-fatigue accessory.'),
+    obExercise('Hip Thrust','Adds glute-focused volume without another squat pattern.','Glutes',goal,'Chosen as a lower-body accessory with manageable fatigue.'),
+    obExercise('Plank','Core stability with low equipment demand.','Core',goal,'Chosen as a low-fatigue finisher for longer lower-body sessions.')
+  ];
+  const upper=push.slice(0,3).concat(pull.slice(0,3),[arms?pull[3]:push[4]]);
+  const lower=legs;
+  const full=[push[0],pull[0],legs[0],legs[1],push[3],pull[3]];
+  const priority=[upperChest?push[1]:push[0],arms?pull[3]:pull[1],arms?push[4]:push[3],legs[1],pull[2]];
+  const map={push:push,pull:pull,legs:legs,upper:upper,lower:lower,full:full,priority:priority,chest_back:[push[0],push[1],pull[0],pull[1],pull[2],push[6],pull[6]],shoulders_arms:[push[2],push[3],pull[3],obExercise('Hammer Curl','Second direct biceps/forearm pattern for arm priority.','Biceps, forearms',goal,'Chosen over another curl variation for a different grip.'),push[4],push[5],pull[5]]};
+  let rows=obFilterExercises((map[split]||full).slice(0,p.exercisesPerSession),p).filter(function(item,i,arr){
+    return arr.findIndex(function(r){return r.name===item.name;})===i;
+  });
+  const fallback=obFilterExercises([
+    obExercise(hasDb?'Goblet Squat':hasCable?'Leg Press':'Step-Up','Safe lower-body volume that fits limited equipment.','Quads, glutes',goal,'Chosen as a fallback when another movement was excluded.'),
+    obExercise(hasDb?'One-Arm Dumbbell Row':hasCable?'Seated Cable Row':'Inverted Row','Equipment-matched horizontal pulling.','Back, biceps',goal,'Chosen as a fallback to keep push/pull balance.'),
+    obExercise('Glute Bridge','Low-skill posterior-chain work.','Glutes, hamstrings',goal,'Chosen as a fallback when hinging options are limited.'),
+    obExercise('Plank','Core stability with low equipment demand.','Core',goal,'Chosen as a low-risk filler that supports general training.'),
+    obExercise('Calf Raise','Simple accessory work with minimal recovery cost.','Calves',goal,'Chosen as a fallback accessory.')
+  ],p);
+  fallback.forEach(function(item){
+    if(rows.length>=p.exercisesPerSession)return;
+    if(!rows.some(function(r){return r.name===item.name;}))rows.push(item);
+  });
+  return rows.slice(0,p.exercisesPerSession);
+}
+function obBuildProgram(d){
+  const p=obCanonicalProfile(d);
+  const candidates=['Full Body','Upper/Lower','PPL','PPL + Upper/Lower','Arnold','Custom Hybrid'].map(function(k){return obScoreSplit(k,p);}).sort(function(a,b){return b.score-a.score;});
+  const best=candidates[0];
+  SPLIT_LBL.full='Full Body';SPLIT_LBL.priority='Priority';SPLIT_LBL.chest_back='Chest & Back';SPLIT_LBL.shoulders_arms='Shoulders & Arms';
+  const seq=obSplitSequence(best.split,p.daysPerWeek);
+  const trainDays=obTrainingDays(p.daysPerWeek);
+  const schedule={mon:'rest',tue:'rest',wed:'rest',thu:'rest',fri:'rest',sat:'rest',sun:'rest'};
+  trainDays.forEach(function(day,i){schedule[day]=seq[i]||'full';});
+  const splitEx={};
+  const exerciseReasons={};
+  [...new Set(seq)].forEach(function(split){
+    const rows=obExercisePool(split,p);
+    splitEx[split]=rows.map(function(r){return r.name;});
+    exerciseReasons[split]=rows.map(function(r){return r;});
+  });
+  const daysText=p.daysPerWeek+' days/week';
+  const priText=p.priorityMuscles.length?p.priorityMuscles.join(', '):'no specific priority muscles';
+  const text='You selected '+p.primaryGoal+' as your main goal, '+daysText+', '+p.duration+' minute sessions, and '+(p.equipment||'your available equipment')+'. I chose '+best.split+' because it scored highest for goal fit, weekly frequency, recovery, and your priorities ('+priText+').';
+  return{profile:p,candidates:candidates,selectedSplit:best.split,schedule:schedule,splitEx:splitEx,exerciseReasons:exerciseReasons,text:text};
+}
+
 async function obGenerate(){
   S.obStep=OB_STEPS.length-1; // show generating screen
   render();
   const d=S.obData;
-  const prompt=
-    'New user onboarding data:\n'+
-    'Name: '+(d.name||'not provided')+'\n'+
-    'Age: '+(d.age||'not provided')+'\n'+
-    'Preferred units: '+(d.unit_system||S.unit||'not provided')+'\n'+
-    'Bodyweight: '+(d.bodyweight||'not provided')+' '+(obUnitFor('bodyweight')||'')+'\n'+
-    'Height: '+(d.height||'not provided')+' '+(obUnitFor('height')||'')+'\n'+
-    'Goal: '+(d.goal||'not provided')+'\n'+
-    'Experience: '+(d.experience||'not provided')+'\n'+
-    'Days per week: '+(d.days_per_week||'not provided')+'\n'+
-    'Session length: '+(d.session_duration||'not provided')+'\n'+
-    'Equipment: '+(d.equipment||'not provided')+'\n'+
-    'Injuries/limitations: '+(d.injuries||'none')+'\n'+
-    'Split preference: '+(d.split_pref||'not provided')+'\n\n'+
-    'Based on this, do the following:\n'+
-    '1. Call update_profile with name, goal, experience, session_duration, exercises_per_session (derive from session length), equipment, injuries, bodyweight (number only, already in user display unit), height (include unit or plain number as provided).\n'+
-    '2. Call update_schedule to set the weekly schedule based on their days and split preference.\n'+
-    '3. Call update_split_exercises to fill each split day with the best exercises for their goal and equipment.\n'+
-    'Also include a "rationale" field in your JSON: 2–3 sentences explaining WHY you chose this specific schedule for them — mention the split type, days, and how it fits their goal. Make it personal and direct. Keep it under 60 words.\n'+
-    'Respond ONLY with valid JSON: {"message":"...","rationale":"...","actions":[...]}';
   try{
-    if(!hasKey())throw new Error(aiKeyMessage());
-    const resp=await fetch(API,{method:'POST',headers:apiHeaders(),body:JSON.stringify({
-      model:MODEL,max_tokens:4000,thinking:{type:'enabled',budget_tokens:1024},
-      system:buildSysPrompt()+'\nYou are completing a new user onboarding. Apply all 3 actions (update_profile, update_schedule, update_split_exercises) based on the data provided. Respond ONLY with valid JSON: {"message":"...","rationale":"...","actions":[...]}',
-      messages:[{role:'user',content:prompt}]
-    })});
-    const raw=await resp.text();
-    const data=JSON.parse(raw);
-    if(data.error)throw new Error(data.error.message);
-    const parsed=parseAIResponse(extractText(data.content));
-    (parsed.actions||[]).forEach(function(a){applyAction(a);});
-    if(parsed.message){
-      S.messages=[{role:'ai',text:parsed.message,time:NOW(),actions:[]}];
-    }
-    if(parsed.rationale){
-      S.scheduleRationale={text:parsed.rationale,dismissed:false};
-    }
+    const plan=obBuildProgram(d);
+    S.profile.name=d.name||S.profile.name;
+    S.profile.goal=d.goal||S.profile.goal;
+    S.profile.experience=d.experience||S.profile.experience;
+    S.profile.session_duration=plan.profile.duration;
+    S.profile.exercises_per_session=plan.profile.exercisesPerSession;
+    S.profile.equipment=d.equipment||S.profile.equipment;
+    S.profile.injuries=d.injuries||S.profile.injuries;
+    S.profile.preferences=[d.exercise_preferences?('Likes: '+d.exercise_preferences):'',d.exercise_dislikes?('Avoids: '+d.exercise_dislikes):'',d.priority_muscles?('Priority muscles: '+d.priority_muscles):''].filter(Boolean).join(' | ');
+    S.profile.program_reasoning=plan;
+    if(d.bodyweight)S.profile.bodyweight=parseFloat(d.bodyweight)||S.profile.bodyweight;
+    if(d.height)S.profile.height=d.height;
+    S.schedule=plan.schedule;
+    S.splitEx=Object.assign({},S.splitEx,plan.splitEx);
+    persist('ll_profile',S.profile);
+    persist('ll_schedule',S.schedule);
+    persist('ll_splits',S.splitEx);
+    S.scheduleRationale={text:plan.text,dismissed:false,details:plan};
+    S.messages=[{role:'ai',text:'I built your program from your onboarding answers: '+plan.selectedSplit+' across '+plan.profile.daysPerWeek+' training days, with exercise choices matched to your goal, equipment, priorities, and limitations.',time:NOW(),actions:[]}];
   }catch(e){
     console.warn('[obGenerate error]',e.message);
     // Apply what we can from the form data directly

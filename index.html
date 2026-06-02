@@ -118,6 +118,7 @@ const S={
   obStep:0, obData:{}, obLoading:false, obDone:false,
   tourPrompt:false, tourActive:false, tourStep:0,
   scheduleRationale:null, // {text:str, dismissed:bool} — shown on home after onboarding
+  programWhyOpen:false,
   nudgeDismissedAt:null,
   quickAIOpen:false, quickAIDraft:'', quickAILoading:false, quickAIReply:'', quickAIListening:false,
   profile:{
@@ -307,8 +308,11 @@ function vHome(){
   // ── Schedule rationale card — shown once after onboarding ─────
   const selDay=S.selStripDay||today;
   const rationaleCard=(S.scheduleRationale&&!S.scheduleRationale.dismissed)?(function(){
+    const details=S.scheduleRationale.details||(S.profile&&S.profile.program_reasoning)||null;
     const days=DAYS.filter(function(d){return S.schedule[d]!=='rest';});
     const splitTypes=[...new Set(days.map(function(d){return spLbl(S.schedule[d]);}))];
+    const scoreRows=details&&details.candidates?details.candidates.slice(0,4):[];
+    const reasonSplits=details&&details.exerciseReasons?Object.keys(details.exerciseReasons).slice(0,3):[];
     return '<div style="background:linear-gradient(135deg,rgba(26,158,212,.10),rgba(26,158,212,.04));border:1px solid rgba(26,158,212,.25);border-radius:16px;padding:16px;margin-bottom:14px">'+
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">'+
         '<div style="display:flex;align-items:center;gap:8px">'+
@@ -317,7 +321,7 @@ function vHome(){
           '</div>'+
           '<div>'+
             '<div style="font-size:12px;font-weight:800;color:var(--blue);letter-spacing:.04em">YOUR PROGRAM</div>'+
-            '<div style="font-size:10px;color:var(--muted);margin-top:1px">Built for you by AI</div>'+
+            '<div style="font-size:10px;color:var(--muted);margin-top:1px">Built from your onboarding profile</div>'+
           '</div>'+
         '</div>'+
         '<button onclick="S.scheduleRationale.dismissed=true;render()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0">&#215;</button>'+
@@ -332,6 +336,31 @@ function vHome(){
       '</div>'+
       // Rationale text
       '<div style="font-size:13px;color:var(--sub);line-height:1.65">'+escH(S.scheduleRationale.text)+'</div>'+
+      (details?
+        '<button class="press" onclick="S.programWhyOpen=!S.programWhyOpen;render()" style="width:100%;margin-top:12px;background:var(--s1);border:1px solid rgba(26,158,212,.25);color:var(--blue);border-radius:10px;padding:10px 12px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:space-between">'+
+          '<span>Why Forma chose this program</span><span style="font-size:14px">'+(S.programWhyOpen?'−':'+')+'</span>'+
+        '</button>'+
+        (S.programWhyOpen?
+          '<div style="margin-top:10px;background:rgba(255,255,255,.55);border:1px solid rgba(26,158,212,.14);border-radius:12px;padding:12px">'+
+            '<div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:8px">Split scoring</div>'+
+            scoreRows.map(function(row){
+              return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--dim)">'+
+                '<div style="min-width:0"><div style="font-size:12px;font-weight:700;color:var(--white)">'+escH(row.split)+'</div>'+
+                '<div style="font-size:10px;color:var(--muted);line-height:1.4">'+escH((row.reasons||[]).slice(0,2).join(' '))+'</div></div>'+
+                '<div style="font-size:13px;font-weight:800;color:var(--blue);font-family:var(--mono)">'+row.score+'</div>'+
+              '</div>';
+            }).join('')+
+            '<div style="font-size:11px;font-weight:800;color:var(--white);margin:12px 0 8px">Exercise choices</div>'+
+            reasonSplits.map(function(sp){
+              const rows=(details.exerciseReasons[sp]||[]).slice(0,3);
+              return '<div style="margin-bottom:9px">'+
+                '<div style="font-size:11px;font-weight:800;color:'+spCol(sp)+';margin-bottom:4px">'+spLbl(sp).toUpperCase()+'</div>'+
+                rows.map(function(r){
+                  return '<div style="font-size:11px;color:var(--sub);line-height:1.45;margin-bottom:4px"><strong style="color:var(--white)">'+escH(r.name)+'</strong>: '+escH(r.reason)+' '+escH(r.alternative||'')+'</div>';
+                }).join('')+
+              '</div>';
+            }).join('')+
+          '</div>':''):'')+
       // CTA
       '<button class="press" onclick="navTo(\'setup\');S.setupTab=\'schedule\';render()" style="margin-top:12px;background:none;border:1px solid rgba(26,158,212,.3);color:var(--blue);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">View full schedule →</button>'+
     '</div>';
