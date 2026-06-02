@@ -27,6 +27,19 @@ function caMuscleGroup(name){
   if(/\b(squat|leg|lunge|rdl|romanian|hip thrust|glute|calf|good morning)\b/.test(n))return 'legs';
   return 'other';
 }
+function caMuscleTags(name){
+  const n=caNormName(name);
+  const tags=[];
+  if(/\b(bench|incline|chest press|push up|push-up|dip|fly|crossover)\b/.test(n))tags.push('chest');
+  if(/\b(row|pull up|pull-up|pullups|pull ups|chin|pulldown|deadlift|straight arm pulldown)\b/.test(n))tags.push('back');
+  if(/\b(overhead press|shoulder press|arnold press|military press|landmine press|lateral raise|front raise|rear delt|face pull|reverse fly)\b/.test(n))tags.push('shoulders');
+  if(/\b(curl|hammer|preacher|chin up|chin-up)\b/.test(n))tags.push('biceps');
+  if(/\b(tricep|pushdown|skull|extension|dip|bench|press)\b/.test(n))tags.push('triceps');
+  if(/\b(squat|leg press|hack squat|lunge|split squat|step up|leg extension)\b/.test(n))tags.push('quads');
+  if(/\b(deadlift|romanian|rdl|good morning|leg curl)\b/.test(n))tags.push('hamstrings');
+  if(/\b(deadlift|romanian|rdl|hip thrust|glute bridge|squat|leg press|lunge|split squat)\b/.test(n))tags.push('glutes');
+  return tags.length?tags:['other'];
+}
 function caPriorityWeight(name){
   const n=caNormName(name);
   if(/\b(bench press|squat|deadlift|overhead press)\b/.test(n))return 4;
@@ -67,7 +80,7 @@ function caAnalyzeExercise(name){
   if(repChange>=2)score+=.4;else if(repChange<=-2)score-=.4;
   const trend=caTrendFromScore(score);
   const signalsAgree=(trend==='stable')||(e1rmChange>0&&repChange>=0)||(e1rmChange<0&&repChange<=0);
-  return{exercise:name,group:caMuscleGroup(name),role:caExerciseRole(name),trend:trend,trendScore:caRound(score,2),e1rmChange:e1rmChange,recentRepTrend:repChange>0?'up':repChange<0?'down':'flat',repChange:repChange,confidence:caConfidence(sessions.length,signalsAgree),priorityWeight:caPriorityWeight(name),importanceScore:caRound(Math.abs(score)*caPriorityWeight(name)+(trend==='declining'?1:0),2),recentTop:caRound(toDisp(recent.topW),1)+' '+uLbl()+' x '+recent.topR,baselineTop:caRound(toDisp(baseline.topW),1)+' '+uLbl()+' x '+baseline.topR,sessions:sessions.length};
+  return{exercise:name,group:caMuscleGroup(name),muscleTags:caMuscleTags(name),role:caExerciseRole(name),trend:trend,trendScore:caRound(score,2),e1rmChange:e1rmChange,recentRepTrend:repChange>0?'up':repChange<0?'down':'flat',repChange:repChange,confidence:caConfidence(sessions.length,signalsAgree),priorityWeight:caPriorityWeight(name),importanceScore:caRound(Math.abs(score)*caPriorityWeight(name)+(trend==='declining'?1:0),2),recentTop:caRound(toDisp(recent.topW),1)+' '+uLbl()+' x '+recent.topR,baselineTop:caRound(toDisp(baseline.topW),1)+' '+uLbl()+' x '+baseline.topR,sessions:sessions.length};
 }
 function caAnalyzeMuscleGroups(exercises){
   const groups={push:[],pull:[],legs:[]};
@@ -84,6 +97,22 @@ function caRoleSummary(exercises,role){
   const rows=exercises.filter(function(e){return e.role===role;});
   const avg=rows.length?rows.reduce(function(a,e){return a+e.trendScore;},0)/rows.length:0;
   return{role:role,rows:rows,avg:avg,trend:rows.length?caTrendFromScore(avg):'no_data'};
+}
+function caAggregateRows(label,rows){
+  const avg=rows.length?rows.reduce(function(a,e){return a+e.trendScore;},0)/rows.length:0;
+  return{label:label,avgTrendScore:caRound(avg,2),overall:rows.length?caTrendFromScore(avg):'no_data',improvers:rows.filter(function(e){return e.trend==='improving';}).sort(function(a,b){return b.importanceScore-a.importanceScore;}).slice(0,4).map(function(e){return e.exercise+' +'+Math.abs(e.e1rmChange)+' '+uLbl();}),laggers:rows.filter(function(e){return e.trend!=='improving';}).sort(function(a,b){return b.importanceScore-a.importanceScore;}).slice(0,4).map(function(e){return e.exercise+': '+e.trend+' ('+(e.e1rmChange>0?'+':'')+e.e1rmChange+' '+uLbl()+')';}),exercises:rows.map(function(e){return e.exercise+': '+e.trend+' ('+(e.e1rmChange>0?'+':'')+e.e1rmChange+' '+uLbl()+')';})};
+}
+function caAnalyzeDetailedMuscleGroups(exercises){
+  const names=['chest','back','shoulders','biceps','triceps','quads','hamstrings','glutes'];
+  const out={};
+  names.forEach(function(name){out[name]=caAggregateRows(name,exercises.filter(function(e){return e.muscleTags&&e.muscleTags.indexOf(name)!==-1;}));});
+  return out;
+}
+function caAnalyzeMovementPatterns(exercises){
+  const roles=['horizontal_press','incline_press','vertical_press','horizontal_pull','vertical_pull','squat_pattern','hinge_pattern','elbow_extension','isolation'];
+  const out={};
+  roles.forEach(function(role){out[role]=caAggregateRows(caRoleLabel(role),exercises.filter(function(e){return e.role===role;}));});
+  return out;
 }
 function caPattern(pattern,confidence,evidence,score,type,meta){
   const out={pattern:pattern,confidence:confidence,evidence:evidence.filter(Boolean),importanceScore:caRound(score||1,2),type:type||'pattern'};
@@ -196,9 +225,18 @@ function caDetectPatterns(exercises,groups){
   caDetectContradictions(exercises,groups).forEach(function(p){patterns.push(p);});
   const compounds=exercises.filter(function(e){return e.priorityWeight>=3;});
   const isolations=exercises.filter(function(e){return e.priorityWeight<=2&&(e.role==='isolation'||e.role==='elbow_extension');});
+  const directArms=exercises.filter(function(e){return /\b(curl|hammer|preacher|tricep|pushdown|skull)\b/.test(caNormName(e.exercise));});
   const compAvg=compounds.length?compounds.reduce(function(a,e){return a+e.trendScore;},0)/compounds.length:0;
   const isoAvg=isolations.length?isolations.reduce(function(a,e){return a+e.trendScore;},0)/isolations.length:0;
-  if(compounds.length>=2&&isolations.length>=2&&compAvg>=.35&&isoAvg<=.1)patterns.push(caPattern('Compound lifts are improving while isolation work is flat or lagging.','medium',['Compounds average trend score '+caRound(compAvg,2),'Isolations average trend score '+caRound(isoAvg,2)],6,'compound_vs_isolation'));
+  const armAvg=directArms.length?directArms.reduce(function(a,e){return a+e.trendScore;},0)/directArms.length:0;
+  const improvingCompounds=compounds.filter(function(e){return e.trend==='improving';});
+  const laggingArms=directArms.filter(function(e){return e.trend!=='improving';});
+  if(improvingCompounds.length>=2&&laggingArms.length>=2&&armAvg<=.1){
+    patterns.push(caPattern('Direct arm work is lagging while compound lifts are progressing.','medium',laggingArms.map(function(e){return e.exercise+': '+e.trend+' ('+(e.e1rmChange>0?'+':'')+e.e1rmChange+' '+uLbl()+')';}).concat(improvingCompounds.slice(0,4).map(function(e){return e.exercise+' improving (+'+Math.abs(e.e1rmChange)+' '+uLbl()+')';})),14,'program_pattern',{
+      possibleExplanations:['Arms may already be receiving enough indirect volume from compounds.','Isolation movements may be progressing more slowly than compound lifts, which is normal.','Direct arm volume or frequency may be too low to drive separate progress.','The current arm exercise selection may not fit the lifter as well as the compound work.']
+    }));
+  }
+  if(compounds.length>=2&&isolations.length>=2&&compAvg>=.35&&isoAvg<=.1)patterns.push(caPattern('Compound lifts are improving while isolation work is flat or lagging.','medium',['Compounds average trend score '+caRound(compAvg,2),'Isolations average trend score '+caRound(isoAvg,2)],11,'program_pattern',{possibleExplanations:['Compounds may be getting the best effort and recovery.','Isolation progress may need smaller jumps, more reps, or more consistent execution.','Accessory volume may be serving maintenance while compounds drive the main adaptation.']}));
   if(groups.pull&&groups.push&&groups.pull.avgTrendScore-groups.push.avgTrendScore>=.7)patterns.push(caPattern('Pull training is progressing faster than push training.','medium',['Pull average trend score '+groups.pull.avgTrendScore,'Push average trend score '+groups.push.avgTrendScore],7,'pull_outpacing_push'));
   Object.keys(groups).forEach(function(group){
     const g=groups[group];
@@ -226,7 +264,7 @@ function caGenerateHypotheses(patterns,exercises){
   const hypotheses=[];
   const seen={};
   function add(title,confidence,evidence,score){hypotheses.push({hypothesis:title,confidence:confidence,evidence:evidence.filter(Boolean),importanceScore:score||1});}
-  patterns.filter(function(p){return p.type==='movement_contradiction';}).slice(0,2).forEach(function(p){
+  patterns.filter(function(p){return p.type==='program_pattern'||p.type==='movement_contradiction';}).slice(0,2).forEach(function(p){
     (p.possibleExplanations||[]).slice(0,4).forEach(function(h,i){
       if(seen[h])return;
       seen[h]=true;
@@ -245,34 +283,50 @@ function caGenerateHypotheses(patterns,exercises){
   return hypotheses.sort(function(a,b){return b.importanceScore-a.importanceScore;}).slice(0,5).map(function(h){return{hypothesis:h.hypothesis,confidence:h.confidence,evidence:h.evidence};});
 }
 function caRankPriorities(exercises,patterns){
-  const patternItems=patterns.map(function(p){return{type:'pattern',name:p.pattern,confidence:p.confidence,importanceScore:p.importanceScore,evidence:p.evidence};});
+  const patternItems=patterns.map(function(p){return{type:p.type==='program_pattern'?'program_pattern':'pattern',name:p.pattern,confidence:p.confidence,importanceScore:p.importanceScore,evidence:p.evidence};});
   const exerciseItems=exercises.filter(function(e){return e.trend==='declining';}).map(function(e){return{type:'exercise',name:e.exercise+' decline',confidence:e.confidence,importanceScore:e.importanceScore,evidence:[e.exercise+' '+e.e1rmChange+' '+uLbl(),e.recentTop+' vs '+e.baselineTop]};});
   return patternItems.concat(exerciseItems).sort(function(a,b){return b.importanceScore-a.importanceScore;}).slice(0,6);
 }
 function buildCoachingAnalysis(){
   const exercises=caAllExerciseNames().map(caAnalyzeExercise).filter(Boolean).sort(function(a,b){return b.importanceScore-a.importanceScore;});
   const muscleGroups=caAnalyzeMuscleGroups(exercises);
+  const detailedMuscleGroups=caAnalyzeDetailedMuscleGroups(exercises);
+  const movementPatterns=caAnalyzeMovementPatterns(exercises);
   const patterns=caDetectPatterns(exercises,muscleGroups);
   const hypotheses=caGenerateHypotheses(patterns,exercises);
   const priorities=caRankPriorities(exercises,patterns);
-  return{generatedAt:new Date().toISOString(),unit:uLbl(),exerciseAnalysis:exercises,muscleGroups:muscleGroups,patterns:patterns,hypotheses:hypotheses,priorities:priorities,topPriority:priorities[0]||null};
+  return{generatedAt:new Date().toISOString(),unit:uLbl(),exerciseAnalysis:exercises,muscleGroups:muscleGroups,detailedMuscleGroups:detailedMuscleGroups,movementPatterns:movementPatterns,patterns:patterns,hypotheses:hypotheses,priorities:priorities,topPriority:priorities[0]||null};
 }
 function formatCoachingAnalysisForPrompt(analysis){
   if(!analysis)analysis=buildCoachingAnalysis();
   if(!analysis.exerciseAnalysis.length)return 'COACHING ANALYSIS: not enough working-set history yet.';
   function lines(arr,mapper,empty){return arr&&arr.length?arr.map(mapper).join('\n'):empty;}
+  const programPatterns=analysis.patterns.filter(function(p){return p.type==='program_pattern';});
   const contradictions=analysis.patterns.filter(function(p){return p.type==='movement_contradiction';});
-  const otherPatterns=analysis.patterns.filter(function(p){return p.type!=='movement_contradiction';});
+  const otherPatterns=analysis.patterns.filter(function(p){return p.type!=='movement_contradiction'&&p.type!=='program_pattern';});
+  const detailedGroupLines=Object.keys(analysis.detailedMuscleGroups||{}).map(function(k){
+    const g=analysis.detailedMuscleGroups[k];
+    if(!g||!g.exercises.length)return '';
+    return k.toUpperCase()+': '+g.overall+' (avg '+g.avgTrendScore+') | laggers: '+(g.laggers.join(', ')||'none')+' | improvers: '+(g.improvers.join(', ')||'none');
+  }).filter(Boolean).join('\n');
+  const movementLines=Object.keys(analysis.movementPatterns||{}).map(function(k){
+    const m=analysis.movementPatterns[k];
+    if(!m||!m.exercises.length)return '';
+    return m.label+': '+m.overall+' (avg '+m.avgTrendScore+') | laggers: '+(m.laggers.join(', ')||'none')+' | improvers: '+(m.improvers.join(', ')||'none');
+  }).filter(Boolean).join('\n');
   const groupLines=Object.keys(analysis.muscleGroups).map(function(k){
     const g=analysis.muscleGroups[k];
     return k.toUpperCase()+': '+g.overall+' (avg '+g.avgTrendScore+') | decliners: '+(g.strongestDecliners.join(', ')||'none')+' | improvers: '+(g.strongestImprovers.join(', ')||'none');
   }).join('\n');
-  return 'COACHING ANALYSIS (computed before AI reasoning; prioritize this over isolated raw deltas)\n'+
+  return 'COACHING ANALYSIS (computed before AI reasoning; evaluate all five levels before answering)\n'+
     'Top priority: '+(analysis.topPriority?analysis.topPriority.name+' | Confidence: '+analysis.topPriority.confidence:'none')+'\n\n'+
-    'Exercise-level trends:\n'+lines(analysis.exerciseAnalysis.slice(0,12),function(e){return '- '+e.exercise+': '+e.trend+', e1RM change '+(e.e1rmChange>0?'+':'')+e.e1rmChange+' '+analysis.unit+', reps '+e.recentRepTrend+', confidence '+e.confidence+', role '+e.role;},'none')+'\n\n'+
-    'Muscle-group analysis:\n'+groupLines+'\n\n'+
-    'Contradictory movement patterns (rank before simple exercise declines):\n'+lines(contradictions,function(p){return '- Pattern: '+p.pattern+' Confidence: '+p.confidence+'. Evidence: '+p.evidence.join('; ')+'. Hypotheses, not facts: '+(p.possibleExplanations||[]).join('; ');},'none strong enough')+'\n\n'+
+    'Level 1 - Individual exercise analysis (do not stop here):\n'+lines(analysis.exerciseAnalysis.slice(0,12),function(e){return '- '+e.exercise+': '+e.trend+', e1RM change '+(e.e1rmChange>0?'+':'')+e.e1rmChange+' '+analysis.unit+', reps '+e.recentRepTrend+', confidence '+e.confidence+', role '+e.role+', muscles '+(e.muscleTags||[]).join('/');},'none')+'\n\n'+
+    'Level 2 - Specific muscle-group analysis:\n'+(detailedGroupLines||'none')+'\n\n'+
+    'Broad split-group analysis:\n'+groupLines+'\n\n'+
+    'Level 3 - Movement-pattern analysis:\n'+(movementLines||'none')+'\n\n'+
+    'Level 4 - Program-level patterns (rank before muscle, movement, and exercise observations):\n'+lines(programPatterns,function(p){return '- Pattern: '+p.pattern+' Confidence: '+p.confidence+'. Evidence: '+p.evidence.join('; ')+'. Hypotheses, not facts: '+(p.possibleExplanations||[]).join('; ');},'none strong enough')+'\n\n'+
+    'Contradictory movement patterns:\n'+lines(contradictions,function(p){return '- Pattern: '+p.pattern+' Confidence: '+p.confidence+'. Evidence: '+p.evidence.join('; ')+'. Hypotheses, not facts: '+(p.possibleExplanations||[]).join('; ');},'none strong enough')+'\n\n'+
     'Other higher-level patterns:\n'+lines(otherPatterns,function(p){return '- '+p.pattern+' Confidence: '+p.confidence+'. Evidence: '+p.evidence.join('; ');},'none strong enough')+'\n\n'+
-    'Ranked hypotheses (not facts):\n'+lines(analysis.hypotheses,function(h,i){return (i+1)+'. '+h.hypothesis+' Confidence: '+h.confidence+'. Evidence: '+h.evidence.join('; ');},'none')+'\n\n'+
+    'Level 5 - Ranked root-cause hypotheses (not facts):\n'+lines(analysis.hypotheses,function(h,i){return (i+1)+'. '+h.hypothesis+' Confidence: '+h.confidence+'. Evidence: '+h.evidence.join('; ');},'none')+'\n\n'+
     'Priority ranking:\n'+lines(analysis.priorities,function(p,i){return (i+1)+'. '+p.name+' ['+p.type+'] score '+p.importanceScore+' confidence '+p.confidence;},'none');
 }

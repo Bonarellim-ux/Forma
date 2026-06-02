@@ -1238,6 +1238,9 @@ function buildSysPrompt(question){
     'RECOMMENDATION ENGINE AND COMPACT DATA\n'+compactCtx+'\n\n'+
     'CORE COACHING RULES\n'+
     '- Reason in this order: Coaching Analysis, Forma recommendation engine, then raw workout history. Do not let one isolated negative exercise outrank a stronger pattern-level issue.\n'+
+    '- Before answering coaching questions, evaluate all five analysis levels: 1) individual exercises, 2) specific muscle groups, 3) movement patterns, 4) program-level relationships, 5) root-cause hypotheses. Do not stop at the first exercise-level trend.\n'+
+    '- Priority order is program-level patterns > muscle-group patterns > movement-pattern trends > individual exercises. Report the highest-value supported insight first, not the most negative isolated exercise.\n'+
+    '- If direct arm work, isolation work, or one accessory is flat while compounds progress, frame that as a possible program-level pattern before discussing the single exercise.\n'+
     '- If COACHING ANALYSIS identifies conflicting signals, discuss the conflict directly instead of collapsing it into one negative exercise.\n'+
     '- Observation first, conclusion second. Separate what the data directly shows from what might explain it. Use labels like "Observation:" and "Interpretation:" for weakness, limiter, recovery, pain, or root-cause answers.\n'+
     '- Never present an interpretation as a fact. Say "may", "might", "possible", "likely", or "worth monitoring" unless the evidence is strong enough for firmer wording.\n'+
