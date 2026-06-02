@@ -26,6 +26,10 @@
   --r-md:14px;
   --r-lg:18px;
   --r-xl:22px;
+  /* ── Motion (Emil Kowalski easing curves; built-in easings are too weak) ── */
+  --ease-out:cubic-bezier(.23,1,.32,1);      /* entering UI: fast start, responsive */
+  --ease-in-out:cubic-bezier(.77,0,.175,1);  /* on-screen movement */
+  --ease-drawer:cubic-bezier(.32,.72,0,1);   /* iOS-style sheets/drawers */
 }
 
 /* ── Reset ───────────────────────────────────────────────────── */
@@ -187,7 +191,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
   cursor:pointer;font-family:inherit;
   transition:border-color .15s,color .15s;
 }
-.btn-dashed:hover{border-color:var(--blue);color:var(--blue)}
+@media (hover:hover) and (pointer:fine){.btn-dashed:hover{border-color:var(--blue);color:var(--blue)}}
 
 /* ── Number row (weight/rep input) ──────────────────────────── */
 .num-row{
@@ -411,8 +415,9 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 .home-week-label{font-size:11px;font-weight:800;letter-spacing:.07em;line-height:1;color:var(--muted)}
 .home-week-label.today{color:var(--white)}
 .home-week-label.selected{color:var(--blue)}
-.home-week-tile{width:100%;height:48px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;transition:transform .16s ease,box-shadow .16s ease}
+.home-week-tile{width:100%;height:48px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;transition:transform .16s var(--ease-out),box-shadow .16s var(--ease-out)}
 .home-week-tile.selected{transform:translateY(-2px);box-shadow:var(--sh-md)}
+.home-week-day:active .home-week-tile{transform:scale(.94)}
 .home-week-tile-text{font-size:10px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;text-align:center;letter-spacing:0}
 .home-week-indicator{width:18px;height:3px;border-radius:999px;background:var(--blue)}
 .home-week-indicator-spacer{height:3px}
@@ -439,11 +444,36 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 .tour-coach-actions{display:flex;gap:8px;margin-top:12px}
 .tour-coach-actions button{flex:1;border-radius:var(--r-sm);padding:12px 10px;font-size:12px;font-weight:800;font-family:inherit}
 
+/* ── Press feedback ──────────────────────────────────────────── */
+/* Any pressable surface should confirm it heard the tap. Subtle scale,
+   snappy ease-out. scale() also scales the label/icon — intentional. */
+.press{transition:transform .14s var(--ease-out)}
+.press:active{transform:scale(.97)}
+
+/* ── Bottom-sheet entrance ───────────────────────────────────── */
+/* A sheet is "occasional", so a standard entrance earns its place:
+   scrim fades in, panel slides up from its own bottom edge. */
+.sheet-overlay{background:rgba(9,19,28,.34);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);animation:scrimIn .26s var(--ease-out) both}
+.sheet-panel{animation:sheetUp .38s var(--ease-drawer) both;will-change:transform}
+
 /* ── Animations ──────────────────────────────────────────────── */
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes scrimIn{from{opacity:0}to{opacity:1}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+/* ── Reduced motion ──────────────────────────────────────────── */
+/* Keep opacity fades for comprehension; collapse movement to near-instant. */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+  .sheet-panel{animation:scrimIn .2s ease both}
+}
 
 /* ── Safe area fill (hidden) ─────────────────────────────────── */
 .safe-fill{display:none!important}
