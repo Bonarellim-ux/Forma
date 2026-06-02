@@ -517,10 +517,10 @@ function vLog(){
         '</div>'+
         (anyLogged?
           '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">'+
-            '<button onclick="finishWorkout()" style="background:var(--blue);color:#fff;border:none;border-radius:9px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.02em">Finish →</button>'+
+            '<button class="press" onclick="finishWorkout()" style="background:var(--blue);color:#fff;border:none;border-radius:9px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.02em">Finish →</button>'+
             '<button onclick="cancelWorkout()" style="background:none;border:none;color:#8892b0;font-size:10px;cursor:pointer;font-family:inherit;padding:0;letter-spacing:.02em;opacity:.7">✕ Cancel workout</button>'+
           '</div>':
-          '<button onclick="cancelWorkout()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#8892b0;border-radius:9px;padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:.02em">✕ Cancel</button>')+
+          '<button class="press" onclick="cancelWorkout()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#8892b0;border-radius:9px;padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:.02em">✕ Cancel</button>')+
       '</div>';
     })())+
 
@@ -559,8 +559,8 @@ function vExHistoryPanel(name){
   const isCardio=isCardioEx(name);
   const allTimeMax=history.length?Math.max.apply(null,history.map(function(h){return h.e1;})):0;
 
-  return '<div style="position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;justify-content:flex-end" onclick="S.exHistoryPanel=null;render()">'+
-    '<div ontouchstart="sheetTouchStart(event)" ontouchmove="sheetTouchMove(event)" ontouchend="sheetTouchEnd(\'exHistory\')" onclick="event.stopPropagation()" style="background:var(--s1);border-radius:20px 20px 0 0;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 -4px 30px rgba(0,0,0,.15)">'+
+  return '<div class="sheet-overlay" style="position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;justify-content:flex-end" onclick="S.exHistoryPanel=null;render()">'+
+    '<div class="sheet-panel" ontouchstart="sheetTouchStart(event)" ontouchmove="sheetTouchMove(event)" ontouchend="sheetTouchEnd(\'exHistory\')" onclick="event.stopPropagation()" style="background:var(--s1);border-radius:20px 20px 0 0;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 -4px 30px rgba(0,0,0,.15)">'+
 
       // Handle bar
       '<div style="display:flex;justify-content:center;padding:10px 0 0">'+
@@ -619,8 +619,8 @@ function vExHistoryPanel(name){
 
 function vExInstructPanel(){
   const name=S.exInstructPanel;
-  return '<div style="position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;justify-content:flex-end" onclick="S.exInstructPanel=null;S.exInstructText=null;S.exInstructChat=[];render()">'+
-    '<div ontouchstart="sheetTouchStart(event)" ontouchmove="sheetTouchMove(event)" ontouchend="sheetTouchEnd(\'exInstruct\')" onclick="event.stopPropagation()" style="background:var(--s1);border-radius:20px 20px 0 0;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 -4px 30px rgba(0,0,0,.15)">'+
+  return '<div class="sheet-overlay" style="position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;justify-content:flex-end" onclick="S.exInstructPanel=null;S.exInstructText=null;S.exInstructChat=[];render()">'+
+    '<div class="sheet-panel" ontouchstart="sheetTouchStart(event)" ontouchmove="sheetTouchMove(event)" ontouchend="sheetTouchEnd(\'exInstruct\')" onclick="event.stopPropagation()" style="background:var(--s1);border-radius:20px 20px 0 0;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 -4px 30px rgba(0,0,0,.15)">'+
       // Handle
       '<div style="display:flex;justify-content:center;padding:10px 0 0">'+
         '<div style="width:36px;height:4px;background:var(--border);border-radius:2px"></div>'+
@@ -670,7 +670,7 @@ function vExInstructPanel(){
           'oninput="S.exInstructDraft=this.value" '+
           'onkeydown="if(event.key===\'Enter\')sendExInstructChat()" '+
           'style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:22px;padding:9px 14px;font-size:13px;color:var(--white);outline:none;font-family:inherit">'+
-        '<button onclick="sendExInstructChat()" '+(S.exInstructChatLoading?'disabled':'')+
+        '<button class="press" onclick="sendExInstructChat()" '+(S.exInstructChatLoading?'disabled':'')+
           ' style="width:38px;height:38px;border-radius:50%;background:'+(S.exInstructChatLoading?'var(--s2)':'var(--blue)')+';border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">'+
           (S.exInstructChatLoading?
             '<div style="width:14px;height:14px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--blue);animation:spin 1s linear infinite"></div>':
@@ -724,8 +724,8 @@ function vFeedback(){
       '<div class="quick-summary-title">Great session</div>'+
       '<div class="quick-summary-lines">'+quick.slice(0,2).map(function(line){return '<div>'+escH(line)+'</div>';}).join('')+'</div>'+
       '<div class="quick-summary-actions">'+
-        '<button class="btn-ghost" onclick="go(\'home\')">Done</button>'+
-        '<button class="btn-accent" onclick="requestWorkoutDebrief()">Ask AI for full debrief</button>'+
+        '<button class="btn-ghost press" onclick="go(\'home\')">Done</button>'+
+        '<button class="btn-accent press" onclick="requestWorkoutDebrief()">Ask AI for full debrief</button>'+
       '</div>'+
     '</div>';
 

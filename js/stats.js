@@ -249,14 +249,14 @@ function vStrengthScore(){
               '<span style="font-size:10px;font-weight:700;color:'+r.levelColor+'">'+r.levelName+'</span>'+
               (r.val>0&&!r.isVol?'<span style="font-size:9px;color:var(--muted)">'+r.val+' '+uLbl()+'</span>':
                r.isVol&&r.val>0?'<span style="font-size:9px;color:var(--muted)">'+r.val+'×</span>':
-               '<span style="font-size:9px;color:var(--dim)">no data</span>')+
+               '<span style="font-size:9px;color:var(--muted)">no data</span>')+
               '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5"><path d="M9 18l6-6-6-6"/></svg>'+
             '</div>'+
           '</div>'+
           '<div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">'+
             '<div style="height:100%;width:'+r.score+'%;background:'+pg.color+';border-radius:2px;opacity:'+(r.val>0?1:0.2)+';transition:width .5s ease"></div>'+
           '</div>'+
-          (r.needed&&r.level<5?'<div style="font-size:9px;color:var(--dim);margin-top:3px">'+r.needed+' '+uLbl()+' to '+LEVELS[Math.min(r.level+1,5)]+'</div>':'')+
+          (r.needed&&r.level<5?'<div style="font-size:9px;color:var(--muted);margin-top:3px">'+r.needed+' '+uLbl()+' to '+LEVELS[Math.min(r.level+1,5)]+'</div>':'')+
         '</div>';
       }).join('')+
     '</div>';
@@ -356,8 +356,8 @@ function vScoreDetailPanel(r){
   };
   const tips=TIPS[sub.name]||['Train this muscle group 2× per week for best hypertrophy results','Focus on progressive overload: add weight or reps each session','Use a mix of compound and isolation exercises for complete development'];
 
-  return '<div style="position:fixed;inset:0;z-index:400;display:flex;flex-direction:column;justify-content:flex-end" onclick="S.scoreDetail=null;render()">'+
-    '<div ontouchstart="sheetTouchStart(event)" ontouchmove="sheetTouchMove(event)" ontouchend="sheetTouchEnd(\'scoreDetail\')" onclick="event.stopPropagation()" style="background:var(--s1);border-radius:20px 20px 0 0;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,.25)">'+
+  return '<div class="sheet-overlay" style="position:fixed;inset:0;z-index:400;display:flex;flex-direction:column;justify-content:flex-end" onclick="S.scoreDetail=null;render()">'+
+    '<div class="sheet-panel" ontouchstart="sheetTouchStart(event)" ontouchmove="sheetTouchMove(event)" ontouchend="sheetTouchEnd(\'scoreDetail\')" onclick="event.stopPropagation()" style="background:var(--s1);border-radius:20px 20px 0 0;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,.25)">'+
 
       // Handle
       '<div style="display:flex;justify-content:center;padding:10px 0 0">'+

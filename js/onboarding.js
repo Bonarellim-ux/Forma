@@ -127,7 +127,7 @@ function vOnboarding(){
           '</div>';
         }).join('')+
       '</div>'+
-      '<button onclick="S.obStep=1;render()" style="width:100%;max-width:320px;background:var(--blue);color:#fff;border:none;border-radius:14px;padding:17px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px">Get started →</button>'+
+      '<button class="press" onclick="S.obStep=1;render()" style="width:100%;max-width:320px;background:var(--blue);color:#fff;border:none;border-radius:14px;padding:17px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px">Get started →</button>'+
       '<button onclick="skipOnboarding()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;font-family:inherit;padding:12px;margin-top:4px">Skip for now</button>'+
     '</div>';
   }
@@ -275,7 +275,7 @@ function obProgressBar(pct,step){
 
 function obFooter(step, canNext){
   return '<div style="padding:16px 24px calc(24px + env(safe-area-inset-bottom))">'+
-    '<button id="ob-continue-btn" onclick="obNext()" '+(canNext?'':'disabled')+
+    '<button id="ob-continue-btn" class="press" onclick="obNext()" '+(canNext?'':'disabled')+
       ' style="width:100%;background:'+(canNext?'var(--blue)':'var(--border)')+';color:'+(canNext?'#fff':'var(--muted)')+';border:none;border-radius:14px;padding:17px;font-size:16px;font-weight:700;cursor:'+(canNext?'pointer':'default')+';font-family:inherit;transition:background .15s">'+
       'Continue →'+
     '</button>'+
@@ -642,8 +642,8 @@ function vFeatureTourPrompt(){
       '<div class="tour-title">Want a quick tour?</div>'+
       '<div class="tour-copy">I’ll show you how Forma gets more useful after you log workouts.</div>'+
       '<div style="display:flex;gap:8px;margin-top:18px">'+
-        '<button class="tour-primary" onclick="startFeatureTour()" style="flex:1;border-radius:12px;padding:14px;font-size:14px;font-weight:800">Show me</button>'+
-        '<button class="tour-secondary" onclick="skipFeatureTour()" style="flex:1;border-radius:12px;padding:14px;font-size:14px;font-weight:800">Skip</button>'+
+        '<button class="tour-primary press" onclick="startFeatureTour()" style="flex:1;border-radius:12px;padding:14px;font-size:14px;font-weight:800">Show me</button>'+
+        '<button class="tour-secondary press" onclick="skipFeatureTour()" style="flex:1;border-radius:12px;padding:14px;font-size:14px;font-weight:800">Skip</button>'+
       '</div>'+
     '</div>'+
   '</div>';
@@ -658,7 +658,7 @@ function vTourOverlay(){
         '<div class="tour-coach-title">You’re ready</div>'+
         '<div class="tour-coach-copy">Start logging. I get more useful every session.</div>'+
         '<div class="tour-coach-actions">'+
-          '<button class="tour-primary" onclick="finishFeatureTour()">Start using Forma</button>'+
+          '<button class="tour-primary press" onclick="finishFeatureTour()">Start using Forma</button>'+
         '</div>'+
       '</div>'+
     '</div>';
@@ -676,8 +676,8 @@ function vTourOverlay(){
       '<div class="tour-coach-copy">'+step.text+'</div>'+
       (step.example?'<div class="tour-coach-example">'+escH(step.example).replace(/\n/g,'<br>')+'</div>':'')+
       '<div class="tour-coach-actions">'+
-        '<button class="tour-secondary" onclick="tourBack()" '+(S.tourStep===0?'disabled style="opacity:.45"':'')+'>Back</button>'+
-        '<button class="tour-primary" onclick="tourNext()">'+(S.tourStep===steps.length-1?'Finish':'Next')+'</button>'+
+        '<button class="tour-secondary press" onclick="tourBack()" '+(S.tourStep===0?'disabled style="opacity:.45"':'')+'>Back</button>'+
+        '<button class="tour-primary press" onclick="tourNext()">'+(S.tourStep===steps.length-1?'Finish':'Next')+'</button>'+
       '</div>'+
     '</div>'+
   '</div>';

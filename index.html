@@ -333,7 +333,7 @@ function vHome(){
       // Rationale text
       '<div style="font-size:13px;color:var(--sub);line-height:1.65">'+escH(S.scheduleRationale.text)+'</div>'+
       // CTA
-      '<button onclick="navTo(\'setup\');S.setupTab=\'schedule\';render()" style="margin-top:12px;background:none;border:1px solid rgba(26,158,212,.3);color:var(--blue);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">View full schedule →</button>'+
+      '<button class="press" onclick="navTo(\'setup\');S.setupTab=\'schedule\';render()" style="margin-top:12px;background:none;border:1px solid rgba(26,158,212,.3);color:var(--blue);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">View full schedule →</button>'+
     '</div>';
   })():'';
   const selSp=S.schedule[selDay];
@@ -524,12 +524,12 @@ function vDayPreviewPanel(day){
           '<div style="font-size:12px;font-weight:600;color:'+col+';margin-top:2px">'+spLbl(sp)+'</div>'+
         '</div>'+
         '<div style="display:flex;gap:8px;align-items:center">'+
-          '<button onclick="editTemplate(\''+sp+'\')" style="background:var(--s2);border:1px solid var(--border2);color:var(--blue);border-radius:12px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Edit</button>'+
+          '<button class="press" onclick="editTemplate(\''+sp+'\')" style="background:var(--s2);border:1px solid var(--border2);color:var(--blue);border-radius:12px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">Edit</button>'+
           (!hasActiveWorkout||isToday?
-            '<button onclick="S.dayPreviewPanel=null;startWorkout(\''+sp+'\')" style="background:'+col+';border:none;color:#fff;border-radius:12px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">'+
+            '<button class="press" onclick="S.dayPreviewPanel=null;startWorkout(\''+sp+'\')" style="background:'+col+';border:none;color:#fff;border-radius:12px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">'+
               (isToday?'Start →':'Start '+DAY_FULL[day]+' →')+
             '</button>':
-            '<button onclick="S.dayPreviewPanel=null;previewDayWorkout(\''+day+'\')" style="background:var(--s2);border:1px solid var(--border2);color:var(--blue);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">'+
+            '<button class="press" onclick="S.dayPreviewPanel=null;previewDayWorkout(\''+day+'\')" style="background:var(--s2);border:1px solid var(--border2);color:var(--blue);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">'+
               'Open →'+
             '</button>')+
         '</div>'+
@@ -554,7 +554,7 @@ function vDayPreviewPanel(day){
             }).join('')+
           '</div>':
           '<div style="text-align:center;padding:30px 0;color:var(--muted);font-size:13px">No exercises set for '+spLbl(sp)+' yet.<br><br>'+
-            '<button onclick="navTo(\'setup\');S.setupTab=\'exercises\';S.editSplit=\''+sp+'\';S.dayPreviewPanel=null;render()" style="background:var(--s2);border:1px solid var(--border);color:var(--blue);border-radius:8px;padding:8px 16px;font-size:12px;cursor:pointer;font-family:inherit">Add exercises</button>'+
+            '<button class="press" onclick="navTo(\'setup\');S.setupTab=\'exercises\';S.editSplit=\''+sp+'\';S.dayPreviewPanel=null;render()" style="background:var(--s2);border:1px solid var(--border);color:var(--blue);border-radius:8px;padding:8px 16px;font-size:12px;cursor:pointer;font-family:inherit">Add exercises</button>'+
           '</div>')+
       '</div>'+
     '</div>'+
@@ -840,13 +840,13 @@ function vWorkoutDetail(){
 function _selPref(field,val,label){
   const on=S.profile[field]===val||S.profile[field]===String(val);
   const valJs=typeof val==='number'?val:'\''+val+'\'';
-  return '<button onclick="updateProfile(\''+field+'\','+valJs+')" style="background:'+(on?'var(--blue)':'var(--s1)')+';color:'+(on?'#fff':'var(--sub)')+';border:1px solid '+(on?'var(--blue)':'var(--border)')+';border-radius:8px;padding:7px 12px;font-size:11px;font-weight:'+(on?700:500)+';cursor:pointer;font-family:inherit">'+label+'</button>';
+  return '<button class="press" onclick="updateProfile(\''+field+'\','+valJs+')" style="background:'+(on?'var(--blue)':'var(--s1)')+';color:'+(on?'#fff':'var(--sub)')+';border:1px solid '+(on?'var(--blue)':'var(--border)')+';border-radius:8px;padding:7px 12px;font-size:11px;font-weight:'+(on?700:500)+';cursor:pointer;font-family:inherit">'+label+'</button>';
 }
 
 function vProfile(){
   const p=S.profile;
 
-  const aiSetupBtn='<button onclick="startOnboarding()" style="width:100%;background:var(--white);color:#fff;border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px">'+
+  const aiSetupBtn='<button class="press" onclick="startOnboarding()" style="width:100%;background:var(--white);color:#fff;border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:8px">'+
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A9ED4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>'+
     '<span>Set up with AI <span style="color:var(--blue)">→</span></span>'+
   '</button>';
@@ -952,14 +952,14 @@ function vSetup(){
       const sp=S.schedule[d];const isT=d===todayKey();
       const btns=allSplits().map(function(s){
         const col=spCol(s);const on=sp===s;
-        return '<button class="tag" onclick="setDay(\''+d+'\',\''+s+'\')" style="background:'+(on?hexA(col,.12):'none')+';border:1px solid '+(on?col:'var(--border)')+';color:'+(on?col:'var(--sub)')+';font-weight:'+(on?700:400)+';margin-bottom:3px">'+spLbl(s)+'</button>';
+        return '<button class="tag press" onclick="setDay(\''+d+'\',\''+s+'\')" style="background:'+(on?hexA(col,.12):'none')+';border:1px solid '+(on?col:'var(--border)')+';color:'+(on?col:'var(--sub)')+';font-weight:'+(on?700:400)+';margin-bottom:3px">'+spLbl(s)+'</button>';
       }).join('');
       return '<div class="card" style="margin-bottom:7px">'+
         '<span class="lbl" style="color:'+(isT?'var(--white)':'var(--sub)')+';font-weight:'+(isT?700:400)+'">'+DAY_FULL[d].toUpperCase()+(isT?' <em style="color:var(--blue);font-style:normal">&larr; TODAY</em>':'')+'</span>'+
         '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px">'+btns+'</div>'+
         '<div style="display:flex;gap:5px">'+
           '<input id="custom-'+d+'" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--white);outline:none;font-family:inherit" placeholder="Custom type (e.g. cardio, hiit, core...)" onkeydown="if(event.key===\'Enter\')setCustomDay(\''+d+'\')">'+
-          '<button onclick="setCustomDay(\''+d+'\')" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:700">Set</button>'+
+          '<button class="press" onclick="setCustomDay(\''+d+'\')" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:700">Set</button>'+
         '</div>'+
       '</div>';
     }).join('');
@@ -967,7 +967,7 @@ function vSetup(){
   } else {
     const splitBtns=allSplits().filter(function(s){return s!=='rest';}).map(function(s){
       const col=spCol(s);const on=S.editSplit===s;
-      return '<button class="tag" onclick="setEditSplit(\''+s+'\')" style="background:'+(on?hexA(col,.12):'none')+';border:1px solid '+(on?col:'var(--border)')+';color:'+(on?col:'var(--sub)')+';font-weight:'+(on?700:400)+';margin-bottom:3px">'+spLbl(s)+'</button>';
+      return '<button class="tag press" onclick="setEditSplit(\''+s+'\')" style="background:'+(on?hexA(col,.12):'none')+';border:1px solid '+(on?col:'var(--border)')+';color:'+(on?col:'var(--sub)')+';font-weight:'+(on?700:400)+';margin-bottom:3px">'+spLbl(s)+'</button>';
     }).join('');
     const exList=(S.splitEx[S.editSplit]||[]).map(function(ex,i){
       return '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--dim)">'+
@@ -980,7 +980,7 @@ function vSetup(){
       '<div style="margin-bottom:12px">'+(exList||'<div style="color:var(--muted);font-size:12px;padding:8px 0">No exercises yet.</div>')+'</div>'+
       '<div style="display:flex;gap:6px">'+
         '<input id="nex" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:12px;color:var(--white);outline:none;font-family:inherit" placeholder="Add exercise&hellip;" onkeydown="if(event.key===\'Enter\')addSplitEx()">'+
-        '<button onclick="addSplitEx()" style="background:var(--blue);color:#fff;border-radius:6px;padding:9px 14px;font-weight:800;font-size:11px;cursor:pointer;font-family:inherit;border:none">ADD</button>'+
+        '<button class="press" onclick="addSplitEx()" style="background:var(--blue);color:#fff;border-radius:6px;padding:9px 14px;font-weight:800;font-size:11px;cursor:pointer;font-family:inherit;border:none">ADD</button>'+
       '</div>';
   }
 
@@ -988,8 +988,8 @@ function vSetup(){
   const unitCard='<div class="card" style="margin-top:18px">'+
     '<span class="lbl" style="margin-bottom:12px">WEIGHT UNIT</span>'+
     '<div style="display:flex;background:var(--bg);border:1px solid var(--border);border-radius:9px;overflow:hidden">'+
-      '<button onclick="setUnit(\'kg\')" style="flex:1;padding:11px;font-size:13px;font-weight:'+(isKg?800:400)+';background:'+(isKg?'var(--blue)':'none')+';color:'+(isKg?'#fff':'var(--sub)')+';border:none;cursor:pointer;font-family:inherit">kg</button>'+
-      '<button onclick="setUnit(\'lbs\')" style="flex:1;padding:11px;font-size:13px;font-weight:'+(!isKg?800:400)+';background:'+(!isKg?'var(--blue)':'none')+';color:'+(!isKg?'#fff':'var(--sub)')+';border:none;border-left:1px solid var(--border);cursor:pointer;font-family:inherit">lbs</button>'+
+      '<button class="press" onclick="setUnit(\'kg\')" style="flex:1;padding:11px;font-size:13px;font-weight:'+(isKg?800:400)+';background:'+(isKg?'var(--blue)':'none')+';color:'+(isKg?'#fff':'var(--sub)')+';border:none;cursor:pointer;font-family:inherit">kg</button>'+
+      '<button class="press" onclick="setUnit(\'lbs\')" style="flex:1;padding:11px;font-size:13px;font-weight:'+(!isKg?800:400)+';background:'+(!isKg?'var(--blue)':'none')+';color:'+(!isKg?'#fff':'var(--sub)')+';border:none;border-left:1px solid var(--border);cursor:pointer;font-family:inherit">lbs</button>'+
     '</div>'+
     '<div style="font-size:11px;color:var(--muted);margin-top:8px">'+(isKg?'Showing weights in kilograms':'Showing weights in pounds &mdash; stored as kg')+'</div>'+
   '</div>';
@@ -1003,7 +1003,7 @@ function vSetup(){
       '<div style="font-size:13px;font-weight:800;color:var(--white)">'+(proxyReady?'Connected through Forma proxy':'Proxy setup needed')+'</div>'+
     '</div>'+
     '<div style="font-size:11px;color:var(--muted);line-height:1.45;margin-bottom:'+(hasOldKey?'10px':'0')+'">Anthropic API keys are stored only as encrypted Cloudflare Worker secrets. They are not saved in this browser or included in backups.</div>'+
-    (hasOldKey?'<button onclick="clearApiKey()" style="background:var(--s2);border:1px solid var(--border);color:var(--sub);border-radius:8px;padding:8px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Remove old browser key</button>':'')+
+    (hasOldKey?'<button class="press" onclick="clearApiKey()" style="background:var(--s2);border:1px solid var(--border);color:var(--sub);border-radius:8px;padding:8px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Remove old browser key</button>':'')+
     '<div id="key-err" style="color:#E05050;font-size:11px;margin-top:7px;min-height:14px"></div>'+
   '</div>';
 
@@ -1013,7 +1013,7 @@ function vSetup(){
         '<div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:2px">Feature Tour</div>'+
         '<div style="font-size:11px;color:var(--muted);line-height:1.4">Preview Forma with temporary demo data.</div>'+
       '</div>'+
-      '<button onclick="replayFeatureTour()" style="background:var(--s2);border:1px solid var(--border2);color:var(--blue);border-radius:9px;padding:9px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap">Replay feature tour</button>'+
+      '<button class="press" onclick="replayFeatureTour()" style="background:var(--s2);border:1px solid var(--border2);color:var(--blue);border-radius:9px;padding:9px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap">Replay feature tour</button>'+
     '</div>'+
   '</div>';
 
@@ -1029,8 +1029,8 @@ function vSetup(){
         '</div>'+
       '</div>'+
       '<div style="display:flex;gap:8px;margin-bottom:6px">'+
-        '<button onclick="exportData()" style="flex:1;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Export</button>'+
-        '<button onclick="document.getElementById(\'import-file\').click()" style="flex:1;background:var(--s1);color:var(--white);border:1px solid var(--border);border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Import</button>'+
+        '<button class="press" onclick="exportData()" style="flex:1;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Export</button>'+
+        '<button class="press" onclick="document.getElementById(\'import-file\').click()" style="flex:1;background:var(--s1);color:var(--white);border:1px solid var(--border);border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Import</button>'+
       '</div>'+
       '<input id="import-file" type="file" accept=".json" style="display:none" onchange="importData(this)">'+
       '<div id="import-status" style="font-size:11px;min-height:14px;color:var(--blue)"></div>'+

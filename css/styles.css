@@ -436,7 +436,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 .tour-secondary{background:var(--s1);border:1px solid var(--border);color:var(--sub);box-shadow:var(--sh-xs)}
 .tour-live-overlay{position:fixed;inset:0;z-index:10000;pointer-events:auto}
 .tour-live-scrim{position:absolute;inset:0;background:rgba(9,19,28,.22);backdrop-filter:saturate(1.1)}
-.tour-spotlight{position:absolute;border:2px solid rgba(14,123,196,.9);border-radius:var(--r-lg);box-shadow:0 0 0 9999px rgba(9,19,28,.16),0 12px 36px rgba(14,123,196,.22);transition:all .18s ease;pointer-events:none}
+.tour-spotlight{position:absolute;border:2px solid rgba(14,123,196,.9);border-radius:var(--r-lg);box-shadow:0 0 0 9999px rgba(9,19,28,.16),0 12px 36px rgba(14,123,196,.22);transition:top .18s var(--ease-out),left .18s var(--ease-out),width .18s var(--ease-out),height .18s var(--ease-out),border-radius .18s var(--ease-out);pointer-events:none}
 .tour-coach-card{position:absolute;left:18px;right:18px;bottom:calc(14px + env(safe-area-inset-bottom));background:var(--s1);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;box-shadow:var(--sh-lg)}
 .tour-coach-title{font-size:17px;font-weight:800;color:var(--white);letter-spacing:-.03em;line-height:1.15;margin-bottom:6px}
 .tour-coach-copy{font-size:13px;color:var(--sub);line-height:1.55}
