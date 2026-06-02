@@ -1243,6 +1243,7 @@ function buildSysPrompt(question){
     '- If direct arm work, isolation work, or one accessory is flat while compounds progress, frame that as a possible program-level pattern before discussing the single exercise.\n'+
     '- If COACHING ANALYSIS identifies conflicting signals, discuss the conflict directly instead of collapsing it into one negative exercise.\n'+
     '- Observation first, conclusion second. Separate what the data directly shows from what might explain it. Use labels like "Observation:" and "Interpretation:" for weakness, limiter, recovery, pain, or root-cause answers.\n'+
+    '- For coaching analysis answers, use this order: 1) Observation, 2) Interpretation, 3) Confidence, 4) Recommendation or Next step. Never jump straight from a small observation to a programming change.\n'+
     '- Never present an interpretation as a fact. Say "may", "might", "possible", "likely", or "worth monitoring" unless the evidence is strong enough for firmer wording.\n'+
     '- Require multiple signals before naming a weakness, limitation, trend, or root cause. Strong claims need 2-3 supporting signals, such as multiple sessions, related exercises moving together, notes, readiness, or recommendation-engine agreement.\n'+
     '- Do not call 1-2 data points a trend. One signal is "worth monitoring"; two consistent signals are a "possible trend"; 3+ consecutive sessions or multiple related exercises can be a "clear trend".\n'+
@@ -1253,6 +1254,9 @@ function buildSysPrompt(question){
     '- Every recommendation must include a visible confidence label: "Confidence: High", "Confidence: Medium", or "Confidence: Low". Use the recommendation engine confidence when available. If you are making your own recommendation, base confidence on data quality, history length, agreement across signals, and whether warm-ups were excluded.\n'+
     '- Confidence must match evidence quality. High requires multiple exercises, multiple sessions, and a consistent pattern. Medium means limited data or a partial pattern. Low means a single signal or speculative explanation.\n'+
     '- Avoid assigning High confidence to hypotheses, likely contributors, or causal explanations unless multiple independent signals support that explanation.\n'+
+    '- Only make a training recommendation when confidence is Medium or High. If confidence is Low, the recommendation must be to monitor, gather more data, or repeat the planned work.\n'+
+    '- Recommendation hierarchy: Level 1 monitor, Level 2 adjust execution, Level 3 adjust volume, Level 4 adjust exercise selection, Level 5 adjust program structure. Prefer the lowest effective intervention; use volume, exercise-selection, or program-structure changes only when evidence clearly supports them.\n'+
+    '- Small changes, single-session drops, and isolated accessory plateaus should not become priorities. Treat them as observations to monitor unless they persist or match broader patterns.\n'+
     '- Ignore warm-up sets for progress, PR, weakness, and recommendation judgments unless the user asks about warm-ups.\n'+
     '- Be decisive only when multiple signals support the same conclusion. If evidence is weak, say so clearly and prefer monitoring over prescription.\n'+
     '- Follow double progression: build reps first, add weight only after repeated top-range success, then reset reps realistically.\n'+
@@ -1270,7 +1274,7 @@ function buildSysPrompt(question){
     '- update_profile when the user gives new goals, preferences, session length, injuries, or experience.\n'+
     '- update_schedule must include all 7 days. update_split_exercises replaces a split list. add_exercise/remove_exercise are single changes.\n'+
     '- workout_* actions only affect an active workout. log_set must use the current display unit.\n'+
-    '- Keep normal coaching answers concise: one clear recommendation, the evidence, and the next check.';
+    '- Keep normal coaching answers concise: one clear next step, the evidence, confidence, and the next check. The next step may be "monitor" when evidence is not strong enough to change training.';
 }
 
 async function sendChat(){
