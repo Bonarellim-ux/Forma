@@ -85,18 +85,115 @@ function caRoleSummary(exercises,role){
   const avg=rows.length?rows.reduce(function(a,e){return a+e.trendScore;},0)/rows.length:0;
   return{role:role,rows:rows,avg:avg,trend:rows.length?caTrendFromScore(avg):'no_data'};
 }
-function caPattern(pattern,confidence,evidence,score,type){return{pattern:pattern,confidence:confidence,evidence:evidence.filter(Boolean),importanceScore:caRound(score||1,2),type:type||'pattern'};}
+function caPattern(pattern,confidence,evidence,score,type,meta){
+  const out={pattern:pattern,confidence:confidence,evidence:evidence.filter(Boolean),importanceScore:caRound(score||1,2),type:type||'pattern'};
+  if(meta)Object.keys(meta).forEach(function(k){out[k]=meta[k];});
+  return out;
+}
+function caRoleLabel(role){
+  const labels={
+    horizontal_press:'horizontal pressing',
+    incline_press:'incline pressing',
+    vertical_press:'vertical pressing',
+    elbow_extension:'triceps/elbow-extension work',
+    horizontal_pull:'horizontal pulling',
+    vertical_pull:'vertical pulling',
+    squat_pattern:'squat-pattern work',
+    hinge_pattern:'hinge-pattern work',
+    isolation:'isolation work',
+    other:'other work'
+  };
+  return labels[role]||role.replace(/_/g,' ');
+}
+function caTitleCase(s){s=String(s||'');return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
+function caRowsForRoles(exercises,roles,trend){
+  return exercises.filter(function(e){return roles.indexOf(e.role)!==-1&&(!trend||e.trend===trend);});
+}
+function caRoleEvidence(rows,word){
+  return rows.map(function(e){return e.exercise+' '+word+' ('+(e.e1rmChange>0?'+':'')+e.e1rmChange+' '+uLbl()+')';});
+}
+function caRoleListLabel(roles){
+  const labels=roles.map(caRoleLabel);
+  if(labels.length<=1)return labels[0]||'movement';
+  if(labels.length===2)return labels[0]+' and '+labels[1];
+  return labels.slice(0,-1).join(', ')+', and '+labels[labels.length-1];
+}
+function caContradictionConfidence(decliners,improvers){
+  const count=decliners.length+improvers.length;
+  const highConf=count>=4&&decliners.concat(improvers).every(function(e){return e.confidence!=='low';});
+  if(highConf)return 'high';
+  if(count>=3)return 'medium';
+  return 'low';
+}
+function caContradictionExplanations(spec){
+  const down=caRoleListLabel(spec.downRoles);
+  const up=caRoleListLabel(spec.upRoles);
+  const explanations=[
+    'The lagging movement may have an exercise-specific technique, setup, or skill bottleneck.',
+    'Recent training emphasis may be favoring '+up+' more than '+down+'.',
+    'Fatigue, soreness, or recovery timing may be affecting the lagging movement more than the improving one.',
+    'A joint, range-of-motion, or comfort issue may be changing mechanics on the lagging movement.'
+  ];
+  if(spec.group==='push')explanations.splice(1,0,'A triceps, shoulder, pec, or lockout bottleneck may be limiting one pressing pattern more than another.');
+  if(spec.group==='pull')explanations.splice(1,0,'Upper-back, lat, grip, or bracing demands may be limiting one pull pattern more than another.');
+  if(spec.group==='legs')explanations.splice(1,0,'Quad, posterior-chain, bracing, or depth demands may be separating squat and hinge progress.');
+  return explanations.slice(0,4);
+}
+function caAddContradiction(patterns,exercises,spec,baseScore){
+  const decliners=caRowsForRoles(exercises,spec.downRoles,'declining');
+  const stalled=caRowsForRoles(exercises,spec.downRoles,'stable').filter(function(e){return e.sessions>=3;});
+  const laggers=decliners.concat(stalled);
+  const improvers=caRowsForRoles(exercises,spec.upRoles,'improving');
+  if(!laggers.length||!improvers.length)return;
+  const declinerWeight=laggers.reduce(function(a,e){return a+e.priorityWeight;},0);
+  const improverWeight=improvers.reduce(function(a,e){return a+e.priorityWeight;},0);
+  const evidence=caRoleEvidence(decliners,'declining').concat(caRoleEvidence(stalled,'stalled')).concat(caRoleEvidence(improvers,'improving'));
+  const score=(baseScore||10)+Math.min(2,(declinerWeight+improverWeight)/8);
+  const lagWord=decliners.length?'declining':'stalled';
+  const actualDownRoles=[...new Set(laggers.map(function(e){return e.role;}))];
+  const actualUpRoles=[...new Set(improvers.map(function(e){return e.role;}))];
+  const upVerb=actualUpRoles.length===1?'is':'are';
+  const actualSpec={group:spec.group,downRoles:actualDownRoles,upRoles:actualUpRoles};
+  patterns.push(caPattern(caTitleCase(caRoleListLabel(actualDownRoles))+' '+lagWord+' while '+caRoleListLabel(actualUpRoles)+' '+upVerb+' improving.',caContradictionConfidence(laggers,improvers),evidence,score,'movement_contradiction',{
+    group:spec.group,
+    decliningRoles:actualDownRoles,
+    improvingRoles:actualUpRoles,
+    possibleExplanations:caContradictionExplanations(actualSpec)
+  }));
+}
+function caDetectContradictions(exercises,groups){
+  const patterns=[];
+  const specs=[
+    {group:'push',downRoles:['horizontal_press'],upRoles:['vertical_press','incline_press']},
+    {group:'push',downRoles:['vertical_press'],upRoles:['horizontal_press','incline_press']},
+    {group:'push',downRoles:['elbow_extension'],upRoles:['horizontal_press','incline_press','vertical_press']},
+    {group:'push',downRoles:['horizontal_press','incline_press','vertical_press'],upRoles:['elbow_extension']},
+    {group:'legs',downRoles:['squat_pattern'],upRoles:['hinge_pattern']},
+    {group:'legs',downRoles:['hinge_pattern'],upRoles:['squat_pattern']},
+    {group:'pull',downRoles:['horizontal_pull'],upRoles:['vertical_pull','hinge_pattern']},
+    {group:'pull',downRoles:['vertical_pull'],upRoles:['horizontal_pull','hinge_pattern']},
+    {group:'pull',downRoles:['hinge_pattern'],upRoles:['horizontal_pull','vertical_pull']}
+  ];
+  specs.forEach(function(spec){caAddContradiction(patterns,exercises,spec,10);});
+  Object.keys(groups).forEach(function(group){
+    const rows=exercises.filter(function(e){return e.group===group;});
+    const decliners=rows.filter(function(e){return e.trend==='declining';});
+    const improvers=rows.filter(function(e){return e.trend==='improving';});
+    const hasSpecific=patterns.some(function(p){return p.group===group&&p.evidence.some(function(ev){return decliners.concat(improvers).some(function(e){return ev.indexOf(e.exercise)!==-1;});});});
+    if(decliners.length&&improvers.length&&!hasSpecific){
+      patterns.push(caPattern(caTitleCase(group)+' has mixed signals: '+decliners.map(function(e){return e.exercise;}).slice(0,2).join(', ')+' declining while '+improvers.map(function(e){return e.exercise;}).slice(0,2).join(', ')+' improves.',caContradictionConfidence(decliners,improvers),caRoleEvidence(decliners,'declining').concat(caRoleEvidence(improvers,'improving')),9,'movement_contradiction',{
+        group:group,
+        decliningRoles:[...new Set(decliners.map(function(e){return e.role;}))],
+        improvingRoles:[...new Set(improvers.map(function(e){return e.role;}))],
+        possibleExplanations:caContradictionExplanations({group:group,downRoles:[...new Set(decliners.map(function(e){return e.role;}))],upRoles:[...new Set(improvers.map(function(e){return e.role;}))]})
+      }));
+    }
+  });
+  return patterns;
+}
 function caDetectPatterns(exercises,groups){
   const patterns=[];
-  const horizontal=caRoleSummary(exercises,'horizontal_press');
-  const vertical=caRoleSummary(exercises,'vertical_press');
-  const incline=caRoleSummary(exercises,'incline_press');
-  const elbowExtension=caRoleSummary(exercises,'elbow_extension');
-  const pressingDecliners=horizontal.rows.filter(function(e){return e.trend==='declining';}).concat(elbowExtension.rows.filter(function(e){return e.trend==='declining';}));
-  const upwardPressImprovers=vertical.rows.filter(function(e){return e.trend==='improving';}).concat(incline.rows.filter(function(e){return e.trend==='improving';}));
-  if(pressingDecliners.length>=1&&upwardPressImprovers.length>=1&&(horizontal.avg<=-.35||pressingDecliners.length>=2)){
-    patterns.push(caPattern('Horizontal pressing is declining while vertical or incline pressing improves.',pressingDecliners.length+upwardPressImprovers.length>=3?'high':'medium',pressingDecliners.map(function(e){return e.exercise+' declining ('+e.e1rmChange+' '+uLbl()+')';}).concat(upwardPressImprovers.map(function(e){return e.exercise+' improving (+'+Math.abs(e.e1rmChange)+' '+uLbl()+')';})),10,'pressing_pattern_issue'));
-  }
+  caDetectContradictions(exercises,groups).forEach(function(p){patterns.push(p);});
   const compounds=exercises.filter(function(e){return e.priorityWeight>=3;});
   const isolations=exercises.filter(function(e){return e.priorityWeight<=2&&(e.role==='isolation'||e.role==='elbow_extension');});
   const compAvg=compounds.length?compounds.reduce(function(a,e){return a+e.trendScore;},0)/compounds.length:0;
@@ -127,14 +224,15 @@ function caDetectPatterns(exercises,groups){
 }
 function caGenerateHypotheses(patterns,exercises){
   const hypotheses=[];
+  const seen={};
   function add(title,confidence,evidence,score){hypotheses.push({hypothesis:title,confidence:confidence,evidence:evidence.filter(Boolean),importanceScore:score||1});}
-  const pressing=patterns.find(function(p){return p.type==='pressing_pattern_issue';});
-  if(pressing){
-    const notes=String((S.profile&&S.profile.injuries)||'')+' '+String((S.profile&&S.profile.preferences)||'');
-    const mentionsShoulder=/shoulder|pec|elbow|wrist|chest/i.test(notes);
-    add('Shoulder, pec, elbow, or setup issue may be affecting horizontal pressing more than vertical pressing.',mentionsShoulder?'medium':'low',pressing.evidence.concat(mentionsShoulder?'Profile notes mention possible upper-body irritation.':'No saved pain note; treat this as a pattern to monitor.'),9);
-    add('Horizontal pressing technique or exercise-specific plateau may be limiting bench-style movements.','medium',pressing.evidence,8);
-  }
+  patterns.filter(function(p){return p.type==='movement_contradiction';}).slice(0,2).forEach(function(p){
+    (p.possibleExplanations||[]).slice(0,4).forEach(function(h,i){
+      if(seen[h])return;
+      seen[h]=true;
+      add(h,p.confidence!=='low'&&i<2?'medium':'low',p.evidence,10-i);
+    });
+  });
   const recovery=patterns.find(function(p){return p.type==='recovery_signal';});
   if(recovery)add('Recovery, sleep, stress, or accumulated fatigue may be contributing.','medium',recovery.evidence,7);
   patterns.filter(function(p){return p.type==='exercise_specific_issue';}).forEach(function(p){add('Exercise-specific issue rather than whole muscle-group weakness.','medium',p.evidence,6);});
@@ -163,6 +261,8 @@ function formatCoachingAnalysisForPrompt(analysis){
   if(!analysis)analysis=buildCoachingAnalysis();
   if(!analysis.exerciseAnalysis.length)return 'COACHING ANALYSIS: not enough working-set history yet.';
   function lines(arr,mapper,empty){return arr&&arr.length?arr.map(mapper).join('\n'):empty;}
+  const contradictions=analysis.patterns.filter(function(p){return p.type==='movement_contradiction';});
+  const otherPatterns=analysis.patterns.filter(function(p){return p.type!=='movement_contradiction';});
   const groupLines=Object.keys(analysis.muscleGroups).map(function(k){
     const g=analysis.muscleGroups[k];
     return k.toUpperCase()+': '+g.overall+' (avg '+g.avgTrendScore+') | decliners: '+(g.strongestDecliners.join(', ')||'none')+' | improvers: '+(g.strongestImprovers.join(', ')||'none');
@@ -171,7 +271,8 @@ function formatCoachingAnalysisForPrompt(analysis){
     'Top priority: '+(analysis.topPriority?analysis.topPriority.name+' | Confidence: '+analysis.topPriority.confidence:'none')+'\n\n'+
     'Exercise-level trends:\n'+lines(analysis.exerciseAnalysis.slice(0,12),function(e){return '- '+e.exercise+': '+e.trend+', e1RM change '+(e.e1rmChange>0?'+':'')+e.e1rmChange+' '+analysis.unit+', reps '+e.recentRepTrend+', confidence '+e.confidence+', role '+e.role;},'none')+'\n\n'+
     'Muscle-group analysis:\n'+groupLines+'\n\n'+
-    'Detected higher-level patterns:\n'+lines(analysis.patterns,function(p){return '- '+p.pattern+' Confidence: '+p.confidence+'. Evidence: '+p.evidence.join('; ');},'none strong enough')+'\n\n'+
+    'Contradictory movement patterns (rank before simple exercise declines):\n'+lines(contradictions,function(p){return '- Pattern: '+p.pattern+' Confidence: '+p.confidence+'. Evidence: '+p.evidence.join('; ')+'. Hypotheses, not facts: '+(p.possibleExplanations||[]).join('; ');},'none strong enough')+'\n\n'+
+    'Other higher-level patterns:\n'+lines(otherPatterns,function(p){return '- '+p.pattern+' Confidence: '+p.confidence+'. Evidence: '+p.evidence.join('; ');},'none strong enough')+'\n\n'+
     'Ranked hypotheses (not facts):\n'+lines(analysis.hypotheses,function(h,i){return (i+1)+'. '+h.hypothesis+' Confidence: '+h.confidence+'. Evidence: '+h.evidence.join('; ');},'none')+'\n\n'+
     'Priority ranking:\n'+lines(analysis.priorities,function(p,i){return (i+1)+'. '+p.name+' ['+p.type+'] score '+p.importanceScore+' confidence '+p.confidence;},'none');
 }
