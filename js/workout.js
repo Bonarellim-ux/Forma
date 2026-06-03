@@ -154,6 +154,35 @@ function startRestTimer(secs,exName){
   render();
 }
 
+// Circumference of the ring (r=20): 2*pi*20
+const _REST_C=125.664;
+// Builds the floating rest-timer markup. Shared by render() (app.js) so the
+// SVG ring is present from first paint; _restTick then updates it in place
+// (keeping the element alive so stroke-dashoffset transitions smoothly).
+function restTimerMarkup(){
+  if(!S.restTimer) return '';
+  const remaining=Math.ceil((S.restTimer.endTime-Date.now())/1000);
+  const done=remaining<=0;
+  const abs=Math.abs(remaining);
+  const m=Math.floor(abs/60),s=abs%60;
+  const disp=(done?'+':'')+m+':'+(s<10?'0':'')+s;
+  const pct=done?1:Math.max(0,Math.min(1,remaining/S.restTimer.total));
+  const off=_REST_C*(1-pct);
+  return '<div class="rest-timer'+(done?' done':'')+'" id="rest-timer">'+
+    '<div class="rt-ring">'+
+      '<svg viewBox="0 0 48 48" aria-hidden="true">'+
+        '<circle class="rt-track" cx="24" cy="24" r="20"></circle>'+
+        '<circle class="rt-prog" cx="24" cy="24" r="20" style="stroke-dashoffset:'+off+'"></circle>'+
+      '</svg>'+
+      '<span class="rt-time">'+disp+'</span>'+
+    '</div>'+
+    '<div class="rt-meta">'+
+      '<span class="rt-label">'+(done?'GO':'REST')+'</span>'+
+      '<button class="rt-btn" onclick="stopRestTimer()" aria-label="Stop rest timer">Skip</button>'+
+    '</div>'+
+  '</div>';
+}
+
 function _restTick(){
   if(!S.restTimer){clearInterval(_timerInterval);return;}
   const remaining=Math.ceil((S.restTimer.endTime-Date.now())/1000);
@@ -162,9 +191,11 @@ function _restTick(){
   const done=remaining<=0;
   const abs=Math.abs(remaining);
   const m=Math.floor(abs/60),s=abs%60;
-  el.className='rest-timer'+(done?' done':'');
-  el.querySelector('.rt-time').textContent=(done?'+':'')+m+':'+(s<10?'0':'')+s;
-  el.querySelector('span').textContent=done?'GO! ':'REST ';
+  el.classList.toggle('done',done);
+  const t=el.querySelector('.rt-time'); if(t) t.textContent=(done?'+':'')+m+':'+(s<10?'0':'')+s;
+  const lbl=el.querySelector('.rt-label'); if(lbl) lbl.textContent=done?'GO':'REST';
+  const prog=el.querySelector('.rt-prog');
+  if(prog){ const pct=done?1:Math.max(0,Math.min(1,remaining/S.restTimer.total)); prog.style.strokeDashoffset=_REST_C*(1-pct); }
   if(done&&!S.restTimer._fired){
     S.restTimer._fired=true;
     if(navigator.vibrate) navigator.vibrate([300,100,300]);
@@ -259,7 +290,8 @@ function vLog(){
         // Cardio: clean session rows
         '<div style="margin-bottom:12px">'+
           ex.sets.map(function(s,si){
-            return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--dim)">'+
+            const justLogged=S._justSet&&S._justSet.ei===i&&S._justSet.si===si;
+            return '<div class="'+(justLogged?'set-just-logged':'')+'" style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--dim)">'+
               '<span style="font-size:11px;color:var(--sub)">Session '+(si+1)+'</span>'+
               '<div style="display:flex;align-items:center;gap:12px">'+
                 '<span style="font-size:14px;font-weight:700;color:var(--white)" class="mono">'+s.w+'<span style="font-size:10px;font-weight:400;color:var(--sub);margin-left:2px">min</span></span>'+
@@ -272,10 +304,12 @@ function vLog(){
         // Strength: clean set rows
         '<div style="margin-bottom:12px">'+
           ex.sets.map(function(s,si){
-            const e=e1rm(toKg(s.w),s.r);
-            const prevBest=si>0?Math.max.apply(null,ex.sets.slice(0,si).map(function(ps){return e1rm(toKg(ps.w),ps.r);})):0;
+            // s.w is already stored in kg; e1rm expects kg (don't re-convert).
+            const e=e1rm(s.w,s.r);
+            const prevBest=si>0?Math.max.apply(null,ex.sets.slice(0,si).map(function(ps){return e1rm(ps.w,ps.r);})):0;
             const isPR=last&&e>last.e1||(!last&&si>0&&e>prevBest);
-            return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--dim)">'+
+            const justLogged=S._justSet&&S._justSet.ei===i&&S._justSet.si===si;
+            return '<div class="'+(justLogged?'set-just-logged':'')+(justLogged&&isPR&&!s.warmup?' set-pr-new':'')+'" style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--dim)">'+
               '<div style="display:flex;align-items:center;gap:6px">'+
                 '<button onclick="toggleSetWarmup('+i+','+si+')" title="Toggle warm-up" style="background:none;border:none;padding:0;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px">'+
                   '<span style="font-size:11px;color:'+(s.warmup?'#E8693A':'var(--sub)')+';font-family:var(--mono)">#'+(si+1)+'</span>'+
@@ -285,7 +319,7 @@ function vLog(){
               '</div>'+
               (s.w===0?'<span style="font-size:14px;font-weight:700;color:var(--white);font-family:var(--mono)">BW <span style="font-size:10px;font-weight:400;color:var(--sub)">&times; '+s.r+'</span></span>':'<span style="font-size:14px;font-weight:700;color:var(--white);font-family:var(--mono)">'+toDisp(s.w)+'<span style="font-size:10px;font-weight:400;color:var(--sub)"> '+uLbl()+'</span> &times; '+s.r+'</span>')+
               '<div style="display:flex;align-items:center;gap:6px">'+
-                (isPR&&!s.warmup?'<span style="font-size:9px;font-weight:800;color:#2DAA70;background:rgba(45,170,112,.1);border:1px solid rgba(45,170,112,.3);padding:1px 5px;border-radius:4px">PR</span>':'')+
+                (isPR&&!s.warmup?'<span class="pr-badge" style="font-size:9px;font-weight:800;color:#2DAA70;background:rgba(45,170,112,.1);border:1px solid rgba(45,170,112,.3);padding:1px 5px;border-radius:4px">PR</span>':'')+
                 '<button style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px;line-height:1" onclick="delSet('+i+','+si+')">&#215;</button>'+
               '</div>'+
             '</div>';
@@ -1267,12 +1301,24 @@ function logSet(i){
   const set={w:isCardio?dW:toKg(dW),r:r};
   if(ex.nextIsWarmup){set.warmup=true;ex.nextIsWarmup=false;} // auto-reset after logging
   S.workout.exercises[i].sets.push(set);
+  // Mark the just-logged set so the row animates in once (cleared after paint).
+  S._justSet={ei:i,si:S.workout.exercises[i].sets.length-1};
+  // PR = working set that beats the best e1RM from the last logged session.
+  let isNewPR=false;
+  if(!set.warmup&&!isCardio){
+    const lastBest=getLastSession(ex.name);
+    if(lastBest&&e1rm(set.w,set.r)>lastBest.e1) isNewPR=true;
+  }
+  // Haptic feedback (Android PWA now; iOS via Capacitor Haptics once wrapped).
+  if(navigator.vibrate) navigator.vibrate(isNewPR?[16,45,28]:11);
   // Auto-start rest timer with smart duration based on exercise type
   if(!set.warmup){
     const autoSecs=getAutoRestSecs(ex.name);
     startRestTimer(autoSecs,ex.name);
   }
   render();
+  // Clear the flag after paint so it never replays on later re-renders.
+  setTimeout(function(){S._justSet=null;},0);
 }
 function delSet(ei,si){if(!S.workout)return;flushLogInputs();S.workout.exercises[ei].sets.splice(si,1);render();}
 function toggleAddEx(){S.addingEx=!S.addingEx;render();}

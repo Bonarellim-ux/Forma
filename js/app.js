@@ -30,21 +30,8 @@ function render(){
     body='<div style="padding:32px 20px;color:#E05050;font-size:13px;line-height:1.6"><strong>Render error ('+S.view+'):</strong><br><pre style="white-space:pre-wrap;margin-top:8px;font-size:11px">'+err.stack+'</pre></div>';
   }
 
-  // Floating rest timer
-  let timerHtml='';
-  if(S.restTimer){
-    const remaining=Math.ceil((S.restTimer.endTime-Date.now())/1000);
-    const done=remaining<=0;
-    const abs=Math.abs(remaining);
-    const m=Math.floor(abs/60),s=abs%60;
-    const display=(done?'+':'')+m+':'+(s<10?'0':'')+s;
-    const pct=Math.max(0,Math.min(1,remaining/S.restTimer.total));
-    timerHtml='<div class="rest-timer'+(done?' done':'')+'" id="rest-timer">'+
-      '<span style="font-size:11px;font-weight:700;letter-spacing:.06em;opacity:.7">'+(done?'GO! ':'REST ')+'</span>'+
-      '<span class="rt-time">'+display+'</span>'+
-      '<button class="rt-btn" onclick="stopRestTimer()" style="color:inherit">&#215;</button>'+
-    '</div>';
-  }
+  // Floating rest timer (markup built in workout.js so the ring is shared)
+  let timerHtml=S.restTimer?restTimerMarkup():'';
 
   const el=document.querySelector('.content');
   const scrollY=el?el.scrollTop:0;
