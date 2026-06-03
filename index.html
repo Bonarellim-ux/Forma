@@ -311,8 +311,52 @@ function vHome(){
     const details=S.scheduleRationale.details||(S.profile&&S.profile.program_reasoning)||null;
     const days=DAYS.filter(function(d){return S.schedule[d]!=='rest';});
     const splitTypes=[...new Set(days.map(function(d){return spLbl(S.schedule[d]);}))];
-    const scoreRows=details&&details.candidates?details.candidates.slice(0,4):[];
-    const reasonSplits=details&&details.exerciseReasons?Object.keys(details.exerciseReasons).slice(0,3):[];
+    const selectedSplit=details&&details.selectedSplit?details.selectedSplit:splitTypes.join(' / ');
+    const splitInfo=(function(name){
+      const n=String(name||'').toLowerCase();
+      if(n.indexOf('ppl + upper/lower')>=0)return{
+        title:'How PPL + Upper/Lower works',
+        what:'The week starts with focused push, pull, and leg sessions, then adds upper/lower days for a second exposure.',
+        why:'It combines focused volume with enough weekly frequency to keep skills and muscle groups moving.',
+        recovery:'Each pattern gets space before it is trained hard again, so volume is spread across the week instead of crammed into one session.',
+        use:'Push hard on the main movement of each day, then use accessories to add volume without turning every set into a max effort.'
+      };
+      if(n.indexOf('upper/lower')>=0)return{
+        title:'How Upper/Lower works',
+        what:'Upper days train your pressing and pulling muscles together. Lower days train squat, hinge, glute, hamstring, calf, and core patterns.',
+        why:'This gives each muscle group repeated practice during the week without loading the same joints hard on back-to-back days.',
+        recovery:'The rest days between sessions give the muscles you trained time to recover while the next workout shifts focus.',
+        use:'Progress the main lifts steadily, keep accessories controlled, and treat rest days as part of the program.'
+      };
+      if(n==='ppl'||n.indexOf('push')>=0)return{
+        title:'How Push/Pull/Legs works',
+        what:'Push days train chest, shoulders, and triceps. Pull days train back and biceps. Leg days train lower-body patterns.',
+        why:'Grouping muscles by movement pattern keeps each session focused and makes fatigue easier to manage.',
+        recovery:'A muscle group usually gets a break while the next session trains a different pattern.',
+        use:'Keep the first lift of the day as the anchor, then let accessories add targeted volume.'
+      };
+      if(n.indexOf('full body')>=0)return{
+        title:'How Full Body works',
+        what:'Each workout touches the main movement patterns: push, pull, squat or lunge, hinge, and accessories.',
+        why:'This works especially well when training days are limited because each muscle gets frequent practice.',
+        recovery:'Volume is spread across sessions so no single day has to bury one muscle group.',
+        use:'Leave a little in reserve on most sets and build consistency before chasing lots of extra volume.'
+      };
+      if(n.indexOf('arnold')>=0)return{
+        title:'How this body-part split works',
+        what:'Chest/back, shoulders/arms, and legs each get dedicated sessions with more local focus.',
+        why:'This is useful when you have enough training days to specialize without rushing through every muscle group.',
+        recovery:'Related muscles get dedicated work, then several days before their next hard exposure.',
+        use:'Keep isolation work smooth and controlled so the higher weekly volume stays recoverable.'
+      };
+      return{
+        title:'How this split works',
+        what:'Your week is arranged around the training days, equipment, goal, and recovery constraints from onboarding.',
+        why:'The aim is to train important movement patterns often enough to progress without forcing the same stress every day.',
+        recovery:'Rest days and alternating session types are there to make the hard days productive.',
+        use:'Follow the planned days first, then adjust exercise choices later if your logs show a clear need.'
+      };
+    })(selectedSplit);
     return '<div style="background:linear-gradient(135deg,rgba(26,158,212,.10),rgba(26,158,212,.04));border:1px solid rgba(26,158,212,.25);border-radius:16px;padding:16px;margin-bottom:14px">'+
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">'+
         '<div style="display:flex;align-items:center;gap:8px">'+
@@ -336,30 +380,29 @@ function vHome(){
       '</div>'+
       // Rationale text
       '<div style="font-size:13px;color:var(--sub);line-height:1.65">'+escH(S.scheduleRationale.text)+'</div>'+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">'+
+        '<span style="background:rgba(26,158,212,.12);border:1px solid rgba(26,158,212,.24);color:var(--blue);padding:4px 9px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.03em">BEST FIT</span>'+
+        '<span style="background:var(--s2);border:1px solid var(--border);color:var(--sub);padding:4px 9px;border-radius:999px;font-size:10px;font-weight:700">'+escH(selectedSplit)+'</span>'+
+      '</div>'+
       (details?
         '<button class="press" onclick="S.programWhyOpen=!S.programWhyOpen;render()" style="width:100%;margin-top:12px;background:var(--s1);border:1px solid rgba(26,158,212,.25);color:var(--blue);border-radius:10px;padding:10px 12px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:space-between">'+
-          '<span>Why Forma chose this program</span><span style="font-size:14px">'+(S.programWhyOpen?'−':'+')+'</span>'+
+          '<span>'+escH(splitInfo.title)+'</span><span style="font-size:14px">'+(S.programWhyOpen?'−':'+')+'</span>'+
         '</button>'+
         (S.programWhyOpen?
           '<div style="margin-top:10px;background:rgba(255,255,255,.55);border:1px solid rgba(26,158,212,.14);border-radius:12px;padding:12px">'+
-            '<div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:8px">Split scoring</div>'+
-            scoreRows.map(function(row){
-              return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--dim)">'+
-                '<div style="min-width:0"><div style="font-size:12px;font-weight:700;color:var(--white)">'+escH(row.split)+'</div>'+
-                '<div style="font-size:10px;color:var(--muted);line-height:1.4">'+escH((row.reasons||[]).slice(0,2).join(' '))+'</div></div>'+
-                '<div style="font-size:13px;font-weight:800;color:var(--blue);font-family:var(--mono)">'+row.score+'</div>'+
-              '</div>';
-            }).join('')+
-            '<div style="font-size:11px;font-weight:800;color:var(--white);margin:12px 0 8px">Exercise choices</div>'+
-            reasonSplits.map(function(sp){
-              const rows=(details.exerciseReasons[sp]||[]).slice(0,3);
-              return '<div style="margin-bottom:9px">'+
-                '<div style="font-size:11px;font-weight:800;color:'+spCol(sp)+';margin-bottom:4px">'+spLbl(sp).toUpperCase()+'</div>'+
-                rows.map(function(r){
-                  return '<div style="font-size:11px;color:var(--sub);line-height:1.45;margin-bottom:4px"><strong style="color:var(--white)">'+escH(r.name)+'</strong>: '+escH(r.reason)+' '+escH(r.alternative||'')+'</div>';
-                }).join('')+
-              '</div>';
-            }).join('')+
+            '<div style="font-size:12px;font-weight:800;color:var(--white);margin-bottom:8px">'+escH(splitInfo.title)+'</div>'+
+            '<div style="display:flex;flex-direction:column;gap:9px">'+
+              [
+                ['Structure',splitInfo.what],
+                ['Why it works',splitInfo.why],
+                ['Recovery',splitInfo.recovery],
+                ['How to run it',splitInfo.use]
+              ].map(function(row){
+                return '<div style="font-size:11px;color:var(--sub);line-height:1.5">'+
+                  '<strong style="color:var(--white)">'+row[0]+':</strong> '+escH(row[1])+
+                '</div>';
+              }).join('')+
+            '</div>'+
           '</div>':''):'')+
       // CTA
       '<button class="press" onclick="navTo(\'setup\');S.setupTab=\'schedule\';render()" style="margin-top:12px;background:none;border:1px solid rgba(26,158,212,.3);color:var(--blue);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">View full schedule →</button>'+

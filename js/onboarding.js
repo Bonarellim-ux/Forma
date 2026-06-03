@@ -27,17 +27,7 @@ const OB_STEPS=[
       {val:'General fitness and health',  svg:'<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>'},
       {val:'Athletic performance',        svg:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>'},
     ]},
-  // 7 — priority muscles (multi-select)
-  {type:'choice', multi:true, key:'priority_muscles', title:'Any priority muscle groups?', subtitle:'Optional, but this helps Forma bias volume toward what matters most.',
-    options:[
-      {val:'Arms',        svg:'<path d="M7 14c2-5 5-7 10-7M6 18c4-1 7-3 10-7"/>'},
-      {val:'Upper Chest', svg:'<path d="M4 11c4-5 12-5 16 0M7 14h10"/>'},
-      {val:'Back',        svg:'<path d="M6 4v8a6 6 0 0012 0V4"/>'},
-      {val:'Shoulders',   svg:'<path d="M5 12h14M8 8l-3 4 3 4M16 8l3 4-3 4"/>'},
-      {val:'Quads',       svg:'<path d="M8 3v7l-2 11M16 3v7l2 11"/>'},
-      {val:'Glutes/Hamstrings', svg:'<path d="M7 4c4 5 5 10 3 17M17 4c-4 5-5 10-3 17"/>'},
-    ]},
-  // 8 — experience (single)
+  // 7 — experience (single)
   {type:'choice', multi:false, key:'experience', title:'How long have you been training?', subtitle:'Be honest — this shapes exercise selection.',
     options:[
       {val:'Just starting out (< 6 months)', svg:'<circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>'},
@@ -45,7 +35,7 @@ const OB_STEPS=[
       {val:'3–5 years',                      svg:'<circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>'},
       {val:'5+ years, advanced lifter',      svg:'<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>'},
     ]},
-  // 9 — days per week (single)
+  // 8 — days per week (single)
   {type:'choice', multi:false, key:'days_per_week', title:'How many days can you train?', subtitle:'Be realistic with your schedule.',
     options:[
       {val:'2 days per week', svg:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'},
@@ -54,7 +44,7 @@ const OB_STEPS=[
       {val:'5 days per week', svg:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'},
       {val:'6 days per week', svg:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'},
     ]},
-  // 10 — session length (single)
+  // 9 — session length (single)
   {type:'choice', multi:false, key:'session_duration', title:'How long are your sessions?', subtitle:'Determines how many exercises to programme.',
     options:[
       {val:'30–45 minutes',  svg:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'},
@@ -62,7 +52,7 @@ const OB_STEPS=[
       {val:'60–75 minutes',  svg:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'},
       {val:'75–90+ minutes', svg:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'},
     ]},
-  // 11 — equipment (multi-select)
+  // 10 — equipment (multi-select)
   {type:'choice', multi:true, key:'equipment', title:'What equipment do you have?', subtitle:'Select everything available to you.',
     options:[
       {val:'Full commercial gym',          svg:'<rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>'},
@@ -71,22 +61,22 @@ const OB_STEPS=[
       {val:'Cables & machines',            svg:'<rect x="2" y="2" width="20" height="20" rx="3"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="22"/>'},
       {val:'Bodyweight only',              svg:'<circle cx="12" cy="5" r="3"/><path d="M6.5 8h11l-1 7h-3l-1 5h-2l-1-5H7l-1-7z"/>'},
     ]},
-  // 12 — exercise preferences (text, optional)
+  // 11 — exercise preferences (text, optional)
   {type:'text', key:'exercise_preferences', title:'Any exercises you like?', subtitle:'Optional. I\'ll try to keep these when they fit your goal.', placeholder:'e.g. dumbbells, machines, pull-ups, no barbell bench…', keyboard:'text', optional:true},
-  // 13 — exercise dislikes (text, optional)
+  // 12 — exercise dislikes (text, optional)
   {type:'text', key:'exercise_dislikes', title:'Any exercises you dislike?', subtitle:'Optional. I\'ll avoid these when good alternatives exist.', placeholder:'e.g. burpees, back squat, overhead press…', keyboard:'text', optional:true},
-  // 14 — injuries (text, optional)
+  // 13 — injuries (text, optional)
   {type:'text', key:'injuries', title:'Any injuries or limitations?', subtitle:'The AI will work around these. Leave blank if none.', placeholder:'e.g. bad lower back, left shoulder pain…', keyboard:'text', optional:true},
-  // 15 — split preference (single)
-  {type:'choice', multi:false, key:'split_pref', title:'Training split preference?', subtitle:'The AI will pick the best one if you\'re unsure.',
+  // 14 — split preference (single)
+  {type:'choice', multi:false, key:'split_pref', title:'Training split preference?', subtitle:'If you\'re unsure, let Forma choose the split that best fits your goal, schedule, equipment, and recovery.', other:false,
     options:[
+      {val:'Let Forma decide', featured:true, note:'Recommended for most people', svg:'<path d="M12 2l1.8 5.5L19 9.3l-5.2 1.8L12 16.5l-1.8-5.4L5 9.3l5.2-1.8L12 2z"/><path d="M19 15l.9 2.6L22 18.5l-2.1.8L19 22l-.9-2.7-2.1-.8 2.1-.9L19 15z"/>'},
       {val:'Push / Pull / Legs',   svg:'<circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/>'},
       {val:'Upper / Lower',        svg:'<line x1="12" y1="2" x2="12" y2="22"/><path d="M2 12h20"/>'},
       {val:'Full Body',            svg:'<circle cx="12" cy="12" r="10"/>'},
       {val:'Bro split',            svg:'<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l7.78-7.78a5.5 5.5 0 000-7.78z"/>'},
-      {val:'Let the AI decide',    svg:'<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>'},
     ]},
-  // 16 — generating
+  // 15 — generating
   {type:'generating'},
 ];
 
@@ -216,9 +206,10 @@ function vOnboarding(){
   if(def.type==='choice'){
     const multi=!!def.multi;
     const arr=Array.isArray(S.obData[def.key])?S.obData[def.key]:(S.obData[def.key]?[S.obData[def.key]]:[]);
+    const showOther=def.other!==false;
     const otherSel=arr.includes('__other__');
     const otherText=S.obData[def.key+'_other']||'';
-    const canNext=arr.length>0&&(!otherSel||otherText.trim().length>0);
+    const canNext=arr.length>0&&(!showOther||!otherSel||otherText.trim().length>0);
     return '<div style="display:flex;flex-direction:column;min-height:90vh;padding:0">'+
       obProgressBar(pct,step)+
       '<div style="flex:1;padding:28px 24px 16px;display:flex;flex-direction:column;overflow-y:auto">'+
@@ -227,23 +218,28 @@ function vOnboarding(){
         '<div style="display:flex;flex-direction:column;gap:8px">'+
           def.options.map(function(opt){
             const sel=arr.includes(opt.val);
+            const featured=!!opt.featured;
             return '<button class="ob-choice-btn" data-key="'+def.key+'" data-val="'+escH(opt.val)+'" data-multi="'+multi+'" '+
               'onclick="obToggleChoice(\''+def.key+'\',\''+opt.val.replace(/'/g,"\\'")+'\',' +multi+')" '+
-              'style="display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:11px;'+
-              'border:2px solid '+(sel?'var(--blue)':'var(--border)')+';'+
-              'background:'+(sel?'rgba(26,158,212,.08)':'var(--s1)')+';'+
+              'style="display:flex;align-items:center;gap:12px;padding:'+(featured?'15px 14px':'13px 14px')+';border-radius:'+(featured?'14px':'11px')+';'+
+              'border:2px solid '+(sel||featured?'var(--blue)':'var(--border)')+';'+
+              'background:'+(sel?'rgba(26,158,212,.12)':featured?'linear-gradient(135deg,rgba(26,158,212,.14),rgba(26,158,212,.05))':'var(--s1)')+';'+
+              'box-shadow:'+(featured?'0 8px 24px rgba(26,158,212,.12)':'none')+';'+
               'cursor:pointer;font-family:inherit;text-align:left;width:100%;transition:border-color .1s">'+
-              '<div style="width:28px;height:28px;border-radius:7px;background:'+(sel?'rgba(26,158,212,.15)':'var(--s2)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
-                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="'+(sel?'var(--blue)':'var(--sub)')+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+opt.svg+'</svg>'+
+              '<div style="width:'+(featured?'34px':'28px')+';height:'+(featured?'34px':'28px')+';border-radius:'+(featured?'10px':'7px')+';background:'+(sel||featured?'rgba(26,158,212,.18)':'var(--s2)')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="'+(sel||featured?'var(--blue)':'var(--sub)')+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+opt.svg+'</svg>'+
               '</div>'+
-              '<span class="ob-choice-label" style="font-size:14px;font-weight:'+(sel?700:500)+';color:'+(sel?'var(--blue)':'var(--white)')+'">'+opt.val+'</span>'+
+              '<span class="ob-choice-label" style="display:flex;flex-direction:column;gap:2px;font-size:14px;font-weight:'+(sel||featured?800:500)+';color:'+(sel||featured?'var(--blue)':'var(--white)')+'">'+
+                '<span>'+opt.val+'</span>'+
+                (opt.note?'<span style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.02em">'+opt.note+'</span>':'')+
+              '</span>'+
               '<div class="ob-choice-check" style="margin-left:auto;flex-shrink:0;display:'+(sel?'flex':'none')+';width:18px;height:18px;border-radius:50%;background:var(--blue);align-items:center;justify-content:center">'+
                 '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'+
               '</div>'+
             '</button>';
           }).join('')+
           // Other option
-          '<button class="ob-choice-btn" data-key="'+def.key+'" data-val="__other__" data-multi="'+multi+'" '+
+          (showOther?'<button class="ob-choice-btn" data-key="'+def.key+'" data-val="__other__" data-multi="'+multi+'" '+
             'onclick="obToggleChoice(\''+def.key+'\',\'__other__\','+multi+')" '+
             'style="display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:11px;'+
             'border:2px solid '+(otherSel?'var(--blue)':'var(--border)')+';'+
@@ -256,10 +252,10 @@ function vOnboarding(){
             '<div class="ob-choice-check" style="margin-left:auto;flex-shrink:0;display:'+(otherSel?'flex':'none')+';width:18px;height:18px;border-radius:50%;background:var(--blue);align-items:center;justify-content:center">'+
               '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'+
             '</div>'+
-          '</button>'+
+          '</button>':'')+
           // Other text input — only shown when Other is selected
-          (otherSel?
-            '<input id="ob-other-input" type="text" placeholder="Describe your goal…" '+
+          (showOther&&otherSel?
+            '<input id="ob-other-input" type="text" placeholder="'+(def.key==='split_pref'?'Describe your preferred split…':'Describe your goal…')+'" '+
               'value="'+escH(otherText)+'" '+
               'oninput="S.obData[\''+def.key+'_other\']=this.value;obSyncChoiceContinue(\''+def.key+'\')" '+
               'style="width:100%;background:var(--s1);border:2px solid '+(otherText.trim()?'var(--blue)':'var(--border)')+';border-radius:11px;padding:13px 14px;font-size:14px;color:var(--white);outline:none;font-family:inherit;margin-top:4px">':
@@ -615,8 +611,7 @@ function obBuildProgram(d){
     exerciseReasons[split]=rows.map(function(r){return r;});
   });
   const daysText=p.daysPerWeek+' days/week';
-  const priText=p.priorityMuscles.length?p.priorityMuscles.join(', '):'no specific priority muscles';
-  const text='You selected '+p.primaryGoal+' as your main goal, '+daysText+', '+p.duration+' minute sessions, and '+(p.equipment||'your available equipment')+'. I chose '+best.split+' because it scored highest for goal fit, weekly frequency, recovery, and your priorities ('+priText+').';
+  const text='You selected '+p.primaryGoal+' as your main goal, '+daysText+', '+p.duration+' minute sessions, and '+(p.equipment||'your available equipment')+'. I chose '+best.split+' because it best fits your schedule, recovery needs, equipment, and training goal.';
   return{profile:p,candidates:candidates,selectedSplit:best.split,schedule:schedule,splitEx:splitEx,exerciseReasons:exerciseReasons,text:text};
 }
 
@@ -633,7 +628,7 @@ async function obGenerate(){
     S.profile.exercises_per_session=plan.profile.exercisesPerSession;
     S.profile.equipment=d.equipment||S.profile.equipment;
     S.profile.injuries=d.injuries||S.profile.injuries;
-    S.profile.preferences=[d.exercise_preferences?('Likes: '+d.exercise_preferences):'',d.exercise_dislikes?('Avoids: '+d.exercise_dislikes):'',d.priority_muscles?('Priority muscles: '+d.priority_muscles):''].filter(Boolean).join(' | ');
+    S.profile.preferences=[d.exercise_preferences?('Likes: '+d.exercise_preferences):'',d.exercise_dislikes?('Avoids: '+d.exercise_dislikes):''].filter(Boolean).join(' | ');
     S.profile.program_reasoning=plan;
     if(d.bodyweight)S.profile.bodyweight=parseFloat(d.bodyweight)||S.profile.bodyweight;
     if(d.height)S.profile.height=d.height;
@@ -643,7 +638,7 @@ async function obGenerate(){
     persist('ll_schedule',S.schedule);
     persist('ll_splits',S.splitEx);
     S.scheduleRationale={text:plan.text,dismissed:false,details:plan};
-    S.messages=[{role:'ai',text:'I built your program from your onboarding answers: '+plan.selectedSplit+' across '+plan.profile.daysPerWeek+' training days, with exercise choices matched to your goal, equipment, priorities, and limitations.',time:NOW(),actions:[]}];
+    S.messages=[{role:'ai',text:'I built your program from your onboarding answers: '+plan.selectedSplit+' across '+plan.profile.daysPerWeek+' training days, with exercise choices matched to your goal, equipment, schedule, and limitations.',time:NOW(),actions:[]}];
   }catch(e){
     console.warn('[obGenerate error]',e.message);
     // Apply what we can from the form data directly
