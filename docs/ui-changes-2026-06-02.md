@@ -191,9 +191,41 @@ browsers serve stale `app.js`/`styles.css` after edits. To verify changes
 live, hard-refresh or load from a fresh port. On GitHub Pages, hard-refresh
 after deploy to clear cached assets.
 
+## Pass 3 — Workout logging feel (commit `6dba348`)
+
+A "wow while logging" pass (Emil Kowalski principles), in `js/workout.js`,
+`js/app.js`, `css/styles.css`:
+
+- **Rest timer is now a circular ring** (SVG `stroke-dashoffset` draining
+  smoothly between ticks). Markup is centralized in **`restTimerMarkup()`**
+  (workout.js) and consumed by `render()` in app.js; `_restTick()` updates
+  the live nodes *in place* (don't re-create the `#rest-timer` element each
+  tick, or the `stroke-dashoffset` transition won't animate). Constant
+  `_REST_C = 125.664` is the ring circumference (r=20).
+- **Set-log feedback**: the just-logged set row animates in via the
+  `.set-just-logged` class, gated by a transient `S._justSet = {ei,si}` flag
+  set in `logSet()` and cleared on `setTimeout(0)` after paint — so it plays
+  once and never replays on later re-renders. Reuse this pattern for any
+  "animate only the thing that just changed" need under the full-rerender
+  model.
+- **Restrained PR moment**: `.set-pr-new` → row green-pulse (`prGlow`) +
+  `.pr-badge` pop (`prPop`). No confetti (gamification is an anti-reference).
+- **Haptics**: `navigator.vibrate` on log (short tap; distinct pattern on a
+  PR). Works on Android PWA now; **wire iOS via Capacitor Haptics** when the
+  app is wrapped.
+- **Bug fixed**: the set-row e1RM used `e1rm(toKg(s.w),…)` but `s.w` is
+  already kg, so imperial users double-converted and PR badges essentially
+  never showed. Now `e1rm(s.w,…)` (correct in both unit modes). If you touch
+  e1RM math elsewhere, remember **stored weights are already kg**.
+
+New follow-up: apply the ring + `restTimerMarkup` pattern is done; consider
+giving the other bottom sheets the `sheet-overlay`/`sheet-panel` motion
+(still open from Pass 2), and extend `.press` to workout/stats/setup buttons.
+
 ## Status
 
-Both commits are on local `main` and **not yet pushed** (push via GitHub
+Pass 1–2 commits (`ee098e0`, `80dcc17`, `f9c3a89`) are on `origin/main`.
+Pass 3 (`6dba348`) is on local `main`, **not yet pushed** (push via GitHub
 Desktop). Design context lives in `PRODUCT.md`. Skills used: `impeccable`
 (visual/UX) and `emil-design-eng` (motion) — both installed under
 `~/.claude/skills/`, not in the repo.
