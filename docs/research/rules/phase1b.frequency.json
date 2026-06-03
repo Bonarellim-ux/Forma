@@ -1,0 +1,312 @@
+[
+  {
+    "id": "phase1b.frequency.R0001",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "hypertrophy",
+    "population": "any",
+    "conditions": [
+      {
+        "field": "sessions_per_week.<muscle>",
+        "op": "<",
+        "value": 2
+      },
+      {
+        "field": "weekly_sets.<muscle>",
+        "op": ">=",
+        "ref": "evidence_range.hypertrophy.low"
+      },
+      {
+        "field": "recovery_status",
+        "op": "==",
+        "value": "adequate"
+      }
+    ],
+    "condition_label": "This muscle is trained less than twice per week while weekly volume is at least within the evidence-supported hypertrophy range and recovery is adequate.",
+    "action": {
+      "type": "change_frequency",
+      "target": "<muscle>",
+      "amount": 1,
+      "unit": "sessions_per_week"
+    },
+    "action_label": "Add one weekly session for this muscle by redistributing existing weekly sets.",
+    "priority": 95,
+    "evidence_ids": [
+      "phase1b.frequency.E0001",
+      "phase1b.frequency.E0002"
+    ],
+    "rule_note": "This rule changes frequency by redistributing existing volume, not by increasing total weekly sets.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1b.frequency.R0002",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "hypertrophy",
+    "population": "any",
+    "conditions": [
+      {
+        "field": "sessions_per_week.<muscle>",
+        "op": ">=",
+        "value": 2
+      },
+      {
+        "field": "sessions_per_week.<muscle>",
+        "op": "<=",
+        "value": 4
+      },
+      {
+        "field": "performance_trend",
+        "op": "==",
+        "value": "improving"
+      }
+    ],
+    "condition_label": "This muscle is already trained two to four times per week and performance is improving.",
+    "action": {
+      "type": "hold",
+      "target": "<muscle>",
+      "amount": 0,
+      "unit": "sessions_per_week"
+    },
+    "action_label": "Keep training frequency unchanged.",
+    "priority": 90,
+    "evidence_ids": [
+      "phase1b.frequency.E0002",
+      "phase1b.frequency.E0004"
+    ],
+    "rule_note": "Volume-equated evidence does not support changing frequency when progress is already occurring.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1b.frequency.R0003",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "hypertrophy",
+    "population": "any",
+    "conditions": [
+      {
+        "field": "weekly_sets.<muscle>",
+        "op": ">",
+        "ref": "evidence_range.hypertrophy.high"
+      },
+      {
+        "field": "sessions_per_week.<muscle>",
+        "op": "<",
+        "value": 3
+      },
+      {
+        "field": "recovery_status",
+        "op": "==",
+        "value": "impaired"
+      }
+    ],
+    "condition_label": "Weekly volume is high, frequency is low, and recovery is impaired.",
+    "action": {
+      "type": "change_frequency",
+      "target": "<muscle>",
+      "amount": 1,
+      "unit": "sessions_per_week"
+    },
+    "action_label": "Redistribute the same weekly sets across one additional session for this muscle.",
+    "priority": 105,
+    "evidence_ids": [
+      "phase1b.frequency.E0002",
+      "phase1b.frequency.E0007",
+      "phase1a.volume.E0005"
+    ],
+    "rule_note": "This rule cross-references Phase 1A high-volume evidence and uses frequency as a distribution tool, not as added workload.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1b.frequency.R0004",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "strength",
+    "population": "any",
+    "conditions": [
+      {
+        "field": "performance_trend",
+        "op": "==",
+        "value": "stalled"
+      },
+      {
+        "field": "sessions_per_week.<muscle>",
+        "op": "<",
+        "value": 3
+      },
+      {
+        "field": "recovery_status",
+        "op": "==",
+        "value": "adequate"
+      }
+    ],
+    "condition_label": "Strength performance is stalled, this muscle is trained fewer than three times per week, and recovery is adequate.",
+    "action": {
+      "type": "change_frequency",
+      "target": "<muscle>",
+      "amount": 1,
+      "unit": "sessions_per_week"
+    },
+    "action_label": "Add one weekly session for this muscle while maintaining current weekly volume.",
+    "priority": 92,
+    "evidence_ids": [
+      "phase1b.frequency.E0003"
+    ],
+    "rule_note": "The user model tracks muscle frequency rather than lift-specific practice, so this rule should be treated as a conservative strength-frequency proxy.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1b.frequency.R0005",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "general_fitness",
+    "population": "novice",
+    "conditions": [
+      {
+        "field": "training_age",
+        "op": "==",
+        "value": "novice"
+      },
+      {
+        "field": "adherence_rate",
+        "op": "<",
+        "value": 0.75
+      }
+    ],
+    "condition_label": "The user is a novice and adherence is below 75 percent.",
+    "action": {
+      "type": "hold",
+      "target": "<muscle>",
+      "amount": 0,
+      "unit": "sessions_per_week"
+    },
+    "action_label": "Do not increase training frequency yet.",
+    "priority": 65,
+    "evidence_ids": [
+      "phase1b.frequency.E0006",
+      "phase1b.frequency.E0008"
+    ],
+    "rule_note": "This is a conservative adherence-protection rule, not a strong frequency-science rule.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1b.frequency.R0006",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "hypertrophy",
+    "population": "advanced",
+    "conditions": [
+      {
+        "field": "training_age",
+        "op": "==",
+        "value": "advanced"
+      },
+      {
+        "field": "weekly_sets.<muscle>",
+        "op": ">",
+        "ref": "evidence_range.hypertrophy.high"
+      },
+      {
+        "field": "sessions_per_week.<muscle>",
+        "op": "<",
+        "value": 3
+      }
+    ],
+    "condition_label": "The user is advanced, weekly volume for this muscle is high, and the volume is concentrated into fewer than three sessions.",
+    "action": {
+      "type": "change_frequency",
+      "target": "<muscle>",
+      "amount": 1,
+      "unit": "sessions_per_week"
+    },
+    "action_label": "Spread this muscle's weekly sets across one additional session.",
+    "priority": 98,
+    "evidence_ids": [
+      "phase1b.frequency.E0007",
+      "phase1a.volume.E0005"
+    ],
+    "rule_note": "This is a fatigue and volume-distribution rule, not evidence that frequency independently increases hypertrophy.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1b.frequency.R0007",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "hypertrophy",
+    "population": "any",
+    "conditions": [
+      {
+        "field": "sessions_per_week.<muscle>",
+        "op": ">=",
+        "value": 4
+      },
+      {
+        "field": "performance_trend",
+        "op": "==",
+        "value": "declining"
+      },
+      {
+        "field": "recovery_status",
+        "op": "==",
+        "value": "impaired"
+      }
+    ],
+    "condition_label": "This muscle is trained at a high frequency, performance is declining, and recovery is impaired.",
+    "action": {
+      "type": "change_frequency",
+      "target": "<muscle>",
+      "amount": -1,
+      "unit": "sessions_per_week"
+    },
+    "action_label": "Reduce this muscle's training frequency by one weekly session while preserving or reviewing weekly volume separately.",
+    "priority": 108,
+    "evidence_ids": [
+      "phase1b.frequency.E0002",
+      "phase1b.frequency.E0004"
+    ],
+    "rule_note": "This rule is a conservative recovery-management heuristic rather than evidence that high frequency itself causes impaired recovery.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1b.frequency.R0008",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "any",
+    "population": "any",
+    "conditions": [
+      {
+        "field": "recovery_status",
+        "op": "==",
+        "value": "unknown"
+      },
+      {
+        "field": "performance_trend",
+        "op": "==",
+        "value": "declining"
+      }
+    ],
+    "condition_label": "Performance is declining but recovery status is unknown.",
+    "action": {
+      "type": "flag_for_review",
+      "target": "<muscle>",
+      "amount": 0,
+      "unit": "sessions_per_week"
+    },
+    "action_label": "Flag frequency for review before changing the number of weekly sessions.",
+    "priority": 112,
+    "evidence_ids": [
+      "phase1b.frequency.E0002",
+      "phase1b.frequency.E0008"
+    ],
+    "rule_note": "Avoids changing frequency when the reason for decline is unclear.",
+    "version": 1,
+    "date": "2026-06-03"
+  }
+]

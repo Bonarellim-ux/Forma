@@ -1,0 +1,288 @@
+[
+  {
+    "id": "phase1a.volume.R0001",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "hypertrophy",
+    "population": "any",
+    "conditions": [
+      {
+        "field": "weekly_sets.<muscle>",
+        "op": "<",
+        "ref": "evidence_range.hypertrophy.low"
+      },
+      {
+        "field": "recovery_status",
+        "op": "==",
+        "value": "adequate"
+      }
+    ],
+    "condition_label": "Weekly volume for this muscle is below the evidence-supported hypertrophy range and recovery is adequate.",
+    "action": {
+      "type": "increase_volume",
+      "target": "<muscle>",
+      "amount": 2,
+      "unit": "sets_per_week"
+    },
+    "action_label": "Add 2 weekly sets for this muscle.",
+    "priority": 100,
+    "evidence_ids": [
+      "phase1a.volume.E0001",
+      "phase1a.volume.E0002"
+    ],
+    "rule_note": "Runtime should eventually bind evidence_range.hypertrophy.low in a population-aware way, because novice effective volume may begin lower than the general 10 sets/week range.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1a.volume.R0002",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "hypertrophy",
+    "population": "any",
+    "conditions": [
+      {
+        "field": "weekly_sets.<muscle>",
+        "op": ">=",
+        "ref": "evidence_range.hypertrophy.high"
+      },
+      {
+        "field": "performance_trend",
+        "op": "==",
+        "value": "declining"
+      }
+    ],
+    "condition_label": "Weekly volume is at or above the high end of the evidence-supported hypertrophy range and performance is declining.",
+    "action": {
+      "type": "decrease_volume",
+      "target": "<muscle>",
+      "amount": 2,
+      "unit": "sets_per_week"
+    },
+    "action_label": "Reduce weekly volume by 2 sets for this muscle.",
+    "priority": 110,
+    "evidence_ids": [
+      "phase1a.volume.E0005"
+    ],
+    "rule_note": "Uses high-range evidence rather than MRV landmarks.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1a.volume.R0003",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "hypertrophy",
+    "population": "any",
+    "conditions": [
+      {
+        "field": "weekly_sets.<muscle>",
+        "op": ">=",
+        "ref": "evidence_range.hypertrophy.low"
+      },
+      {
+        "field": "weekly_sets.<muscle>",
+        "op": "<=",
+        "ref": "evidence_range.hypertrophy.high"
+      },
+      {
+        "field": "performance_trend",
+        "op": "==",
+        "value": "improving"
+      }
+    ],
+    "condition_label": "Weekly volume is inside the evidence-supported hypertrophy range and performance is improving.",
+    "action": {
+      "type": "hold",
+      "target": "<muscle>",
+      "amount": 0,
+      "unit": "sets_per_week"
+    },
+    "action_label": "Keep weekly volume unchanged for this muscle.",
+    "priority": 90,
+    "evidence_ids": [
+      "phase1a.volume.E0001",
+      "phase1a.volume.E0005"
+    ],
+    "rule_note": "",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1a.volume.R0004",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "hypertrophy",
+    "population": "any",
+    "conditions": [
+      {
+        "field": "weekly_sets.<muscle>",
+        "op": ">",
+        "ref": "evidence_range.hypertrophy.high"
+      },
+      {
+        "field": "recovery_status",
+        "op": "==",
+        "value": "impaired"
+      }
+    ],
+    "condition_label": "Weekly volume is above the evidence-supported hypertrophy range and recovery is impaired.",
+    "action": {
+      "type": "decrease_volume",
+      "target": "<muscle>",
+      "amount": 4,
+      "unit": "sets_per_week"
+    },
+    "action_label": "Reduce weekly volume by 4 sets for this muscle.",
+    "priority": 120,
+    "evidence_ids": [
+      "phase1a.volume.E0005"
+    ],
+    "rule_note": "This rule avoids using exact MRV thresholds because they are not validated. Runtime should eventually bind evidence_range.hypertrophy.high in a population-aware way.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1a.volume.R0005",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "strength",
+    "population": "novice",
+    "conditions": [
+      {
+        "field": "training_age",
+        "op": "==",
+        "value": "novice"
+      },
+      {
+        "field": "performance_trend",
+        "op": "==",
+        "value": "improving"
+      }
+    ],
+    "condition_label": "The user is a novice and strength performance is improving.",
+    "action": {
+      "type": "hold",
+      "target": "<muscle>",
+      "amount": 0,
+      "unit": "sets_per_week"
+    },
+    "action_label": "Keep strength volume unchanged while progress continues.",
+    "priority": 80,
+    "evidence_ids": [
+      "phase1a.volume.E0006"
+    ],
+    "rule_note": "Novices often progress with relatively low volume.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1a.volume.R0006",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "strength",
+    "population": "any",
+    "conditions": [
+      {
+        "field": "performance_trend",
+        "op": "==",
+        "value": "stalled"
+      },
+      {
+        "field": "recovery_status",
+        "op": "==",
+        "value": "adequate"
+      }
+    ],
+    "condition_label": "Strength performance has stalled and recovery is adequate.",
+    "action": {
+      "type": "increase_volume",
+      "target": "<muscle>",
+      "amount": 1,
+      "unit": "sets_per_week"
+    },
+    "action_label": "Add 1 weekly set for this muscle.",
+    "priority": 85,
+    "evidence_ids": [
+      "phase1a.volume.E0004"
+    ],
+    "rule_note": "This rule operates on weekly_sets.<muscle>, while the cited strength evidence parameter is sets_per_session. The rule uses E0004 directionally to support conservative volume increases after a strength plateau, but a future version should add a directly weekly strength-volume evidence range.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1a.volume.R0007",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "hypertrophy",
+    "population": "advanced",
+    "conditions": [
+      {
+        "field": "training_age",
+        "op": "==",
+        "value": "advanced"
+      },
+      {
+        "field": "performance_trend",
+        "op": "==",
+        "value": "stalled"
+      },
+      {
+        "field": "recovery_status",
+        "op": "==",
+        "value": "adequate"
+      }
+    ],
+    "condition_label": "The user is advanced, progress is stalled, and recovery is adequate.",
+    "action": {
+      "type": "increase_volume",
+      "target": "<muscle>",
+      "amount": 2,
+      "unit": "sets_per_week"
+    },
+    "action_label": "Add 2 weekly sets for this muscle.",
+    "priority": 95,
+    "evidence_ids": [
+      "phase1a.volume.E0007",
+      "phase1a.volume.E0001",
+      "phase1a.volume.E0003"
+    ],
+    "rule_note": "Advanced and trained lifters may need more carefully managed volume, but exact thresholds are not validated.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1a.volume.R0008",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "hypertrophy",
+    "population": "any",
+    "conditions": [
+      {
+        "field": "recovery_status",
+        "op": "==",
+        "value": "unknown"
+      },
+      {
+        "field": "performance_trend",
+        "op": "==",
+        "value": "declining"
+      }
+    ],
+    "condition_label": "Performance is declining but recovery status is unknown.",
+    "action": {
+      "type": "flag_for_review",
+      "target": "<muscle>",
+      "amount": 0,
+      "unit": "sets_per_week"
+    },
+    "action_label": "Flag this muscle's volume for review before changing sets.",
+    "priority": 115,
+    "evidence_ids": [
+      "phase1a.volume.E0005"
+    ],
+    "rule_note": "Avoids automatically increasing or decreasing volume when recovery information is missing.",
+    "version": 1,
+    "date": "2026-06-03"
+  }
+]

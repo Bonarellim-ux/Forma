@@ -1,0 +1,185 @@
+[
+  {
+    "id": "phase1b.frequency.E0001",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "hypertrophy",
+    "population": "any",
+    "muscle_group": null,
+    "statement": "When weekly resistance-training volume is not equated, training a muscle at least twice per week is generally associated with greater hypertrophy than training it once per week.",
+    "parameters": {
+      "value_min": 2,
+      "value_max": 3,
+      "unit": "sessions_per_week"
+    },
+    "tier": 1,
+    "confidence": 0.86,
+    "source_ids": [
+      "S0011"
+    ],
+    "evidence_note": "This effect may largely reflect higher weekly volume in higher-frequency groups rather than frequency as an independent driver.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1b.frequency.E0002",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "hypertrophy",
+    "population": "any",
+    "muscle_group": null,
+    "statement": "When weekly training volume is equated, resistance-training frequency does not appear to significantly or meaningfully affect muscle hypertrophy.",
+    "parameters": {
+      "value_min": 1,
+      "value_max": 3,
+      "unit": "sessions_per_week"
+    },
+    "tier": 1,
+    "confidence": 0.9,
+    "source_ids": [
+      "S0012",
+      "S0015",
+      "S0017"
+    ],
+    "evidence_note": "Frequency should usually be treated as a way to distribute weekly volume and manage session quality, not as an independent hypertrophy target.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1b.frequency.E0003",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "strength",
+    "population": "any",
+    "muscle_group": null,
+    "statement": "Higher resistance-training frequency can be associated with greater strength gains, but the effect is reduced or less consistent when weekly volume is equated.",
+    "parameters": {
+      "value_min": 2,
+      "value_max": 4,
+      "unit": "sessions_per_week"
+    },
+    "tier": 1,
+    "confidence": 0.82,
+    "source_ids": [
+      "S0013",
+      "S0014",
+      "S0015"
+    ],
+    "evidence_note": "Strength may benefit from more frequent exposure, but the available user model does not track exercise-specific skill practice.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1b.frequency.E0004",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "hypertrophy",
+    "population": "intermediate",
+    "muscle_group": null,
+    "statement": "In trained or moderately trained participants, distributing equivalent weekly volume across more sessions generally produces similar hypertrophy outcomes to lower-frequency training.",
+    "parameters": {
+      "value_min": 2,
+      "value_max": 4,
+      "unit": "sessions_per_week"
+    },
+    "tier": 3,
+    "confidence": 0.62,
+    "source_ids": [
+      "S0015",
+      "S0016",
+      "S0017"
+    ],
+    "evidence_note": "RCT evidence in trained participants is limited by small samples and short intervention lengths.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1b.frequency.E0005",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "hypertrophy",
+    "population": "any",
+    "muscle_group": null,
+    "statement": "Resistance exercise acutely increases muscle protein synthesis for approximately 24 to 48 hours, providing a mechanistic rationale for training a muscle more than once per week.",
+    "parameters": {
+      "value_min": 24,
+      "value_max": 48,
+      "unit": "hours"
+    },
+    "tier": 3,
+    "confidence": 0.62,
+    "source_ids": [
+      "S0018",
+      "S0019"
+    ],
+    "evidence_note": "Acute muscle protein synthesis data provide mechanistic rationale, but should not override longitudinal volume-equated outcome evidence.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1b.frequency.E0006",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "general_fitness",
+    "population": "novice",
+    "muscle_group": "full_body",
+    "statement": "Novices can make meaningful strength and hypertrophy progress with relatively low training frequencies, especially when total weekly volume and adherence are adequate.",
+    "parameters": {
+      "value_min": 2,
+      "value_max": 3,
+      "unit": "days_per_week"
+    },
+    "tier": 2,
+    "confidence": 0.74,
+    "source_ids": [
+      "S0004",
+      "S0010"
+    ],
+    "evidence_note": "This is a practical starting range, not a strict threshold for all goals or muscles.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1b.frequency.E0007",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "hypertrophy",
+    "population": "advanced",
+    "muscle_group": null,
+    "statement": "More advanced lifters may benefit practically from higher frequencies because high weekly volume can be distributed across sessions, but evidence does not show a clear independent hypertrophy effect of frequency when volume is equated.",
+    "parameters": {
+      "value_min": 2,
+      "value_max": 5,
+      "unit": "sessions_per_week"
+    },
+    "tier": 1,
+    "confidence": 0.8,
+    "source_ids": [
+      "S0012",
+      "S0015",
+      "S0016"
+    ],
+    "evidence_note": "Higher frequency is framed as volume distribution and fatigue management, not as a standalone hypertrophy requirement.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1b.frequency.E0008",
+    "phase_id": "phase1b.frequency",
+    "domain": "frequency",
+    "goal": "any",
+    "population": "any",
+    "muscle_group": null,
+    "statement": "Frequency prescriptions should account for adherence because a theoretically optimal frequency is less useful if the user cannot consistently complete it.",
+    "parameters": null,
+    "tier": 4,
+    "confidence": 0.3,
+    "source_ids": [
+      "S0004",
+      "S0010"
+    ],
+    "evidence_note": "Conservative practical inference only: the cited sources support practical resistance-training prescription, but they are not primarily adherence-specific frequency studies.",
+    "version": 1,
+    "date": "2026-06-03"
+  }
+]

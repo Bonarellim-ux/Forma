@@ -1,0 +1,8 @@
+- [FLAG] Frequency appears most useful as a way to distribute weekly volume, not as an independent hypertrophy driver when weekly volume is equated.
+- [FLAG] The user model tracks sessions_per_week.<muscle>, but does not track exercise-specific practice frequency. Strength rules therefore use muscle frequency as a conservative proxy for lift exposure.
+- [FLAG] Volume-equated frequency evidence in trained participants is limited by small samples and relatively short interventions.
+- [FLAG] Muscle protein synthesis evidence provides a mechanistic rationale for frequency, but acute MPS findings should not override longitudinal hypertrophy outcomes.
+- [FLAG] phase1b.frequency.E0005 is mechanistic evidence supporting frequency rationale but currently does not support a deterministic rule.
+- [FLAG] No phase1b rule should increase weekly volume directly. Volume changes belong to phase1a.volume rules.
+- [FLAG] Frequency recommendations may need population-aware runtime binding. Novices may progress with lower frequencies, while advanced lifters may use higher frequencies mainly to distribute larger weekly volumes.
+- [FLAG] Exercise selection, split design, periodization, progression, intensity, nutrition, and recovery interventions were excluded because they belong outside Phase 1B scope.

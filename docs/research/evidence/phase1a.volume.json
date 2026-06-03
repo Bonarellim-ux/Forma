@@ -1,0 +1,201 @@
+[
+  {
+    "id": "phase1a.volume.E0001",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "hypertrophy",
+    "population": "any",
+    "muscle_group": null,
+    "statement": "Higher weekly resistance-training set volume is associated with greater hypertrophy across a low-to-moderate range, with evidence of a dose-response relationship.",
+    "parameters": {
+      "value_min": 10,
+      "value_max": 20,
+      "unit": "sets_per_week"
+    },
+    "tier": 1,
+    "confidence": 0.9,
+    "source_ids": [
+      "S0001",
+      "S0002",
+      "S0008",
+      "S0009"
+    ],
+    "evidence_note": "The range is an approximate evidence-supported programming range, not an exact validated threshold.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1a.volume.E0002",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "hypertrophy",
+    "population": "any",
+    "muscle_group": null,
+    "statement": "Very low weekly volume can still increase hypertrophy, but tends to produce smaller hypertrophy gains than moderate weekly volume.",
+    "parameters": {
+      "value_min": 1,
+      "value_max": 9,
+      "unit": "sets_per_week"
+    },
+    "tier": 1,
+    "confidence": 0.86,
+    "source_ids": [
+      "S0001",
+      "S0002",
+      "S0010"
+    ],
+    "evidence_note": "",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1a.volume.E0003",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "hypertrophy",
+    "population": "intermediate",
+    "muscle_group": null,
+    "statement": "In trained men, higher weekly set volumes can enhance hypertrophy more than lower volumes, but strength improvements may not increase proportionally.",
+    "parameters": {
+      "value_min": 10,
+      "value_max": 30,
+      "unit": "sets_per_week"
+    },
+    "tier": 3,
+    "confidence": 0.62,
+    "source_ids": [
+      "S0005",
+      "S0006"
+    ],
+    "evidence_note": "RCT evidence in trained men supports hypertrophy benefits from higher volume, but results vary by muscle and design.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1a.volume.E0004",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "strength",
+    "population": "any",
+    "muscle_group": null,
+    "statement": "Multiple sets per exercise generally produce greater strength gains than a single set, but strength gains show diminishing returns as set volume rises.",
+    "parameters": {
+      "value_min": 2,
+      "value_max": 6,
+      "unit": "sets_per_session"
+    },
+    "tier": 1,
+    "confidence": 0.87,
+    "source_ids": [
+      "S0003",
+      "S0007",
+      "S0010"
+    ],
+    "evidence_note": "This evidence is expressed per session. Rules using weekly volume should treat it as directional support unless a weekly strength-volume range is added in a future version.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1a.volume.E0005",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "hypertrophy",
+    "population": "any",
+    "muscle_group": null,
+    "statement": "At high weekly volumes, hypertrophy benefits may plateau or become less predictable, indicating diminishing returns and possible recovery constraints.",
+    "parameters": {
+      "value_min": 20,
+      "value_max": 30,
+      "unit": "sets_per_week"
+    },
+    "tier": 1,
+    "confidence": 0.84,
+    "source_ids": [
+      "S0007",
+      "S0008",
+      "S0009"
+    ],
+    "evidence_note": "Exact upper limits vary by person, muscle group, proximity to failure, exercise selection, and recovery capacity.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1a.volume.E0006",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "strength",
+    "population": "novice",
+    "muscle_group": null,
+    "statement": "Novices can gain strength with lower resistance-training volume than more trained lifters, although multiple sets remain generally superior to single sets.",
+    "parameters": {
+      "value_min": 1,
+      "value_max": 3,
+      "unit": "sets_per_session"
+    },
+    "tier": 2,
+    "confidence": 0.76,
+    "source_ids": [
+      "S0004",
+      "S0003"
+    ],
+    "evidence_note": "",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1a.volume.E0007",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "hypertrophy",
+    "population": "advanced",
+    "muscle_group": null,
+    "statement": "More trained individuals may require higher or more carefully managed volume than novices to continue hypertrophy progress.",
+    "parameters": null,
+    "tier": 2,
+    "confidence": 0.74,
+    "source_ids": [
+      "S0004",
+      "S0005",
+      "S0006"
+    ],
+    "evidence_note": "Evidence supports training-age differences directionally, but exact advanced-lifter volume requirements are not firmly quantified.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1a.volume.E0008",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "hypertrophy",
+    "population": "any",
+    "muscle_group": null,
+    "statement": "Weekly volume is often a more useful volume target than per-session volume because the same weekly volume can be distributed across sessions.",
+    "parameters": null,
+    "tier": 1,
+    "confidence": 0.82,
+    "source_ids": [
+      "S0001",
+      "S0007",
+      "S0010"
+    ],
+    "evidence_note": "Frequency-specific recommendations belong to phase1b.frequency; this statement only supports tracking weekly volume.",
+    "version": 1,
+    "date": "2026-06-03"
+  },
+  {
+    "id": "phase1a.volume.E0009",
+    "phase_id": "phase1a.volume",
+    "domain": "volume",
+    "goal": "hypertrophy",
+    "population": "any",
+    "muscle_group": null,
+    "statement": "MEV, MAV, and MRV are practitioner volume-landmark constructs rather than thresholds directly validated by meta-analysis.",
+    "parameters": null,
+    "tier": 4,
+    "confidence": 0.25,
+    "source_ids": [],
+    "evidence_note": "Stored only as a flagged practitioner framework because the verified literature supports dose-response relationships and approximate ranges, not validated MEV, MAV, or MRV thresholds.",
+    "version": 1,
+    "date": "2026-06-03"
+  }
+]

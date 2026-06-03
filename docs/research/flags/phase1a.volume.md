@@ -1,0 +1,7 @@
+- [FLAG] MEV, MAV, and MRV were not stored as validated numeric thresholds — the verified literature supports dose-response relationships and approximate effective ranges, not exact per-muscle landmark values.
+- [FLAG] The hypertrophy evidence range currently uses a general population-level 10–20 sets/week range, but runtime binding should become population-aware. Applying the same evidence_range.hypertrophy.low threshold to novices may over-flag low-volume novice programs, since novice effective volume may begin lower than intermediate or advanced effective volume.
+- [FLAG] Frequency-specific prescriptions were not converted into Phase 1A rules — frequency belongs to phase1b.frequency.
+- [FLAG] Exact per-muscle volume targets were not produced — available evidence is not strong enough to assign validated volume ranges separately for every muscle_group in the v1 vocabulary.
+- [FLAG] Exercise selection, proximity to failure, periodization, nutrition, supplementation, injury, and medical recovery factors were excluded — these are outside Phase 1A scope under the contract.
+- [FLAG] Advanced-lifter volume requirements were represented cautiously — evidence suggests trained individuals may need more volume management, but exact advanced thresholds are not firmly validated.
+- [FLAG] Strength-volume evidence in E0004 is parameterized as sets_per_session, while R0006 operates on weekly_sets.<muscle>. R0006 should be treated as a conservative directional rule until a future weekly strength-volume evidence range is added.
