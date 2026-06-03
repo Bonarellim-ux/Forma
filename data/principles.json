@@ -1,0 +1,20 @@
+[
+  {
+    "id": "pr_demo_split_frequency_001",
+    "statement": "Choose splits that provide enough weekly practice for the user's goal while keeping total workload recoverable.",
+    "evidenceIds": ["ev_demo_frequency_001", "ev_demo_recovery_001"],
+    "confidence": "medium"
+  },
+  {
+    "id": "pr_demo_recovery_constraint_001",
+    "statement": "When session length, experience, or recovery capacity is limited, prefer simpler or lower-volume split structures.",
+    "evidenceIds": ["ev_demo_recovery_001"],
+    "confidence": "medium"
+  },
+  {
+    "id": "pr_demo_progression_skepticism_001",
+    "statement": "Do not make strong progression or recovery claims from a single performance change.",
+    "evidenceIds": ["ev_demo_progression_001"],
+    "confidence": "medium"
+  }
+]

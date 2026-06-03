@@ -68,9 +68,9 @@ const OB_STEPS=[
   // 13 — injuries (text, optional)
   {type:'text', key:'injuries', title:'Any injuries or limitations?', subtitle:'The AI will work around these. Leave blank if none.', placeholder:'e.g. bad lower back, left shoulder pain…', keyboard:'text', optional:true},
   // 14 — split preference (single)
-  {type:'choice', multi:false, key:'split_pref', title:'Training split preference?', subtitle:'If you\'re unsure, let Forma choose the split that best fits your goal, schedule, equipment, and recovery.', other:false,
+  {type:'choice', multi:false, key:'split_pref', title:'Training split preference?', subtitle:'If you\'re unsure, let Forma choose the split that best fits your goal, schedule, equipment, and recovery.',
     options:[
-      {val:'Let Forma decide', featured:true, note:'Recommended for most people', svg:'<path d="M12 2l1.8 5.5L19 9.3l-5.2 1.8L12 16.5l-1.8-5.4L5 9.3l5.2-1.8L12 2z"/><path d="M19 15l.9 2.6L22 18.5l-2.1.8L19 22l-.9-2.7-2.1-.8 2.1-.9L19 15z"/>'},
+      {val:'Let Forma decide', featured:true, svg:'<path d="M12 2l1.8 5.5L19 9.3l-5.2 1.8L12 16.5l-1.8-5.4L5 9.3l5.2-1.8L12 2z"/><path d="M19 15l.9 2.6L22 18.5l-2.1.8L19 22l-.9-2.7-2.1-.8 2.1-.9L19 15z"/>'},
       {val:'Push / Pull / Legs',   svg:'<circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/>'},
       {val:'Upper / Lower',        svg:'<line x1="12" y1="2" x2="12" y2="22"/><path d="M2 12h20"/>'},
       {val:'Full Body',            svg:'<circle cx="12" cy="12" r="10"/>'},
@@ -433,65 +433,250 @@ function obCanonicalProfile(d){
     splitPreference:d.split_pref||''
   };
 }
-function obSplitSequence(kind,days){
-  const map={
-    'Full Body':days<=2?['full','full']:days===3?['full','full','full']:['full','upper','lower','full','full','upper'].slice(0,days),
-    'Upper/Lower':days<=2?['upper','lower']:days===3?['upper','lower','full']:['upper','lower','upper','lower','full','upper'].slice(0,days),
-    'PPL':days<=3?['push','pull','legs']:['push','pull','legs','push','pull','legs'].slice(0,days),
-    'PPL + Upper/Lower':days<=4?['push','pull','legs','upper']:['push','pull','legs','upper','lower','push'].slice(0,days),
-    'Arnold':days<=3?['chest_back','shoulders_arms','legs']:['chest_back','shoulders_arms','legs','chest_back','shoulders_arms','legs'].slice(0,days),
-    'Custom Hybrid':days<=3?['full','upper','lower']:days===4?['upper','lower','priority','full']:['push','pull','legs','priority','upper','lower'].slice(0,days)
-  };
-  return map[kind]||map['Full Body'];
+function obSplitTemplates(){
+  return[
+    {id:'full_3',name:'Full Body x3',days:3,labels:['full','full','full'],goals:['strength','fitness','fat','athletic'],experience:['beginner','intermediate'],recovery:'low',minDuration:30,equipment:['all'],strengths:['High practice frequency for major movement patterns','Efficient fit for three training days','Simple progression with strong recovery margin'],tradeoffs:['Less per-session specialization than PPL','Exercise selection needs to stay focused']},
+    {id:'ul_full_3',name:'Upper / Lower / Full Body',days:3,labels:['upper','lower','full'],goals:['strength','muscle','fitness'],experience:['intermediate','advanced'],recovery:'medium',minDuration:45,equipment:['all'],strengths:['Blends focused upper/lower work with one full-body exposure','Good balance for mixed strength and muscle goals'],tradeoffs:['Less simple than Full Body x3','Weekly lower-body stress can be uneven']},
+    {id:'ul_2',name:'Upper/Lower x2',days:4,labels:['upper','lower','upper','lower'],goals:['strength','muscle','fitness','fat'],experience:['beginner','intermediate','advanced'],recovery:'medium',minDuration:45,equipment:['all'],strengths:['Clean four-day structure','Balances frequency and recovery','Easy to progress compounds and accessories'],tradeoffs:['Less movement-specific than PPL','Lower days can feel dense if recovery is poor']},
+    {id:'full_ul_4',name:'Full Body + Upper/Lower',days:4,labels:['full','upper','lower','full'],goals:['fitness','fat','athletic','strength'],experience:['beginner','intermediate'],recovery:'medium',minDuration:40,equipment:['all'],strengths:['More full-body practice without six training days','Good for general fitness and fat-loss consistency'],tradeoffs:['Less specialization than Upper/Lower x2','Can feel repetitive if exercise variety matters']},
+    {id:'ppl_ul_5',name:'PPL + Upper/Lower',days:5,labels:['push','pull','legs','upper','lower'],goals:['muscle','strength'],experience:['intermediate','advanced'],recovery:'high',minDuration:55,equipment:['gym','barbell','dumbbell','machine'],strengths:['Focused push/pull/legs days plus a second upper/lower exposure','Strong weekly volume for hypertrophy','Clean five-day schedule'],tradeoffs:['Higher weekly recovery demand','Less ideal for beginners or very short sessions']},
+    {id:'ul_full_5',name:'Upper/Lower + Full Body',days:5,labels:['upper','lower','upper','lower','full'],goals:['strength','fitness','fat','muscle'],experience:['beginner','intermediate','advanced'],recovery:'medium',minDuration:45,equipment:['all'],strengths:['High frequency without a complicated split','Good fit when strength practice and recovery both matter'],tradeoffs:['Less body-part specialization than PPL','The full-body day should stay moderate']},
+    {id:'ppl_2',name:'PPL x2',days:6,labels:['push','pull','legs','push','pull','legs'],goals:['muscle','strength'],experience:['intermediate','advanced'],recovery:'high',minDuration:55,equipment:['gym','barbell','dumbbell','machine'],strengths:['Two weekly exposures for push, pull, and legs','Clean six-day structure with no random extra day','Enough room for compounds plus accessories'],tradeoffs:['High weekly recovery demand','Can be too much for beginners or very short sessions']},
+    {id:'ul_3',name:'Upper/Lower x3',days:6,labels:['upper','lower','upper','lower','upper','lower'],goals:['strength','muscle'],experience:['intermediate','advanced'],recovery:'high',minDuration:50,equipment:['all'],strengths:['Very high lift practice frequency','Clean repeated structure across six days','Strong fit for strength-focused users with enough time'],tradeoffs:['Repeated lower days require good recovery','Less session variety than PPL x2']},
+    {id:'arnold_6',name:'Arnold Split',days:6,labels:['chest_back','shoulders_arms','legs','chest_back','shoulders_arms','legs'],goals:['muscle'],experience:['advanced'],recovery:'high',minDuration:60,equipment:['gym','dumbbell','machine'],strengths:['Dedicated body-part focus','High weekly accessory volume','Good for advanced hypertrophy specialization'],tradeoffs:['Less efficient for beginners','Less conservative for shoulder limitations']},
+    {id:'short_6',name:'Upper/Lower x3 Short Sessions',days:6,labels:['upper','lower','upper','lower','upper','lower'],goals:['fitness','fat','strength'],experience:['beginner','intermediate'],recovery:'medium',minDuration:30,equipment:['all'],strengths:['Six short sessions without pretending volume can be huge','Keeps each workout focused and recoverable','Better fit for limited session length'],tradeoffs:['Requires restraint on exercise count','Lower per-session volume than standard six-day splits']}
+  ];
 }
-function obScoreSplit(kind,p){
-  let score=5;
+function obGoalKey(p){
   const goal=String(p.primaryGoal+' '+p.secondaryGoal).toLowerCase();
+  if(goal.indexOf('strong')>=0||goal.indexOf('strength')>=0)return'strength';
+  if(goal.indexOf('muscle')>=0||goal.indexOf('bigger')>=0)return'muscle';
+  if(goal.indexOf('fat')>=0||goal.indexOf('lean')>=0)return'fat';
+  if(goal.indexOf('athletic')>=0)return'athletic';
+  return'fitness';
+}
+function obExpKey(p){
   const exp=String(p.experience).toLowerCase();
-  const pref=String(p.splitPreference).toLowerCase();
+  if(exp.indexOf('starting')>=0||exp.indexOf('beginner')>=0||exp.indexOf('<')>=0)return'beginner';
+  if(exp.indexOf('5+')>=0||exp.indexOf('advanced')>=0)return'advanced';
+  return'intermediate';
+}
+function obEquipKey(p){
   const eq=String(p.equipment).toLowerCase();
-  const lim=String(p.limitations.join(' ')).toLowerCase();
+  if(eq.indexOf('full')>=0||eq.indexOf('commercial')>=0)return'gym';
+  if(eq.indexOf('barbell')>=0||eq.indexOf('rack')>=0)return'barbell';
+  if(eq.indexOf('dumbbell')>=0)return'dumbbell';
+  if(eq.indexOf('cable')>=0||eq.indexOf('machine')>=0)return'machine';
+  if(eq.indexOf('bodyweight')>=0)return'bodyweight';
+  return'all';
+}
+function obRecoveryDemandValue(v){return v==='high'?3:v==='medium'?2:1;}
+function obProfileRecoveryCapacity(p){
+  const exp=obExpKey(p);
+  let cap=exp==='advanced'?3:exp==='intermediate'?2:1;
+  if(p.duration<45)cap-=.5;
+  if(p.limitations.length)cap-=.5;
+  return Math.max(1,cap);
+}
+function obTemplateScore(t,p){
+  const goal=obGoalKey(p);
+  const exp=obExpKey(p);
+  const equip=obEquipKey(p);
+  const pref=String(p.splitPreference||'').toLowerCase();
   const pri=p.priorityMuscles.map(function(m){return m.toLowerCase();}).join(' ');
+  const lim=String(p.limitations.join(' ')).toLowerCase();
+  let score=0;
   const reasons=[];
-  if(kind==='Full Body'){
-    score+=p.daysPerWeek<=3?1.8:-1.2;
-    if(exp.indexOf('starting')>=0)score+=1.2;
-    if(goal.indexOf('health')>=0||goal.indexOf('fat')>=0)score+=.7;
-    reasons.push('Strong when training days are limited and whole-body frequency matters.');
+  const tradeoffs=t.tradeoffs.slice();
+  if(t.days===p.daysPerWeek){score+=3;reasons.push('Matches your '+p.daysPerWeek+' available training days');}
+  else score-=4*Math.abs(t.days-p.daysPerWeek);
+  if(t.goals.indexOf(goal)>=0){score+=2.2;reasons.push('Strong fit for '+obGoalTheme(p).label);}
+  else score+=.4;
+  if(t.experience.indexOf(exp)>=0){score+=1.2;reasons.push('Appropriate for your training experience');}
+  else{
+    score-=1.2;
+    tradeoffs.unshift('Less ideal for your current training experience.');
   }
-  if(kind==='Upper/Lower'){
-    score+=p.daysPerWeek===4?1.6:p.daysPerWeek===3?1:p.daysPerWeek===5?.5:0;
-    if(goal.indexOf('strength')>=0)score+=.9;
-    reasons.push('Balances frequency, recovery, and simple progression.');
+  if(p.duration>=t.minDuration){score+=1;reasons.push('Fits '+p.duration+'-minute sessions');}
+  else{
+    score-=1.8;
+    tradeoffs.unshift('Your preferred sessions are short for this split.');
   }
-  if(kind==='PPL'){
-    score+=p.daysPerWeek>=5?1.2:p.daysPerWeek===3?.5:-.8;
-    if(goal.indexOf('muscle')>=0)score+=.9;
-    reasons.push('Gives clear movement focus but can underdose frequency at lower day counts.');
+  if(t.id==='short_6'&&p.duration>45){
+    score-=3;
+    tradeoffs.unshift('This short-session variant is unnecessary for your preferred session length.');
   }
-  if(kind==='PPL + Upper/Lower'){
-    score+=p.daysPerWeek===5?2.2:p.daysPerWeek===6?1.4:p.daysPerWeek===4?.4:-1.5;
-    if(goal.indexOf('muscle')>=0)score+=1;
-    if(pri.indexOf('arms')>=0||pri.indexOf('upper chest')>=0)score+=1;
-    reasons.push('Combines focused PPL days with extra weekly frequency for priority muscles.');
+  const demand=obRecoveryDemandValue(t.recovery);
+  const capacity=obProfileRecoveryCapacity(p);
+  if(capacity>=demand){score+=1.1;reasons.push('Recovery demand is realistic for your profile');}
+  else{
+    score-=1.6*(demand-capacity);
+    tradeoffs.unshift('Recovery demand may be high for your current profile.');
   }
-  if(kind==='Arnold'){
-    score+=p.daysPerWeek>=5?1.1:-1.4;
-    if(pri.indexOf('arms')>=0||pri.indexOf('shoulders')>=0)score+=.9;
-    if(lim.indexOf('shoulder')>=0)score-=.8;
-    reasons.push('Useful for upper-body specialization but less conservative for shoulders.');
+  if(t.equipment.indexOf('all')>=0||t.equipment.indexOf(equip)>=0){score+=.8;reasons.push('Works with '+(p.equipment||'your equipment'));}
+  else{
+    score-=1;
+    tradeoffs.unshift('Equipment fit is less direct.');
   }
-  if(kind==='Custom Hybrid'){
-    score+=p.priorityMuscles.length?1.3:.2;
-    if(lim)score+=.8;
-    if(p.daysPerWeek===5)score+=.5;
-    reasons.push('Best when priorities or limitations require a non-template structure.');
+  if(pri.indexOf('arms')>=0&&(t.id.indexOf('ppl')>=0||t.id.indexOf('arnold')>=0))score+=.5;
+  if(pri.indexOf('upper chest')>=0&&(t.id.indexOf('ppl')>=0||t.id.indexOf('arnold')>=0))score+=.4;
+  if(lim.indexOf('shoulder')>=0&&t.id.indexOf('arnold')>=0)score-=1.2;
+  if(pref&&pref.indexOf('let')<0){
+    if(pref.indexOf('push')>=0&&t.id.indexOf('ppl')>=0){score+=.8;reasons.push('Matches your split preference');}
+    if(pref.indexOf('upper')>=0&&t.id.indexOf('ul')>=0){score+=.8;reasons.push('Matches your split preference');}
+    if(pref.indexOf('full')>=0&&t.id.indexOf('full')>=0){score+=.8;reasons.push('Matches your split preference');}
+    if(pref.indexOf('bro')>=0&&t.id.indexOf('arnold')>=0){score+=1;reasons.push('Closest clean match to your body-part split preference');}
   }
-  if(pref&&pref.indexOf('let')<0&&kind.toLowerCase().indexOf(pref.split('/')[0].trim())>=0){score+=.7;reasons.push('Matches the split preference you selected.');}
-  if(pref.indexOf('bro')>=0&&kind==='Arnold'){score+=1.5;reasons.push('Closest match to the body-part split preference you selected.');}
-  if(eq.indexOf('bodyweight')>=0&&(kind==='PPL + Upper/Lower'||kind==='Arnold'))score-=1.2;
-  if(p.duration<=45&&(kind==='PPL + Upper/Lower'||kind==='Arnold'))score-=.5;
-  return{split:kind,score:Math.round(score*10)/10,reasons:reasons};
+  return Object.assign({},t,{score:Math.round(score*10)/10,reasons:reasons.slice(0,4),tradeoffs:tradeoffs.slice(0,3)});
+}
+function obGoalTheme(p){
+  const goal=String(p.primaryGoal+' '+p.secondaryGoal).toLowerCase();
+  if(goal.indexOf('strong')>=0||goal.indexOf('strength')>=0)return{
+    label:'strength progression',
+    phrase:'strength improves through frequent, repeatable practice of major movement patterns',
+    bullet:'Best aligned with strength progression'
+  };
+  if(goal.indexOf('muscle')>=0||goal.indexOf('bigger')>=0)return{
+    label:'muscle growth',
+    phrase:'muscle growth responds well to enough weekly volume, repeatable effort, and recoverable frequency',
+    bullet:'Supports weekly hypertrophy volume'
+  };
+  if(goal.indexOf('fat')>=0||goal.indexOf('lean')>=0)return{
+    label:'fat loss',
+    phrase:'fat loss training works best when lifting is consistent, recoverable, and paired with enough total weekly work',
+    bullet:'Keeps training consistent during fat loss'
+  };
+  if(goal.indexOf('athletic')>=0)return{
+    label:'athletic performance',
+    phrase:'athletic training benefits from balanced movement practice without letting one session create too much fatigue',
+    bullet:'Balances movement practice and recovery'
+  };
+  return{
+    label:'general fitness',
+    phrase:'general fitness improves best when the week is balanced, repeatable, and easy to recover from',
+    bullet:'Balances strength, muscle, and recovery'
+  };
+}
+function obDisplaySplitName(name){
+  const map={
+    'Upper/Lower + Full Body':'5-Day Upper/Lower Hybrid',
+    'Upper/Lower x3 Short Sessions':'Short-Session Upper/Lower'
+  };
+  return map[name]||name;
+}
+function obCoachSummary(template,p){
+  const name=obDisplaySplitName(template.name);
+  const goal=obGoalKey(p);
+  if(template.id==='ul_full_5')return name+' gives you frequent muscle stimulation while keeping the week manageable enough to recover well and stay consistent.';
+  if(template.id==='short_6')return name+' keeps each workout focused and realistic, so six training days do not turn into six high-volume sessions.';
+  if(template.id==='ppl_2')return name+' gives push, pull, and leg work two clean exposures per week with enough room for compounds and accessories.';
+  if(template.id==='ul_3')return name+' creates frequent upper- and lower-body practice while keeping each day focused.';
+  if(template.id==='full_3')return name+' keeps the week simple, repeatable, and productive by practicing the major movement patterns every workout.';
+  if(template.id==='ul_2')return name+' balances muscle-building volume with enough recovery between upper- and lower-body sessions.';
+  if(template.id==='ppl_ul_5')return name+' blends focused push, pull, and leg work with a second upper/lower exposure for more weekly volume.';
+  if(template.id==='arnold_6')return name+' gives each body area dedicated attention while spreading volume across the week.';
+  if(goal==='fat')return name+' keeps lifting consistent and recoverable while supporting overall weekly work.';
+  return name+' gives your week a clean structure that is easy to follow and adjust.';
+}
+function obConfidence(best,candidates,p){
+  const next=candidates[1]||{score:best.score};
+  const gap=best.score-next.score;
+  const answered=[p.primaryGoal,p.daysPerWeek,p.duration,p.equipment,p.experience].filter(Boolean).length;
+  if(best.score>=8&&gap>=.6&&answered>=5)return'High';
+  if(best.score>=7&&gap>=.3)return'High';
+  if(best.score>=6)return'Medium';
+  return'Low';
+}
+function obWhySummary(split,p){
+  const theme=obGoalTheme(p);
+  const rows=[
+    'Matches your '+p.daysPerWeek+' training day'+(p.daysPerWeek===1?'':'s'),
+    'Fits '+p.duration+'-minute sessions',
+    theme.bullet
+  ];
+  if(p.equipment)rows.push('Works with '+p.equipment);
+  if(p.limitations.length)rows.push('Accounts for your limitations');
+  return rows.slice(0,4);
+}
+function obExpectations(template,p){
+  const goal=obGoalKey(p);
+  if(template.id==='ul_full_5')return{
+    recovery:'Moderate recovery demand. Most users adapt within 2-3 weeks if the Full Body day stays controlled.',
+    progression:'Compound lifts usually improve before isolation exercises because they get more frequent practice.',
+    focus:'Prioritize the Upper and Lower days. Treat Full Body as supplemental volume, not a max-effort day.',
+    watchouts:'If recovery drops, reduce Full Body volume first before changing the whole split.',
+    tradeoffs:'Less specialized than a dedicated PPL split, but easier to recover from for many lifters.'
+  };
+  if(template.id==='short_6')return{
+    recovery:'Low-to-moderate per-session stress, but consistency matters because you train often.',
+    progression:'Expect technique and rep quality to improve first, then load progression as sessions feel easier.',
+    focus:'Keep workouts tight. Hit the main pattern, add a small amount of accessory work, then get out.',
+    watchouts:'Do not let short sessions become full-length workouts six days in a row.',
+    tradeoffs:'Lower per-session volume than standard six-day splits.'
+  };
+  if(template.id==='ppl_2')return{
+    recovery:'High weekly training demand. Recovery should be monitored closely during the first few weeks.',
+    progression:'Push, pull, and leg patterns each get two chances to progress every week.',
+    focus:'Keep the first compound lift of each day as the anchor, then use accessories to support it.',
+    watchouts:'Avoid turning every accessory into a max-effort set; fatigue can accumulate quickly.',
+    tradeoffs:'Less forgiving than four- or five-day splits if sleep, stress, or soreness slip.'
+  };
+  if(template.id==='ul_3')return{
+    recovery:'High frequency with manageable session focus, but lower-body recovery needs attention.',
+    progression:'Major lifts can progress quickly because practice frequency is high.',
+    focus:'Rotate hard and moderate efforts so repeated Upper and Lower days stay productive.',
+    watchouts:'If joints or lower back feel beat up, reduce lower-day accessory volume first.',
+    tradeoffs:'Less variety than PPL, but stronger movement-practice rhythm.'
+  };
+  if(template.id==='full_3')return{
+    recovery:'Low-to-moderate recovery demand with rest days naturally spaced between sessions.',
+    progression:'Movement skill and consistency usually improve before big load jumps.',
+    focus:'Make each workout balanced: one push, one pull, one squat/lunge, and one hinge pattern.',
+    watchouts:'Do not cram too many exercises into each session; quality matters more than variety.',
+    tradeoffs:'Less specialization than higher-day splits.'
+  };
+  if(template.id==='ul_2')return{
+    recovery:'Moderate recovery demand with clear separation between upper and lower stress.',
+    progression:'Compounds usually lead progress, with accessories improving more gradually.',
+    focus:'Treat each Upper and Lower day as a primary training day, not a filler workout.',
+    watchouts:'Lower days can get dense; keep hinge and squat volume recoverable.',
+    tradeoffs:'Less movement-specific than PPL, but simpler and more recoverable.'
+  };
+  return{
+    recovery:'Recovery demand should be manageable if effort and volume stay consistent.',
+    progression:'Expect main lifts and repeated movement patterns to improve first.',
+    focus:'Prioritize the main lift or movement pattern of each day before accessories.',
+    watchouts:'If performance drops across multiple workouts, reduce accessory volume first.',
+    tradeoffs:'Every split trades specialization, frequency, and recovery differently.'
+  };
+}
+function obSplitFit(split,p){
+  const theme=obGoalTheme(p);
+  const name=String(split||'');
+  const n=name.toLowerCase();
+  const days=p.daysPerWeek;
+  const duration=p.duration;
+  const equip=p.equipment||'your available equipment';
+  const goal=p.primaryGoal||'your goal';
+  const base='You selected '+goal+' as your primary goal, can train '+days+' day'+(days===1?'':'s')+' per week, prefer about '+duration+' minute sessions, and have access to '+equip+'. ';
+  if(n.indexOf('full body')>=0)return base+'Because '+theme.phrase+', '+name+' lets you train push, pull, squat, and hinge patterns multiple times per week while staying within your preferred session length.';
+  if(n.indexOf('upper/lower')>=0||n.indexOf('upper / lower')>=0)return base+'Because '+theme.phrase+', '+name+' separates upper- and lower-body stress so each session stays focused while still giving each area repeated weekly practice.';
+  if(n.indexOf('ppl')>=0)return base+'Because '+theme.phrase+', '+name+' gives push, pull, and leg patterns a clean weekly structure with no random extra day.';
+  if(n.indexOf('arnold')>=0)return base+'Because '+theme.phrase+', '+name+' gives dedicated attention to chest/back, shoulders/arms, and legs while spreading the volume across the week.';
+  return base+'Because '+theme.phrase+', '+name+' arranges your week around the schedule, equipment, and recovery constraints you gave Forma.';
+}
+function obTemplateAlternativeReason(row,best,p){
+  if(row.days!==p.daysPerWeek)return row.name+' does not match your '+p.daysPerWeek+' available training days as cleanly.';
+  if(row.score>=best.score-.4)return row.name+' was close, but '+best.name+' had the stronger overall fit for your goal, recovery, and session length.';
+  if(row.tradeoffs&&row.tradeoffs.length)return row.tradeoffs[0];
+  return row.name+' was considered, but '+best.name+' fit your onboarding profile more cleanly.';
+}
+function obValidatePlanText(text,template,p){
+  const lower=String(text||'').toLowerCase();
+  const selected=String(obDisplaySplitName(template.name)).toLowerCase();
+  if(lower.indexOf(selected)<0)return false;
+  const all=obSplitTemplates().map(function(t){return obDisplaySplitName(t.name).toLowerCase();}).filter(function(n){return n!==selected&&selected.indexOf(n)<0;});
+  return !all.some(function(n){return lower.indexOf(n)>=0;});
 }
 function obTrainingDays(days){
   const map={2:['mon','thu'],3:['mon','wed','fri'],4:['mon','tue','thu','fri'],5:['mon','tue','wed','thu','fri'],6:['mon','tue','wed','thu','fri','sat']};
@@ -596,10 +781,10 @@ function obExercisePool(split,p){
 }
 function obBuildProgram(d){
   const p=obCanonicalProfile(d);
-  const candidates=['Full Body','Upper/Lower','PPL','PPL + Upper/Lower','Arnold','Custom Hybrid'].map(function(k){return obScoreSplit(k,p);}).sort(function(a,b){return b.score-a.score;});
+  const candidates=obSplitTemplates().filter(function(t){return t.days===p.daysPerWeek;}).map(function(t){return obTemplateScore(t,p);}).sort(function(a,b){return b.score-a.score;});
   const best=candidates[0];
   SPLIT_LBL.full='Full Body';SPLIT_LBL.priority='Priority';SPLIT_LBL.chest_back='Chest & Back';SPLIT_LBL.shoulders_arms='Shoulders & Arms';
-  const seq=obSplitSequence(best.split,p.daysPerWeek);
+  const seq=best.labels.slice();
   const trainDays=obTrainingDays(p.daysPerWeek);
   const schedule={mon:'rest',tue:'rest',wed:'rest',thu:'rest',fri:'rest',sat:'rest',sun:'rest'};
   trainDays.forEach(function(day,i){schedule[day]=seq[i]||'full';});
@@ -610,9 +795,29 @@ function obBuildProgram(d){
     splitEx[split]=rows.map(function(r){return r.name;});
     exerciseReasons[split]=rows.map(function(r){return r;});
   });
-  const daysText=p.daysPerWeek+' days/week';
-  const text='You selected '+p.primaryGoal+' as your main goal, '+daysText+', '+p.duration+' minute sessions, and '+(p.equipment||'your available equipment')+'. I chose '+best.split+' because it best fits your schedule, recovery needs, equipment, and training goal.';
-  return{profile:p,candidates:candidates,selectedSplit:best.split,schedule:schedule,splitEx:splitEx,exerciseReasons:exerciseReasons,text:text};
+  let text=obCoachSummary(best,p);
+  if(!obValidatePlanText(text,best,p)){
+    text=obDisplaySplitName(best.name)+' gives your training week a clean structure that is easy to follow, recover from, and adjust.';
+  }
+  const alternatives=candidates.filter(function(row){return row.id!==best.id;}).slice(0,2).map(function(row){
+    return{split:row.name,reason:obTemplateAlternativeReason(row,best,p)};
+  });
+  return{
+    profile:p,
+    candidates:candidates,
+    selectedSplit:obDisplaySplitName(best.name),
+    internalSplit:best.name,
+    confidence:obConfidence(best,candidates,p),
+    fitSummary:obWhySummary(best.name,p),
+    benefits:best.strengths,
+    tradeoffs:best.tradeoffs,
+    expectations:obExpectations(best,p),
+    alternatives:alternatives,
+    schedule:schedule,
+    splitEx:splitEx,
+    exerciseReasons:exerciseReasons,
+    text:text
+  };
 }
 
 async function obGenerate(){

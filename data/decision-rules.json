@@ -1,0 +1,26 @@
+[
+  {
+    "id": "rule_demo_split_3day_general_001",
+    "condition": "IF daysAvailable = 3 AND goalPriority IN [general_fitness, strength] AND recoveryCapacity != low THEN Full Body x3 is eligible.",
+    "action": "Prefer a full-body split that repeats major movement patterns across the week.",
+    "userModelVariableIds": ["USER_MODEL_GOAL_PRIORITY", "USER_MODEL_RECOVERY_CAPACITY", "USER_MODEL_TRAINING_AGE_CATEGORY"],
+    "principleIds": ["pr_demo_split_frequency_001", "pr_demo_recovery_constraint_001"],
+    "confidence": "medium"
+  },
+  {
+    "id": "rule_demo_split_short_session_001",
+    "condition": "IF daysAvailable >= 5 AND sessionLengthCategory = short AND adherenceRisk != low THEN avoid high-volume split assumptions.",
+    "action": "Prefer a structure that keeps each session focused and avoids assuming high-volume training tolerance.",
+    "userModelVariableIds": ["USER_MODEL_SESSION_LENGTH_CATEGORY", "USER_MODEL_ADHERENCE_RISK", "USER_MODEL_RECOVERY_CAPACITY", "USER_MODEL_INJURY_CONSTRAINT_LEVEL"],
+    "principleIds": ["pr_demo_recovery_constraint_001"],
+    "confidence": "medium"
+  },
+  {
+    "id": "rule_demo_progression_monitor_001",
+    "condition": "IF performanceSignalCount = 1 OR evidenceWindow = single_session THEN avoid strong progression or recovery claims.",
+    "action": "Frame the result as worth monitoring instead of a strong trend or root-cause conclusion.",
+    "userModelVariableIds": ["USER_MODEL_GOAL_PRIORITY"],
+    "principleIds": ["pr_demo_progression_skepticism_001"],
+    "confidence": "medium"
+  }
+]

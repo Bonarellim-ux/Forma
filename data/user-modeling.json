@@ -1,0 +1,102 @@
+[
+  {
+    "id": "USER_MODEL_TRAINING_AGE_CATEGORY",
+    "description": "Estimated training age category used to scale complexity, volume tolerance, and exercise selection.",
+    "rawInputs": ["trainingExperience", "trainingHistory", "onboardingExperienceSelection"],
+    "values": ["novice", "beginner", "intermediate", "advanced"],
+    "inferenceLogic": [
+      "IF onboardingExperienceSelection contains 'Just starting out' THEN trainingAgeCategory = beginner",
+      "IF onboardingExperienceSelection contains '1-2 years' THEN trainingAgeCategory = intermediate",
+      "IF onboardingExperienceSelection contains '5+ years' OR 'advanced' THEN trainingAgeCategory = advanced"
+    ],
+    "confidence": "medium",
+    "evidenceIds": ["ev_demo_recovery_001"],
+    "relatedDecisionRuleIds": ["rule_demo_split_3day_general_001", "rule_demo_split_short_session_001"]
+  },
+  {
+    "id": "USER_MODEL_RECOVERY_CAPACITY",
+    "description": "Estimated ability to recover from weekly training stress.",
+    "rawInputs": ["sleepQuality", "stressLevel", "daysAvailable", "sessionLength", "trainingAge"],
+    "values": ["low", "moderate", "high"],
+    "inferenceLogic": [
+      "IF sleepQuality = poor OR stressLevel = high THEN recoveryCapacity = low",
+      "IF trainingAgeCategory = beginner AND daysAvailable >= 5 THEN recoveryCapacity = moderate or low",
+      "IF sleepQuality = good AND stressLevel = low AND trainingAgeCategory != beginner THEN recoveryCapacity = high"
+    ],
+    "confidence": "medium",
+    "evidenceIds": ["ev_demo_recovery_001"],
+    "relatedDecisionRuleIds": ["rule_demo_split_short_session_001"]
+  },
+  {
+    "id": "USER_MODEL_ADHERENCE_RISK",
+    "description": "Estimated risk that a recommendation is too complex, frequent, or time-consuming for the user to follow consistently.",
+    "rawInputs": ["daysAvailable", "sessionLength", "scheduleConsistency", "trainingAge", "statedPreference"],
+    "values": ["low", "moderate", "high"],
+    "inferenceLogic": [
+      "IF daysAvailable is high AND sessionLengthCategory = short THEN adherenceRisk = moderate",
+      "IF trainingAgeCategory = beginner AND split complexity is high THEN adherenceRisk = high",
+      "IF scheduleConsistency = stable AND sessionLengthCategory != short THEN adherenceRisk = low"
+    ],
+    "confidence": "medium",
+    "evidenceIds": ["ev_demo_recovery_001"],
+    "relatedDecisionRuleIds": ["rule_demo_split_short_session_001"]
+  },
+  {
+    "id": "USER_MODEL_SESSION_LENGTH_CATEGORY",
+    "description": "Classifies preferred workout duration so rules can avoid recommending structures that require more time than the user has.",
+    "rawInputs": ["sessionLength", "preferredWorkoutDuration"],
+    "values": ["short", "moderate", "long"],
+    "inferenceLogic": [
+      "IF sessionLength <= 45 minutes THEN sessionLengthCategory = short",
+      "IF sessionLength > 45 minutes AND sessionLength <= 75 minutes THEN sessionLengthCategory = moderate",
+      "IF sessionLength > 75 minutes THEN sessionLengthCategory = long"
+    ],
+    "confidence": "high",
+    "evidenceIds": ["ev_demo_recovery_001"],
+    "relatedDecisionRuleIds": ["rule_demo_split_short_session_001"]
+  },
+  {
+    "id": "USER_MODEL_EQUIPMENT_ACCESS_LEVEL",
+    "description": "Classifies equipment access so exercise and split recommendations match what the user can actually perform.",
+    "rawInputs": ["equipmentSelection", "exercisePreferences", "exerciseDislikes"],
+    "values": ["bodyweight_only", "limited_home", "free_weights", "machines", "full_gym"],
+    "inferenceLogic": [
+      "IF equipmentSelection contains 'Bodyweight only' THEN equipmentAccessLevel = bodyweight_only",
+      "IF equipmentSelection contains 'Dumbbells' AND NOT 'Full commercial gym' THEN equipmentAccessLevel = limited_home",
+      "IF equipmentSelection contains 'Full commercial gym' THEN equipmentAccessLevel = full_gym"
+    ],
+    "confidence": "high",
+    "evidenceIds": ["ev_demo_frequency_001"],
+    "relatedDecisionRuleIds": ["rule_demo_split_3day_general_001"]
+  },
+  {
+    "id": "USER_MODEL_GOAL_PRIORITY",
+    "description": "Normalized primary training priority derived from the user's selected goals.",
+    "rawInputs": ["primaryGoal", "secondaryGoal", "goalSelection"],
+    "values": ["strength", "hypertrophy", "fat_loss", "general_fitness", "athletic_performance"],
+    "inferenceLogic": [
+      "IF first selected goal contains 'stronger' THEN goalPriority = strength",
+      "IF first selected goal contains 'muscle' OR 'bigger' THEN goalPriority = hypertrophy",
+      "IF first selected goal contains 'fat' OR 'leaner' THEN goalPriority = fat_loss",
+      "IF first selected goal contains 'general fitness' THEN goalPriority = general_fitness"
+    ],
+    "confidence": "high",
+    "evidenceIds": ["ev_demo_frequency_001", "ev_demo_progression_001"],
+    "relatedDecisionRuleIds": ["rule_demo_split_3day_general_001", "rule_demo_progression_monitor_001"]
+  },
+  {
+    "id": "USER_MODEL_INJURY_CONSTRAINT_LEVEL",
+    "description": "Estimated degree to which pain, injury, or movement limitations should constrain exercise selection and loading aggressiveness.",
+    "rawInputs": ["injuries", "painLimitations", "exerciseDislikes"],
+    "values": ["none", "minor", "moderate", "major"],
+    "inferenceLogic": [
+      "IF injuries is blank THEN injuryConstraintLevel = none",
+      "IF injuries contains mild discomfort THEN injuryConstraintLevel = minor",
+      "IF injuries contains pain during major movement patterns THEN injuryConstraintLevel = moderate",
+      "IF injuries describes medical restriction or severe pain THEN injuryConstraintLevel = major"
+    ],
+    "confidence": "low",
+    "evidenceIds": ["ev_demo_recovery_001"],
+    "relatedDecisionRuleIds": ["rule_demo_split_short_session_001"]
+  }
+]
