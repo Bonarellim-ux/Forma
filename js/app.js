@@ -7,6 +7,14 @@ function render(){
     document.getElementById('root').innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--muted)">loading...</div>';
     return;
   }
+  if(S.auth&&S.auth.configured&&!S.auth.user){
+    document.getElementById('root').innerHTML=vAuth();
+    return;
+  }
+  if(S.auth&&S.auth.ready&&!S.auth.configured){
+    document.getElementById('root').innerHTML=vAuth();
+    return;
+  }
   const inTourPrompt=S.tourPrompt;
   const hasNav=!inTourPrompt&&['home','chat','progress','setup'].includes(S.view);
   const hasBack=!inTourPrompt&&['log','feedback','workout-detail'].includes(S.view);
@@ -157,6 +165,7 @@ function deleteAllData(){
   persist('ll_workouts',[]);
   persist('ll_profile',S.profile);
   persist('ll_onboarded',false);
+  persistAll();
   render();
 }
 
@@ -205,7 +214,7 @@ function initApp(){
   if(S._appStarted)return;
   S._appStarted=true;
   render();
-  loadData();
+  initAuthAndData();
 
 // Register inline service worker for background notifications
 if('serviceWorker' in navigator){

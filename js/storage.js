@@ -1,38 +1,44 @@
 // Storage, import, and export helpers for Forma.
-function loadData(){
+async function loadData(){
   try{
-    const load=function(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}};
-    const w=load('ll_workouts');
-    if(w){
-      // Sanitize all historical workouts — ensure every exercise has a valid sets array
-      S.workouts=w.map(function(workout){
-        if(!workout||!Array.isArray(workout.exercises))return workout;
-        workout.exercises=workout.exercises.filter(Boolean).map(function(ex){
-          return Object.assign({},ex,{sets:Array.isArray(ex.sets)?ex.sets:[]});
-        });
-        return workout;
-      }).filter(Boolean);
-    }
-    const sh=load('ll_sched_hist');if(sh)  S.scheduleHistory=sh;
-    const sp=load('ll_splits');    if(sp)  S.splitEx=sp;
-    const u=load('ll_unit');       if(u)   S.unit=u;
-    const pr=load('ll_profile');   if(pr)  S.profile=Object.assign({},S.profile,pr);
-    const ob=load('ll_onboarded'); if(ob)  S.onboarded=ob;
-    // Restore active workout but stay on home — user navigates back manually
-    const aw=load('ll_active_workout');
-    if(aw){
-      // Sanitize exercises — guard against missing sets[] from older saves or data corruption
-      if(Array.isArray(aw.exercises)){
-        aw.exercises=aw.exercises.filter(Boolean).map(function(ex){
-          return Object.assign({inputW:'',inputR:'5'},ex,{sets:Array.isArray(ex.sets)?ex.sets:[]});
-        });
-      } else {
-        aw.exercises=[];
+    if(S.auth&&S.auth.configured&&S.auth.user&&typeof formaLoadCloudState==='function'){
+      await formaLoadCloudState();
+    }else if(!(S.auth&&S.auth.configured)){
+      const load=function(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}};
+      const w=load('ll_workouts');
+      if(w){
+        // Sanitize all historical workouts — ensure every exercise has a valid sets array
+        S.workouts=w.map(function(workout){
+          if(!workout||!Array.isArray(workout.exercises))return workout;
+          workout.exercises=workout.exercises.filter(Boolean).map(function(ex){
+            return Object.assign({},ex,{sets:Array.isArray(ex.sets)?ex.sets:[]});
+          });
+          return workout;
+        }).filter(Boolean);
       }
-      S.workout=aw;
+      const sh=load('ll_sched_hist');if(sh)  S.scheduleHistory=sh;
+      const sp=load('ll_splits');    if(sp)  S.splitEx=sp;
+      const u=load('ll_unit');       if(u)   S.unit=u;
+      const pr=load('ll_profile');   if(pr)  S.profile=Object.assign({},S.profile,pr);
+      const ob=load('ll_onboarded'); if(ob)  S.onboarded=ob;
+      // Restore active workout but stay on home — user navigates back manually
+      const aw=load('ll_active_workout');
+      if(aw){
+        // Sanitize exercises — guard against missing sets[] from older saves or data corruption
+        if(Array.isArray(aw.exercises)){
+          aw.exercises=aw.exercises.filter(Boolean).map(function(ex){
+            return Object.assign({inputW:'',inputR:'5'},ex,{sets:Array.isArray(ex.sets)?ex.sets:[]});
+          });
+        } else {
+          aw.exercises=[];
+        }
+        S.workout=aw;
+      }
     }
     // Don't restore messages — fresh chat each session
-  }catch(e){}
+  }catch(e){
+    if(S.auth)S.auth.error='Could not load account data: '+e.message;
+  }
   normalizeSplitsData();
   persist('ll_schedule',S.schedule);
   persist('ll_splits',S.splitEx);
@@ -44,7 +50,10 @@ function loadData(){
   }
 }
 
-function persist(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}}
+function persist(key,val){
+  try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}
+  if(typeof formaScheduleCloudSave==='function')formaScheduleCloudSave();
+}
 
 function persistAll(){
   persist('ll_schedule',S.schedule);
@@ -66,6 +75,7 @@ function saveMessages(){
     return Object.assign({},m,{rawContent:stripped});
   });
   persist('ll_messages',clean);
+  if(typeof formaScheduleCloudSave==='function')formaScheduleCloudSave();
 }
 
 
