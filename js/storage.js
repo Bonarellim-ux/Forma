@@ -109,11 +109,13 @@ function importData(input){
   const file=input.files[0];
   if(!file)return;
   const reader=new FileReader();
-  reader.onload=function(e){
+  reader.onload=async function(e){
     try{
       const data=JSON.parse(e.target.result);
       if(!data.workouts)throw new Error('Invalid backup file');
       if(!confirm('This will replace ALL your current data with the backup from '+new Date(data.exported).toLocaleDateString()+'. Continue?'))return;
+      S.importStatus={text:'Importing backup...',color:'var(--blue)'};
+      render();
       if(data.workouts)  {S.workouts=data.workouts;   persist('ll_workouts',data.workouts);}
       if(data.schedule)  {S.schedule=data.schedule;   persist('ll_schedule',data.schedule);}
       if(data.splits)    {S.splitEx=data.splits;       persist('ll_splits',data.splits);}
@@ -121,12 +123,17 @@ function importData(input){
       if(data.profile)   {S.profile=Object.assign({},S.profile,data.profile); persist('ll_profile',S.profile);}
       if(data.onboarded!==undefined){S.onboarded=data.onboarded; persist('ll_onboarded',data.onboarded);}
       if(data.active_workout){S.workout=data.active_workout;persist('ll_active_workout',data.active_workout);}
-      const el=document.getElementById('import-status');
-      if(el)el.textContent='✓ Imported '+data.workouts.length+' sessions + profile successfully';
+      persistAll();
+      if(S.auth&&S.auth.user&&typeof formaSaveCloudStateNow==='function'){
+        await formaSaveCloudStateNow();
+        S.importStatus={text:'✓ Imported '+data.workouts.length+' sessions and saved to your account',color:'#2DAA70'};
+      }else{
+        S.importStatus={text:'✓ Imported '+data.workouts.length+' sessions locally',color:'#2DAA70'};
+      }
       render();
     }catch(err){
-      const el=document.getElementById('import-status');
-      if(el){el.textContent='Error: '+err.message;el.style.color='#C44';}
+      S.importStatus={text:'Error: '+err.message,color:'#C44'};
+      render();
     }
     input.value='';
   };

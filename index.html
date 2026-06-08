@@ -1089,7 +1089,7 @@ function vSetup(){
         '<button class="press" onclick="document.getElementById(\'import-file\').click()" style="flex:1;background:var(--s1);color:var(--white);border:1px solid var(--border);border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Import</button>'+
       '</div>'+
       '<input id="import-file" type="file" accept=".json" style="display:none" onchange="importData(this)">'+
-      '<div id="import-status" style="font-size:11px;min-height:14px;color:var(--blue)"></div>'+
+      '<div id="import-status" style="font-size:11px;min-height:14px;color:'+(S.importStatus&&S.importStatus.color?S.importStatus.color:'var(--blue)')+'">'+(S.importStatus?escH(S.importStatus.text):'')+'</div>'+
     '</div>';
 
   const dangerCard=
