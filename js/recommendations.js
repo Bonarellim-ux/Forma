@@ -753,6 +753,7 @@ function replaceExerciseWith(i,newName){
   });
   S.substituteIdx=null;
   persistAll();
+  flushCloudSaveNow('exercise replaced');
   render();
 }
 
@@ -763,5 +764,6 @@ function applyOverloadSug(i,wDisp){
   S.workout.exercises[i].inputW=String(wDisp);
   const inp=document.getElementById('w'+i);
   if(inp){inp.value=wDisp;syncW(i,String(wDisp));previewE1(i);}
+  persistActiveWorkoutNow('recommendation applied');
   render();
 }

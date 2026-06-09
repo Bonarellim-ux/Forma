@@ -67,6 +67,25 @@ function persistAll(){
   else try{localStorage.removeItem('ll_active_workout');}catch(e){}
 }
 
+function flushCloudSaveNow(reason){
+  if(typeof formaFlushCloudSave==='function'){
+    formaFlushCloudSave(reason||'manual').catch(function(){});
+  }
+}
+
+function persistActiveWorkoutNow(reason){
+  if(S.workout)persist('ll_active_workout',S.workout);
+  else try{localStorage.removeItem('ll_active_workout');}catch(e){}
+  flushCloudSaveNow(reason||'active workout');
+}
+
+async function persistAllAndFlushCloud(reason){
+  persistAll();
+  if(typeof formaFlushCloudSave==='function'){
+    await formaFlushCloudSave(reason||'state change');
+  }
+}
+
 function saveMessages(){
   // Strip thinking blocks before persisting — they're only needed for live API calls
   const clean=S.messages.slice(-40).map(function(m){

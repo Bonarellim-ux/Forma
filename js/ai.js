@@ -1349,6 +1349,10 @@ async function sendChat(){
     S.messages=S.messages.filter(function(m){return m.role!=='typing';});
     const applied=[];
     (parsed.actions||[]).forEach(function(a){if(applyAction(a))applied.push(a);});
+    if(applied.length){
+      if(S.workout)persist('ll_active_workout',S.workout);
+      flushCloudSaveNow('ai action applied');
+    }
     S.messages.push({role:'ai',text:parsed.message||'Done.',time:NOW(),actions:applied});
     saveMessages();
     const navAct=(parsed.actions||[]).find(function(a){return a.type==='navigate';});
@@ -1400,10 +1404,14 @@ async function sendInlineAI(){
     const data=await resp.json();
     if(data.error)throw new Error(data.error.message);
     const parsed=parseAIResponse(extractText(data.content));
-    (parsed.actions||[]).forEach(applyAction);
+    const appliedActions=(parsed.actions||[]).filter(function(a){return applyAction(a);});
+    if(appliedActions.length){
+      if(S.workout)persist('ll_active_workout',S.workout);
+      flushCloudSaveNow('inline ai action applied');
+    }
     S.inlineAIReply=parsed.message||'Done!';
     S.messages.push({role:'user',text:'[In-workout] '+text,time:NOW(),actions:[]});
-    S.messages.push({role:'ai',text:S.inlineAIReply,time:NOW(),actions:parsed.actions||[]});
+    S.messages.push({role:'ai',text:S.inlineAIReply,time:NOW(),actions:appliedActions});
     saveMessages();
   }catch(e){S.inlineAIReply='Error: '+e.message;}
   S.inlineAILoading=false;render();

@@ -928,6 +928,15 @@ function drawChart(){
   if(S.progressTab!=='progress')return;
   const canvas=document.getElementById('prog-chart');if(!canvas)return;
   if(S.chart){S.chart.destroy();S.chart=null;}
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const chartBlue=isDark?'#65C6F1':'#1A9ED4';
+  const chartFill=isDark?'rgba(101,198,241,0.10)':'rgba(26,158,212,0.08)';
+  const gridColor=isDark?'rgba(145,170,187,0.16)':'#EBF3FA';
+  const tickColor=isDark?'rgba(190,208,220,0.72)':'#9AB8CC';
+  const tooltipBg=isDark?'#1D2B37':'#fff';
+  const tooltipBorder=isDark?'rgba(73,98,117,0.72)':'#C8DCF0';
+  const tooltipTitle=isDark?'#BED0DC':'#5A84A0';
+  const tooltipBody=isDark?'#F5F8FB':'#0D1E2E';
   const rows=S.workouts.filter(function(w){return w.exercises.find(function(e){return e.name===S.selEx;});}).map(function(w){
     const ex=w.exercises.find(function(e){return e.name===S.selEx;});
     const ws=ex.sets.filter(function(s){return !s.warmup;});
@@ -935,8 +944,8 @@ function drawChart(){
   }).filter(Boolean).reverse();
   if(!rows.length)return;
   S.chart=new Chart(canvas,{type:'line',
-    data:{labels:rows.map(function(r){return r.date;}),datasets:[{data:rows.map(function(r){return r.val;}),borderColor:'#1A9ED4',backgroundColor:'rgba(26,158,212,0.08)',pointBackgroundColor:'#1A9ED4',pointRadius:4,tension:0.3,borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#fff',borderColor:'#C8DCF0',borderWidth:1,titleColor:'#5A84A0',bodyColor:'#0D1E2E',callbacks:{label:function(ctx){return 'e1RM: '+ctx.raw+uLbl();}}}},scales:{x:{grid:{color:'#EBF3FA'},ticks:{color:'#9AB8CC',font:{size:9}}},y:{grid:{color:'#EBF3FA'},ticks:{color:'#9AB8CC',font:{size:9}}}}}
+    data:{labels:rows.map(function(r){return r.date;}),datasets:[{data:rows.map(function(r){return r.val;}),borderColor:chartBlue,backgroundColor:chartFill,pointBackgroundColor:chartBlue,pointRadius:4,tension:0.3,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:tooltipBg,borderColor:tooltipBorder,borderWidth:1,titleColor:tooltipTitle,bodyColor:tooltipBody,callbacks:{label:function(ctx){return 'e1RM: '+ctx.raw+uLbl();}}}},scales:{x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9}}},y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9}}}}}
   });
 }
 

@@ -3,6 +3,8 @@
 let formaSupabase=null;
 let formaCloudSaveTimer=null;
 let formaCloudApplying=false;
+let formaCloudSaveInFlight=null;
+let formaCloudSaveQueued=false;
 
 function formaSupabaseConfigured(){
   return !!(window.supabase&&FORMA_SUPABASE_URL&&FORMA_SUPABASE_ANON_KEY);
@@ -134,11 +136,33 @@ function formaScheduleCloudSave(){
   if(!S.loaded||!S.auth||!S.auth.user||formaCloudApplying)return;
   clearTimeout(formaCloudSaveTimer);
   formaCloudSaveTimer=setTimeout(function(){
-    formaSaveCloudStateNow().catch(function(err){
-      console.error('Forma cloud save failed:',err);
-      if(S.auth)S.auth.error='Cloud save failed: '+err.message;
-    });
+    formaFlushCloudSave('debounced').catch(function(){});
   },600);
+}
+
+function formaFlushCloudSave(reason){
+  if(!S.loaded||!S.auth||!S.auth.user||formaCloudApplying)return Promise.resolve(false);
+  clearTimeout(formaCloudSaveTimer);
+  if(formaCloudSaveInFlight){
+    formaCloudSaveQueued=true;
+    return formaCloudSaveInFlight;
+  }
+  formaCloudSaveInFlight=(async function(){
+    try{
+      do{
+        formaCloudSaveQueued=false;
+        await formaSaveCloudStateNow();
+      }while(formaCloudSaveQueued);
+      return true;
+    }catch(err){
+      console.error('Forma cloud save failed'+(reason?' ('+reason+')':'' )+':',err);
+      if(S.auth)S.auth.error='Cloud save failed: '+err.message;
+      throw err;
+    }finally{
+      formaCloudSaveInFlight=null;
+    }
+  })();
+  return formaCloudSaveInFlight;
 }
 
 async function initAuthAndData(){

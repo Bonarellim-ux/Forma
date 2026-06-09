@@ -118,6 +118,7 @@ function applyExerciseRecommendation(i){
   if(reps)ex.inputR=String(reps);
   rememberAppliedRecommendation(ex,sug);
   S.recAppliedIdx=i;
+  persistActiveWorkoutNow('recommendation applied');
   render();
 }
 
@@ -135,7 +136,7 @@ function vExerciseRecommendationRow(sug,i,ex){
       '<div class="rec-row-copy">'+
         '<div class="rec-row-label">'+(applied?'Applied':'Recommendation')+'</div>'+
         '<div class="rec-row-action">'+escH(action)+'</div>'+
-        '<div class="rec-row-hint">'+(needsApply?'Tap to apply · ':'')+recommendationConfidenceText(sug)+'</div>'+
+        (needsApply?'<div class="rec-row-hint">Tap to apply</div>':'')+
       '</div>'+
       (why?'<button class="rec-why-btn" onclick="event.stopPropagation();S.recWhyIdx='+(open?'null':i)+';render()">'+(open?'Hide':'Why?')+'</button>':'')+
     '</div>'+
@@ -1088,6 +1089,7 @@ async function finishWorkout(){
   S.workoutStartTime=null;
   stopWorkoutTick();
   S.workout=null;
+  try{await persistAllAndFlushCloud('workout finished');}catch(e){}
   S.feedback=null;S.feedbackLoading=false;go('feedback');
 }
 
@@ -1144,8 +1146,8 @@ async function requestWorkoutDebrief(){
 }
 
 
-function syncW(i,val){if(S.workout)S.workout.exercises[i].inputW=val;previewE1(i);}
-function syncR(i,val){if(S.workout)S.workout.exercises[i].inputR=val;previewE1(i);}
+function syncW(i,val){if(S.workout){S.workout.exercises[i].inputW=val;persist('ll_active_workout',S.workout);}previewE1(i);}
+function syncR(i,val){if(S.workout){S.workout.exercises[i].inputR=val;persist('ll_active_workout',S.workout);}previewE1(i);}
 
 function nudgeW(i,delta){
   const inp=document.getElementById('w'+i);if(!inp)return;
@@ -1163,8 +1165,8 @@ function syncWorkoutToTemplate(){
   S.splitEx[S.workout.split]=S.workout.exercises.map(function(e){return e.name;});
   persist('ll_splits',S.splitEx);
 }
-function renameEx(i,name){if(!S.workout)return;flushLogInputs();S.workout.exercises[i].name=name;syncWorkoutToTemplate();render();}
-function toggleM2(i){if(!S.workout)return;const ex=S.workout.exercises[i];ex.trackM2=!ex.trackM2;render();}
+function renameEx(i,name){if(!S.workout)return;flushLogInputs();S.workout.exercises[i].name=name;syncWorkoutToTemplate();persistActiveWorkoutNow('exercise renamed');render();}
+function toggleM2(i){if(!S.workout)return;const ex=S.workout.exercises[i];ex.trackM2=!ex.trackM2;persistActiveWorkoutNow('exercise tracking changed');render();}
 
 // ── PLATE CALCULATOR ─────────────────────────────────────────
 function calcWorkoutPlates(dispW){
@@ -1218,7 +1220,7 @@ function previewE1(i){
   }else el.innerHTML='';
 }
 
-function toggleSetWarmup(ei,si){if(!S.workout)return;const s=S.workout.exercises[ei].sets[si];s.warmup=!s.warmup;render();}
+function toggleSetWarmup(ei,si){if(!S.workout)return;const s=S.workout.exercises[ei].sets[si];s.warmup=!s.warmup;persistActiveWorkoutNow('set warmup changed');render();}
 
 // ── DRAG AND DROP REORDER ─────────────────────────────────────
 // Works on both desktop (HTML5 DnD) and mobile (touch events)
@@ -1282,12 +1284,13 @@ function exTouchEnd(e){
     const exs=S.workout.exercises;
     const moved=exs.splice(src,1)[0];
     exs.splice(dest,0,moved);
+    persistActiveWorkoutNow('exercise reorder');
   }
   S.dragIdx=null;S.dragOverIdx=null;
   render();
 }
 
-function toggleWarmup(i){if(!S.workout)return;const ex=S.workout.exercises[i];ex.nextIsWarmup=!ex.nextIsWarmup;render();}
+function toggleWarmup(i){if(!S.workout)return;const ex=S.workout.exercises[i];ex.nextIsWarmup=!ex.nextIsWarmup;persistActiveWorkoutNow('warmup mode');render();}
 
 function logSet(i){
   if(!S.workout)return;
@@ -1316,13 +1319,14 @@ function logSet(i){
     const autoSecs=getAutoRestSecs(ex.name);
     startRestTimer(autoSecs,ex.name);
   }
+  persistActiveWorkoutNow('set logged');
   render();
   // Clear the flag after paint so it never replays on later re-renders.
   setTimeout(function(){S._justSet=null;},0);
 }
-function delSet(ei,si){if(!S.workout)return;flushLogInputs();S.workout.exercises[ei].sets.splice(si,1);render();}
+function delSet(ei,si){if(!S.workout)return;flushLogInputs();S.workout.exercises[ei].sets.splice(si,1);persistActiveWorkoutNow('set deleted');render();}
 function toggleAddEx(){S.addingEx=!S.addingEx;render();}
-function addEx(name){if(!S.workout||S.workout.exercises.find(function(e){return e.name===name;}))return;S.workout.exercises.push({name:name,sets:[],inputW:getLastW(name),inputR:'5'});S.addingEx=false;syncWorkoutToTemplate();render();}
+function addEx(name){if(!S.workout||S.workout.exercises.find(function(e){return e.name===name;}))return;S.workout.exercises.push({name:name,sets:[],inputW:getLastW(name),inputR:'5'});S.addingEx=false;syncWorkoutToTemplate();persistActiveWorkoutNow('exercise added');render();}
 function customEx(){const inp=document.getElementById('cex');if(inp&&inp.value.trim())addEx(inp.value.trim());}
 
 // Manual exercise editing
@@ -1332,18 +1336,18 @@ function saveExEdit(i){
   const inp=document.getElementById('ex-edit-'+i);
   const name=inp?inp.value.trim():'';
   if(!name||!S.workout)return;
-  S.workout.exercises[i].name=name;S.editingExIdx=null;syncWorkoutToTemplate();render();
+  S.workout.exercises[i].name=name;S.editingExIdx=null;syncWorkoutToTemplate();persistActiveWorkoutNow('exercise renamed');render();
 }
-function removeExFromWorkout(i){if(!S.workout)return;flushLogInputs();S.workout.exercises.splice(i,1);S.editingExIdx=null;syncWorkoutToTemplate();render();}
+function removeExFromWorkout(i){if(!S.workout)return;flushLogInputs();S.workout.exercises.splice(i,1);S.editingExIdx=null;syncWorkoutToTemplate();persistActiveWorkoutNow('exercise removed');render();}
 function moveExUp(i){
   if(!S.workout||i===0)return;flushLogInputs();
   const exs=S.workout.exercises;const tmp=exs[i-1];exs[i-1]=exs[i];exs[i]=tmp;
-  S.editingExIdx=i-1;syncWorkoutToTemplate();render();
+  S.editingExIdx=i-1;syncWorkoutToTemplate();persistActiveWorkoutNow('exercise moved');render();
 }
 function moveExDown(i){
   if(!S.workout||i>=S.workout.exercises.length-1)return;flushLogInputs();
   const exs=S.workout.exercises;const tmp=exs[i];exs[i]=exs[i+1];exs[i+1]=tmp;
-  S.editingExIdx=i+1;syncWorkoutToTemplate();render();
+  S.editingExIdx=i+1;syncWorkoutToTemplate();persistActiveWorkoutNow('exercise moved');render();
 }
 
 // Set voice

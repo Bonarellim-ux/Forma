@@ -213,6 +213,7 @@ function makeVoice(onFinal, onInterim, onStop){
 function initApp(){
   if(S._appStarted)return;
   S._appStarted=true;
+  if(typeof applyTheme==='function')applyTheme(S.theme);
   render();
   initAuthAndData();
 
