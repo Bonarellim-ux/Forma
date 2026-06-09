@@ -26,6 +26,7 @@ function vStrengthScore(){
   const bwRaw=parseFloat(S.profile.bodyweight||0);
   const bwLbs=bwRaw>0?(S.unit==='kg'?bwRaw*KG2LB:bwRaw):0;
   const hasBW=bwLbs>50&&bwLbs<500;
+  const bwDisplay=hasBW?(S.unit==='kg'?bwLbs/KG2LB:bwLbs):0;
 
   // Standards as bodyweight multipliers (source: ExRx.net / Symmetric Strength)
   // [Beginner, Novice, Intermediate, Advanced, Elite]
@@ -37,7 +38,7 @@ function vStrengthScore(){
         {
           name:'Chest',
           note:'bench press & variations',
-          exercises:['Bench Press','Incline Bench Press','Incline Dumbbell Press','Chest Fly','Cable Crossover'],
+          exercises:['Bench Press','Dumbbell Bench Press','Machine Chest Press','Incline Bench','Incline Bench Press','Incline Dumbbell Press','Incline Press','Chest Fly','Cable Fly','Cable Crossover','Pec Deck','Push-Up','Push Up'],
           bwMult:[0.50,0.75,1.00,1.25,1.50],
           absStd:[95,135,185,245,315]
         }
@@ -49,27 +50,27 @@ function vStrengthScore(){
         {
           name:'Lat Width',
           note:'vertical pull — pulldowns & pull-ups',
-          exercises:['Pull-Ups','Lat Pulldown','Straight-Arm Pulldown'],
+          exercises:['Pull-Up','Pull-Ups','Chin-Up','Chin Up','Lat Pulldown','Pulldown','Front Pulldown','MTS Front Pulldown','Straight-Arm Pulldown'],
           bwMult:[0.35,0.55,0.75,1.00,1.30],
           absStd:[55,85,120,165,215]
         },
         {
           name:'Lat Thickness',
           note:'horizontal pull — rows',
-          exercises:['Barbell Row','Seated Row Machine','Cable Row','Dumbbell Row','Pendlay Row'],
+          exercises:['Barbell Row','Seated Row Machine','Seated Cable Row','Seated Row','Cable Row','Low Row','Machine Row','Dumbbell Row','Chest-Supported Row','Chest Supported Row','Pendlay Row'],
           bwMult:[0.45,0.65,0.90,1.15,1.50],
           absStd:[75,115,155,205,265]
         },
         {
           name:'Upper Back & Traps',
           note:'rear delt, traps — training frequency',
-          exercises:['Face Pull','Rear Delt Fly','Shrug','Reverse Fly'],
+          exercises:['Face Pull','Rear Delt Fly','Rear Delt Machine','Reverse Pec Deck','Shrug','Reverse Fly'],
           type:'volume'
         },
         {
           name:'Lower Back',
           note:'spinal erectors — deadlift',
-          exercises:['Deadlift','Romanian Deadlift','Good Morning'],
+          exercises:['Deadlift','Trap Bar Deadlift','Romanian Deadlift','RDL','Good Morning','Back Extension'],
           bwMult:[1.00,1.25,1.50,2.00,2.50],
           absStd:[135,195,275,365,455]
         }
@@ -81,20 +82,20 @@ function vStrengthScore(){
         {
           name:'Front Delts',
           note:'overhead pressing',
-          exercises:['Overhead Press','Dumbbell Shoulder Press','Arnold Press'],
+          exercises:['Overhead Press','Shoulder Press','Dumbbell Shoulder Press','Machine Shoulder Press','Arnold Press','Landmine Press'],
           bwMult:[0.35,0.50,0.65,0.85,1.10],
           absStd:[55,80,115,155,200]
         },
         {
           name:'Side Delts',
           note:'lateral raises — training frequency',
-          exercises:['Cable Lateral Raise','Dumbbell Lateral Raise','Machine Lateral Raise'],
+          exercises:['Lateral Raise','Cable Lateral Raise','Dumbbell Lateral Raise','Machine Lateral Raise','Lean-Away Lateral Raise','Lean Away Lateral Raise'],
           type:'volume'
         },
         {
           name:'Rear Delts',
           note:'face pull & fly — training frequency',
-          exercises:['Face Pull','Rear Delt Fly','Reverse Fly'],
+          exercises:['Face Pull','Rear Delt Fly','Rear Delt Machine','Reverse Pec Deck','Reverse Fly'],
           type:'volume'
         }
       ]
@@ -105,14 +106,14 @@ function vStrengthScore(){
         {
           name:'Biceps',
           note:'all curl variations',
-          exercises:['Dumbbell Curl','Hammer Curl','Barbell Curl','Incline Curl','Incline Hammer Curls','Cable Curl'],
+          exercises:['Bicep Curl','Biceps Curl','Bicep Curl Machine','Dumbbell Curl','Hammer Curl','Hammer Curls','Barbell Curl','Incline Curl','Incline Hammer Curl','Incline Hammer Curls','Cable Curl','Preacher Curl'],
           bwMult:[0.13,0.20,0.28,0.38,0.50],
           absStd:[20,32,46,62,82]
         },
         {
           name:'Triceps',
           note:'pushdowns, extensions & press',
-          exercises:['Tricep Pushdown','Tricep Press Machine','Skull Crusher','Overhead Tricep Extension','Cable Overhead Extension'],
+          exercises:['Tricep Pushdown','Triceps Pushdown','Cable Tricep Pushdown','Tricep Press Machine','Skull Crusher','Overhead Tricep Extension','Cable Overhead Extension','Close-Grip Bench Press','Close Grip Bench Press'],
           bwMult:[0.18,0.30,0.45,0.62,0.82],
           absStd:[30,50,75,105,140]
         }
@@ -124,28 +125,28 @@ function vStrengthScore(){
         {
           name:'Quads',
           note:'squat & leg press',
-          exercises:['Squat','Hack Squat','Leg Press','Leg Extension','Front Squat'],
+          exercises:['Squat','Back Squat','Front Squat','Hack Squat','Leg Press','Leg Extension','Bulgarian Split Squat'],
           bwMult:[0.75,1.00,1.25,1.75,2.25],
           absStd:[115,165,225,300,390]
         },
         {
           name:'Hamstrings',
           note:'leg curl & RDL',
-          exercises:['Leg Curl','Romanian Deadlift'],
+          exercises:['Leg Curl','Seated Leg Curl','Lying Leg Curl','Romanian Deadlift','RDL','Good Morning'],
           bwMult:[0.25,0.40,0.58,0.78,1.02],
           absStd:[40,65,95,130,170]
         },
         {
           name:'Glutes',
           note:'hip thrust & split squat',
-          exercises:['Hip Thrust','Bulgarian Split Squat','Glute Bridge'],
+          exercises:['Hip Thrust','Bulgarian Split Squat','Split Squat','Glute Bridge','Cable Kickback'],
           bwMult:[0.55,0.85,1.20,1.65,2.15],
           absStd:[95,145,205,280,365]
         },
         {
           name:'Calves',
           note:'calf raises',
-          exercises:['Calf Raises','Seated Calf Raise','Standing Calf Raise'],
+          exercises:['Calf Raise','Calf Raises','Seated Calf Raise','Standing Calf Raise','Leg Press Calf Raise'],
           bwMult:[0.40,0.65,0.92,1.25,1.62],
           absStd:[70,110,155,210,275]
         }
@@ -153,32 +154,80 @@ function vStrengthScore(){
     }
   ];
 
-  function getBestE1(exList){
-    let best=0;
-    exList.forEach(function(exName){
-      S.workouts.forEach(function(w){
-        const ex=w.exercises.find(function(e){return e.name===exName;});
-        if(!ex)return;
-        ex.sets.filter(function(s){return !s.warmup&&s.w>0&&s.r>0;}).forEach(function(s){
+  function scoreNormExerciseName(name){
+    return String(name||'')
+      .toLowerCase()
+      .replace(/&/g,' and ')
+      .replace(/[-_]/g,' ')
+      .replace(/\b(dumbbell|db)\b/g,'dumbbell')
+      .replace(/\b(barbell|bb)\b/g,'barbell')
+      .replace(/\b(cable|machine|mts|plate loaded|selectorized)\b/g,' ')
+      .replace(/\bpull ups\b/g,'pull up')
+      .replace(/\bpush ups\b/g,'push up')
+      .replace(/\b(curls|raises|pullups|pushups)\b/g,function(m){
+        return m==='curls'?'curl':m==='raises'?'raise':m==='pullups'?'pull up':'push up';
+      })
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+
+  function scoreExerciseMatches(exName,exList){
+    const n=scoreNormExerciseName(exName);
+    if(!n)return false;
+    return (exList||[]).some(function(target){
+      const t=scoreNormExerciseName(target);
+      if(!t)return false;
+      if(n===t)return true;
+      if(t.length>=6&&(n.indexOf(t)>=0||t.indexOf(n)>=0))return true;
+      const nWords=n.split(' ');
+      const tWords=t.split(' ');
+      if(tWords.length>=2&&tWords.every(function(w){return nWords.indexOf(w)>=0;}))return true;
+      return false;
+    });
+  }
+
+  function scoreWorkingSets(ex){
+    return (ex&&Array.isArray(ex.sets)?ex.sets:[]).filter(function(s){
+      return s&&!s.warmup&&Number(s.w)>0&&Number(s.r)>0;
+    });
+  }
+
+  function getMatchedScoreExercises(exList){
+    const matches={};
+    S.workouts.forEach(function(w){
+      (w.exercises||[]).forEach(function(ex){
+        if(!scoreExerciseMatches(ex.name,exList))return;
+        const sets=scoreWorkingSets(ex);
+        if(!sets.length)return;
+        const key=scoreNormExerciseName(ex.name);
+        if(!matches[key])matches[key]={name:ex.name,best:0,sessions:0};
+        matches[key].sessions++;
+        sets.forEach(function(s){
           const v=toDisp(e1rm(s.w,s.r));
-          if(v>best)best=v;
+          if(v>matches[key].best)matches[key].best=v;
         });
       });
     });
-    return Math.round(best);
+    return Object.values(matches).sort(function(a,b){return b.best-a.best;});
+  }
+
+  function getBestE1(exList){
+    const matches=getMatchedScoreExercises(exList);
+    return Math.round(matches.reduce(function(best,ex){return Math.max(best,ex.best||0);},0));
   }
 
   function getVolumeSessions(exList){
     return S.workouts.filter(function(w){
-      return w.exercises.some(function(ex){
-        return exList.includes(ex.name)&&ex.sets.filter(function(s){return !s.warmup;}).length>0;
+      return (w.exercises||[]).some(function(ex){
+        return scoreExerciseMatches(ex.name,exList)&&scoreWorkingSets(ex).length>0;
       });
     }).length;
   }
 
   function getStd(sub){
-    if(hasBW&&sub.bwMult) return sub.bwMult.map(function(m){return Math.round(bwLbs*m);});
-    return sub.absStd||[10,20,35,55,80];
+    if(hasBW&&sub.bwMult) return sub.bwMult.map(function(m){return Math.round(bwDisplay*m);});
+    const lbsStd=sub.absStd||[10,20,35,55,80];
+    return S.unit==='kg'?lbsStd.map(function(v){return Math.round(v/KG2LB);}):lbsStd;
   }
 
   function getLevel(val,std){
@@ -203,10 +252,12 @@ function vStrengthScore(){
   const parentHtml=PARENT_GROUPS.map(function(pg){
     const subResults=pg.subs.map(function(sub){
       const isVol=sub.type==='volume';
+      const matchedExercises=getMatchedScoreExercises(sub.exercises);
       let val,score,level;
       if(isVol){
+        const volumeStd=[1,3,7,14,25];
         val=getVolumeSessions(sub.exercises);
-        score=Math.min(100,Math.round(val*8));
+        score=getScore(val,volumeStd);
         level=val===0?0:val<3?1:val<7?2:val<14?3:val<25?4:5;
       } else {
         const std=getStd(sub);
@@ -220,7 +271,7 @@ function vStrengthScore(){
       const levelColor=LEVEL_COLORS[Math.min(level,5)];
       const nextStd=!isVol&&sub._std&&sub._std[level]?sub._std[level]:null;
       const needed=nextStd&&val>0&&level<5?Math.ceil(nextStd-val):null;
-      const result={sub,val,score,level,levelName,levelColor,nextStd,needed,isVol,pgColor:pg.color};
+      const result={sub,val,score,level,levelName,levelColor,nextStd,needed,isVol,pgColor:pg.color,matchedExercises:matchedExercises};
       S._scoreResults[sub.name]=result; // store for detail panel
       return result;
     });
@@ -288,7 +339,7 @@ function vStrengthScore(){
   return ring+
     '<div style="font-size:10px;color:var(--muted);margin-bottom:16px;line-height:1.6;padding:10px 12px;background:var(--s1);border-radius:10px;border:1px solid var(--border)">'+
       (hasBW?
-        'Standards normalized to your bodyweight ('+Math.round(bwLbs)+' lbs). Scores use estimated 1RM from your logged sets.':
+        'Standards normalized to your bodyweight ('+Math.round(bwDisplay)+' '+uLbl()+'). Scores use estimated 1RM from your logged sets.':
         'Using general absolute standards. Add your bodyweight in Profile for personalized accuracy.')+
     '</div>'+
     parentHtml+
@@ -324,18 +375,10 @@ function vScoreDetailPanel(r){
     '</div>';
   }).join(''):null;
 
-  // Find which exercises they've actually logged from this group
-  const loggedExs=[];
-  (sub.exercises||[]).forEach(function(exName){
-    var best=0;
-    S.workouts.forEach(function(w){
-      var ex=w.exercises&&w.exercises.find(function(e){return e.name===exName;});
-      if(!ex||!Array.isArray(ex.sets))return;
-      ex.sets.forEach(function(s){if(!s.warmup&&s.w>0&&s.r>0){var v=toDisp(e1rm(s.w,s.r));if(v>best)best=v;}});
-    });
-    if(best>0)loggedExs.push({name:exName,e1rm:best});
-  });
-  loggedExs.sort(function(a,b){return b.e1rm-a.e1rm;});
+  // Show the actual logged exercise names that matched this score bucket.
+  const loggedExs=(r.matchedExercises||[]).map(function(ex){
+    return{name:ex.name,e1rm:ex.best||0,sessions:ex.sessions||0};
+  }).filter(function(ex){return ex.e1rm>0;}).sort(function(a,b){return b.e1rm-a.e1rm;});
 
   // Improvement tips by sub name
   const TIPS={
@@ -357,7 +400,7 @@ function vScoreDetailPanel(r){
   const tips=TIPS[sub.name]||['Train this muscle group 2× per week for best hypertrophy results','Focus on progressive overload: add weight or reps each session','Use a mix of compound and isolation exercises for complete development'];
 
   return '<div class="sheet-overlay" style="position:fixed;inset:0;z-index:400;display:flex;flex-direction:column;justify-content:flex-end" onclick="S.scoreDetail=null;render()">'+
-    '<div class="sheet-panel" ontouchstart="sheetTouchStart(event)" ontouchmove="sheetTouchMove(event)" ontouchend="sheetTouchEnd(\'scoreDetail\')" onclick="event.stopPropagation()" style="background:var(--s1);border-radius:20px 20px 0 0;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,.25)">'+
+    '<div class="sheet-panel" ontouchstart="sheetTouchStart(event)" ontouchmove="sheetTouchMove(event)" ontouchend="sheetTouchEnd(\'scoreDetail\')" onclick="event.stopPropagation()" style="background:var(--s1);border-radius:20px 20px 0 0;max-height:calc(100vh - 86px);display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,.25)">'+
 
       // Handle
       '<div style="display:flex;justify-content:center;padding:10px 0 0">'+
@@ -376,7 +419,7 @@ function vScoreDetailPanel(r){
         '</div>'+
       '</div>'+
 
-      '<div data-sheet-scroll="1" style="overflow-y:auto;padding:16px 18px 32px;flex:1">'+
+      '<div data-sheet-scroll="1" style="overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 18px calc(116px + env(safe-area-inset-bottom));flex:1">'+
 
         // Score bar
         '<div style="margin-bottom:18px">'+

@@ -31,7 +31,7 @@
 <script src="js/utils.js"></script>
 <script src="js/storage.js?v=cloudsave1"></script>
 <script src="js/recommendations.js?v=early-recs1"></script>
-<script src="js/stats.js?v=theme1"></script>
+<script src="js/stats.js?v=score-fix2"></script>
 <script src="js/workout.js?v=exercise-suggest3"></script>
 <script src="js/onboarding.js"></script>
 <script src="js/coachingAnalysis.js"></script>
@@ -271,8 +271,10 @@ function homeRecommendationLine(sug){
   if(!sug)return '';
   const unit=uLbl();
   const wt=sug.weightDisp!==undefined&&sug.weightDisp!==null?String(sug.weightDisp)+' '+unit:null;
-  if(sug.action==='add_weight'&&wt)return 'Increase to '+wt;
-  if(sug.action==='add_reps'&&wt)return 'Stay at '+wt;
+  if(sug.action==='add_weight'||sug.action==='early_add_weight')return wt?'Increase to '+wt:'Add weight';
+  if(sug.action==='add_reps'||sug.action==='early_add_reps')return wt?'Stay at '+wt:'Add reps';
+  if(sug.action==='early_repeat')return wt?'Repeat '+wt:'Repeat last working set';
+  if(sug.action==='baseline')return wt?'Start around '+wt:'Set a baseline';
   if(sug.action==='hold'&&wt)return 'Hold '+wt;
   if(sug.action==='reduce_weight'&&wt)return 'Reduce to '+wt;
   if(sug.action==='reduce_or_recover')return 'Hold progression today';
@@ -285,8 +287,14 @@ function homePlanItems(exs){
     const current=S.workout&&S.workout.exercises?(S.workout.exercises.find(function(e){return e.name===name;})||{}).inputW:null;
     const sug=typeof getOverloadSuggestion==='function'?getOverloadSuggestion(name,current):null;
     if(!sug)return null;
-    const action=homeRecommendationLine(sug).replace(/^Stay at /,'stay at ').replace(/^Increase to /,'increase to ').replace(/^Hold /,'hold ').replace(/^Reduce to /,'reduce to ');
-    const short=sug.action==='add_reps'&&sug.repTarget?'aim for '+sug.repTarget+' reps':action;
+    const action=homeRecommendationLine(sug)
+      .replace(/^Stay at /,'stay at ')
+      .replace(/^Increase to /,'increase to ')
+      .replace(/^Repeat /,'repeat ')
+      .replace(/^Start around /,'start around ')
+      .replace(/^Hold /,'hold ')
+      .replace(/^Reduce to /,'reduce to ');
+    const short=(sug.action==='add_reps'||sug.action==='early_add_reps')&&sug.repTarget?'aim for '+sug.repTarget+' reps':action;
     return{
       name:name,
       text:name+': '+short,
@@ -299,7 +307,6 @@ function vHome(){
   const today=todayKey();
   const sp=S.schedule[today];
   const col=spCol(sp);
-  // Show active workout exercises if it's today's split, otherwise show template
   const exs=(S.workout&&S.workout.split===sp)
     ? S.workout.exercises.map(function(e){return e.name;})
     : (S.splitEx[sp]||[]);
@@ -407,7 +414,6 @@ function vHome(){
   // ── Day preview panel (read-only, works even with active workout) ──
   const dayPreview=S.dayPreviewPanel?vDayPreviewPanel(S.dayPreviewPanel):'';
   const planItems=homePlanItems(exs);
-  const previewExs=exs.slice(0,4).join(', ')+(exs.length>4?' +' +(exs.length-4)+' more':'');
   const startAction=S.workout?'resumeWorkout()':'startWorkout(\''+sp+'\')';
 
   return (
@@ -419,9 +425,7 @@ function vHome(){
         '<div style="min-width:0;flex:1">'+
           '<div style="font-size:11px;font-weight:800;color:#78BDE4;letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px">'+DAY_FULL[today]+'</div>'+
           '<div style="font-size:33px;font-weight:850;color:#fff;letter-spacing:-.055em;line-height:.98">'+(isRest?'Rest Day':spLbl(sp)+' Day')+'</div>'+
-          '<div style="font-size:12px;color:#9CC0D8;line-height:1.45;margin-top:9px">'+
-            (isRest?'No workout scheduled. Recover and come back fresh.':escH(previewExs||'No exercises planned yet.'))+
-          '</div>'+
+          (isRest?'<div style="font-size:12px;color:#9CC0D8;line-height:1.45;margin-top:9px">No workout scheduled. Recover and come back fresh.</div>':'')+
         '</div>'+
         (isRest?'':
           '<div style="flex-shrink:0;padding:6px 13px;border-radius:999px;background:'+hexA(col,.24)+';border:1px solid '+hexA(col,.5)+'">'+
@@ -433,12 +437,15 @@ function vHome(){
         (isRest?
           '<div style="font-size:13px;color:#B8D1E3;line-height:1.5;margin-bottom:14px">Let today be recovery. I’ll use your next logged session to update targets.</div>':
           (planItems.length?
-            '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:15px">'+planItems.map(function(item){
-              return '<div style="display:flex;align-items:flex-start;gap:9px">'+
-                '<div style="width:6px;height:6px;border-radius:50%;background:#45B4EA;margin-top:7px;flex-shrink:0"></div>'+
-                '<div style="font-size:13px;font-weight:650;color:#fff;line-height:1.35">'+escH(item.text)+'</div>'+
-              '</div>';
-            }).join('')+'</div>':
+            '<div style="margin-bottom:15px">'+
+              '<div style="font-size:10px;font-weight:850;color:#78BDE4;letter-spacing:.14em;text-transform:uppercase;margin-bottom:9px">Goals for today</div>'+
+              '<div style="display:flex;flex-direction:column;gap:8px">'+planItems.map(function(item){
+                return '<div style="display:flex;align-items:flex-start;gap:9px">'+
+                  '<div style="width:6px;height:6px;border-radius:50%;background:#45B4EA;margin-top:7px;flex-shrink:0"></div>'+
+                  '<div style="font-size:13px;font-weight:650;color:#fff;line-height:1.35">'+escH(item.text)+'</div>'+
+                '</div>';
+              }).join('')+'</div>'+
+            '</div>':
             '<div style="font-size:13px;color:#B8D1E3;line-height:1.5;margin-bottom:14px">Log today’s workout and I’ll update your next targets.</div>'))+
         '<button '+(!isRest?'class="press" onclick="'+startAction+'"':'')+' style="width:100%;background:'+(isRest?'var(--s2)':'linear-gradient(180deg,var(--blue2),var(--blue))')+';border:'+(isRest?'1px solid var(--border)':'none')+';border-radius:14px;padding:14px 16px;font-size:15px;font-weight:850;color:'+(isRest?'var(--sub)':'#fff')+';cursor:'+(isRest?'default':'pointer')+';font-family:inherit;letter-spacing:-.01em;box-shadow:'+(isRest?'none':'0 12px 24px rgba(26,158,212,.22)')+'">'+
           (isRest?'Rest Day':(S.workout?'Continue Workout':'Start '+spLbl(sp)+' Workout'))+
