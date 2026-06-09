@@ -519,9 +519,53 @@ function compoundDeclineCount(){
   }).length;
 }
 
+function starterOverloadSuggestion(exName,currentInputW,sessions){
+  const p=exerciseProgressionProfile(exName);
+  if(p.category==='bodyweight')return null;
+  const currentDisp=parseFloat(currentInputW)>0?Number(currentInputW):Number(getLastW(exName));
+  if(!sessions.length){
+    const repTarget=p.minTarget+'-'+p.maxTarget;
+    // TEMP: based on ACSM Progression Models in Resistance Training for Healthy Adults (Med Sci Sports Exerc, 2009; DOI 10.1249/MSS.0b013e3181915670) - use conservative baseline loading until Forma has enough user-specific history; replace with rule engine when research database is complete.
+    const action='I\'d recommend using '+currentDisp+' '+uLbl()+' as a starting target for '+repTarget+' clean reps.';
+    const detail=recommendationDetail(action,[
+      'No prior working sets are logged for this exercise yet.',
+      'Use this as a baseline, then Forma can make more specific recommendations after you log it.'
+    ]);
+    return recommendationResult({dir:'same',action:'baseline',confidence:'medium',trend:'unknown',state:'baseline',category:p.category,weight:kgFromDisplayWeight(currentDisp),weightDisp:currentDisp,repTarget:repTarget,reason:'Set a baseline',detail:detail});
+  }
+  const last=sessions[0];
+  if(!last||last.topW===0)return null;
+  const lastWDisp=sessionDisplayWeight(last,p);
+  const prior=sessions[1]||null;
+  const targetReps=Math.min(p.maxTarget,last.topR+1);
+  const shouldAddReps=last.topR<p.maxTarget;
+  const sameAsPrior=prior&&sameProgressionWeight(sessionDisplayWeight(prior,p),lastWDisp,p.jump);
+  const repeatedTop=sameAsPrior&&last.topR>=p.maxTarget&&prior.topR>=p.maxTarget;
+  if(repeatedTop&&sessions.length>=2){
+    const sugDisp=roundToProgressionJump(lastWDisp+p.jump,S.unit==='lbs'?2.5:1);
+    const target=weightIncreaseRepTarget(p,last.topR);
+    // TEMP: based on ACSM Progression Models in Resistance Training for Healthy Adults (Med Sci Sports Exerc, 2009; DOI 10.1249/MSS.0b013e3181915670) - small load increases after repeated top-of-range performance; replace with rule engine when research database is complete.
+    const action='I\'d recommend trying '+sugDisp+' '+uLbl()+' for '+target.label+' reps.';
+    const detail=recommendationDetail(action,[
+      'You have only a little history, but you reached the top of the target range twice at '+lastWDisp+' '+uLbl()+'.',
+      'This is an early recommendation, so treat the new load as a test rather than a confirmed trend.'
+    ]);
+    return recommendationResult({dir:'up',action:'early_add_weight',confidence:'medium',trend:'early_signal',state:'early_progression',category:p.category,weight:kgFromDisplayWeight(sugDisp),weightDisp:sugDisp,repTarget:target.label,reason:'Early progression test',detail:detail});
+  }
+  // TEMP: based on ACSM Progression Models in Resistance Training for Healthy Adults (Med Sci Sports Exerc, 2009; DOI 10.1249/MSS.0b013e3181915670) - progress reps before load when history is sparse; replace with rule engine when research database is complete.
+  const action=shouldAddReps?
+    'I\'d recommend keeping '+lastWDisp+' '+uLbl()+' and aiming for '+targetReps+' reps.':
+    'I\'d recommend repeating '+lastWDisp+' '+uLbl()+' for '+p.minTarget+'-'+p.maxTarget+' clean reps.';
+  const detail=recommendationDetail(action,[
+    sessions.length===1?'You have 1 prior working session logged for this exercise.':'You have 2 prior working sessions logged for this exercise.',
+    'That is enough for useful guidance, but not enough to call a real trend yet.'
+  ]);
+  return recommendationResult({dir:'same',action:shouldAddReps?'early_add_reps':'early_repeat',confidence:'medium',trend:'early_signal',state:'early_guidance',category:p.category,weight:last.topW,weightDisp:lastWDisp,repTarget:shouldAddReps?String(targetReps):p.minTarget+'-'+p.maxTarget,reason:shouldAddReps?'Early rep target':'Repeat and confirm',detail:detail});
+}
+
 function getOverloadSuggestion(exName,currentInputW){
   const sessions=getRecentExerciseSessions(exName,6);
-  if(sessions.length<3)return null;
+  if(sessions.length<3)return starterOverloadSuggestion(exName,currentInputW,sessions);
   if(sessions.some(function(s){return s.topW===0;}))return null; // bodyweight loading needs separate logic
 
   const p=exerciseProgressionProfile(exName);

@@ -272,7 +272,8 @@ function vLog(){
     // Defensive guard — skip any malformed exercise object to prevent crashes
     if(!ex||typeof ex.name!=='string'){return '';}
     if(!Array.isArray(ex.sets)){ex.sets=[];}
-    const last=getLastSession(ex.name);
+    syncExerciseWarmupFlow(ex);
+    const last=lastFinalWorkingSet(ex.name);
     const isL=S.setVoiceIdx===i;
     const isEditing=S.editingExIdx===i;
 
@@ -412,7 +413,10 @@ function vLog(){
     const hdr=isEditing?
       '<div style="margin-bottom:12px">'+
         '<input id="ex-edit-'+i+'" style="width:100%;background:var(--s2);border:1.5px solid var(--blue);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:700;color:var(--white);outline:none;font-family:inherit" value="'+ex.name+'" '+
+          'oninput="updateExerciseSuggestionPanel(\'ex-edit-'+i+'\',\'ex-edit-suggestions-'+i+'\')" '+
+          'onfocus="updateExerciseSuggestionPanel(\'ex-edit-'+i+'\',\'ex-edit-suggestions-'+i+'\')" '+
           'onkeydown="if(event.key===\'Enter\')saveExEdit('+i+');if(event.key===\'Escape\')cancelExEdit()">'+
+        '<div id="ex-edit-suggestions-'+i+'" class="exercise-suggestions"></div>'+
         '<div style="display:flex;gap:6px;margin-top:8px">'+
           '<button onclick="cancelExEdit()" style="flex:1;background:var(--bg);border:1px solid var(--border);color:var(--sub);border-radius:7px;padding:8px;font-size:12px;cursor:pointer;font-family:inherit">Cancel</button>'+
           '<button onclick="saveExEdit('+i+')" style="flex:2;background:var(--blue);color:#fff;border:none;border-radius:7px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Save</button>'+
@@ -515,10 +519,11 @@ function vLog(){
           .join('')+
       '</div>'+
       '<div style="display:flex;gap:6px">'+
-        '<input id="cex" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:12px;color:var(--white);outline:none;font-family:inherit" placeholder="Custom exercise&hellip;" onkeydown="if(event.key===\'Enter\')customEx()">'+
+        '<input id="cex" autocomplete="off" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:12px;color:var(--white);outline:none;font-family:inherit" placeholder="Search or add exercise&hellip;" oninput="updateExerciseSuggestionPanel(\'cex\',\'cex-suggestions\')" onfocus="updateExerciseSuggestionPanel(\'cex\',\'cex-suggestions\')" onkeydown="if(event.key===\'Enter\')customEx()">'+
         '<button onclick="customEx()" style="background:var(--blue);color:#fff;border-radius:6px;padding:9px 14px;font-weight:800;font-size:11px;cursor:pointer;font-family:inherit;border:none">ADD</button>'+
         '<button onclick="toggleAddEx()" style="background:none;border:1px solid var(--border);color:var(--sub);border-radius:6px;padding:9px;font-size:11px;cursor:pointer">&#10005;</button>'+
       '</div>'+
+      '<div id="cex-suggestions" class="exercise-suggestions"></div>'+
     '</div>':
     '<button class="btn-dashed" onclick="toggleAddEx()">+ add exercise</button>';
 
@@ -800,6 +805,181 @@ function lastPreviousExerciseSet(exName){
   }
   return null;
 }
+function finalWorkingSet(ex){
+  const sets=(ex&&Array.isArray(ex.sets)?ex.sets:[]).filter(function(s){return s&&!s.warmup&&s.w>0&&s.r>0;});
+  return sets.length?sets[sets.length-1]:null;
+}
+
+function normExerciseName(name){
+  return String(name||'').trim().replace(/\s+/g,' ').toLowerCase();
+}
+function knownExerciseNames(){
+  const seen={};
+  const names=[];
+  function add(name){
+    const clean=String(name||'').trim().replace(/\s+/g,' ');
+    const key=normExerciseName(clean);
+    if(!clean||seen[key])return;
+    seen[key]=true;
+    names.push(clean);
+  }
+  (S.workouts||[]).forEach(function(w){
+    (w.exercises||[]).forEach(function(ex){add(ex&&ex.name);});
+  });
+  Object.values(S.splitEx||{}).forEach(function(list){
+    (list||[]).forEach(add);
+  });
+  (ALL_EX||[]).forEach(add);
+  return names;
+}
+function canonicalExerciseName(name){
+  const clean=String(name||'').trim().replace(/\s+/g,' ');
+  const key=normExerciseName(clean);
+  return knownExerciseNames().find(function(n){return normExerciseName(n)===key;})||clean;
+}
+function exerciseSuggestions(query,limit){
+  const q=normExerciseName(query);
+  if(!q)return [];
+  return knownExerciseNames().filter(function(name){
+    const n=normExerciseName(name);
+    return n.indexOf(q)>=0||q.split(' ').every(function(part){return n.indexOf(part)>=0;});
+  }).sort(function(a,b){
+    const na=normExerciseName(a), nb=normExerciseName(b);
+    const sa=na.indexOf(q)===0?0:1;
+    const sb=nb.indexOf(q)===0?0:1;
+    return sa-sb||a.localeCompare(b);
+  }).slice(0,limit||6);
+}
+function lastWarmupSet(name){
+  const key=normExerciseName(name);
+  for(const w of S.workouts||[]){
+    const ex=(w.exercises||[]).find(function(e){return e&&normExerciseName(e.name)===key;});
+    if(!ex||!Array.isArray(ex.sets))continue;
+    const warmups=ex.sets.filter(function(s){return s&&s.warmup&&s.w>0&&s.r>0;});
+    if(warmups.length)return warmups[warmups.length-1];
+  }
+  return null;
+}
+function lastFinalWorkingSet(name){
+  const key=normExerciseName(name);
+  for(const w of S.workouts||[]){
+    const ex=(w.exercises||[]).find(function(e){return e&&normExerciseName(e.name)===key;});
+    const final=finalWorkingSet(ex);
+    if(final)return{date:fmtD(w.date),w:final.w,r:final.r,e1:e1rm(final.w,final.r)};
+  }
+  return null;
+}
+function exerciseInputDefaults(name){
+  const canonical=canonicalExerciseName(name);
+  const warm=lastWarmupSet(canonical);
+  if(warm)return{inputW:String(toDisp(warm.w)),inputR:String(warm.r),nextIsWarmup:true,warmupSeeded:true};
+  const last=lastFinalWorkingSet(canonical);
+  return{inputW:last?String(toDisp(last.w)):getLastW(canonical),inputR:last&&last.r?String(last.r):'5',nextIsWarmup:false,warmupSeeded:false};
+}
+function loadFinalWorkingInputs(ex){
+  const last=lastFinalWorkingSet(ex&&ex.name);
+  if(!last)return false;
+  ex.inputW=String(toDisp(last.w));
+  ex.inputR=String(last.r);
+  ex.finalSeededAfterWarmup=true;
+  return true;
+}
+function inputMatchesSet(ex,set){
+  if(!ex||!set)return false;
+  const iw=Number(parseFloat(ex.inputW));
+  const ir=Number(parseFloat(ex.inputR));
+  return Math.abs(iw-Number(toDisp(set.w)))<0.05&&Math.abs(ir-Number(set.r))<0.05;
+}
+function hasWorkingSets(ex){
+  return !!(ex&&Array.isArray(ex.sets)&&ex.sets.some(function(s){return s&&!s.warmup&&s.w>0&&s.r>0;}));
+}
+function hasLoggedWarmup(ex){
+  return !!(ex&&Array.isArray(ex.sets)&&ex.sets.some(function(s){return s&&s.warmup&&s.w>0&&s.r>0;}));
+}
+function syncExerciseWarmupFlow(ex){
+  if(!ex||isCardioEx(ex.name))return;
+  const warm=lastWarmupSet(ex.name);
+  const hasWork=hasWorkingSets(ex);
+  if(!ex.sets||!ex.sets.length){
+    if(!warm)return;
+    if(!ex.warmupSeeded){
+      ex.inputW=String(toDisp(warm.w));
+      ex.inputR=String(warm.r);
+      ex.warmupSeeded=true;
+    }
+    if(inputMatchesSet(ex,warm))ex.nextIsWarmup=true;
+    return;
+  }
+  if(!hasWork&&hasLoggedWarmup(ex)&&!ex.finalSeededAfterWarmup){
+    ex.nextIsWarmup=false;
+    loadFinalWorkingInputs(ex);
+  }
+}
+function shouldLogWarmup(ex,isCardio){
+  if(isCardio)return false;
+  if(ex.nextIsWarmup)return true;
+  if(hasWorkingSets(ex))return false;
+  const warm=lastWarmupSet(ex.name);
+  return inputMatchesSet(ex,warm);
+}
+function makeWorkoutExercise(name){
+  const canonical=canonicalExerciseName(name);
+  const defaults=exerciseInputDefaults(canonical);
+  return{name:canonical,sets:[],inputW:defaults.inputW,inputR:defaults.inputR,nextIsWarmup:defaults.nextIsWarmup,warmupSeeded:defaults.warmupSeeded};
+}
+function exerciseSuggestionList(inputId){
+  const el=document.getElementById(inputId);
+  const q=el?el.value:'';
+  const items=exerciseSuggestions(q,6);
+  if(!items.length)return '';
+  return '<div class="exercise-suggestions">'+items.map(function(name){
+    const safe=name.replace(/'/g,"\\'");
+    const final=lastFinalWorkingSet(name);
+    const meta=final?'last set '+toDisp(final.w)+' '+uLbl()+' x '+final.r:'saved exercise';
+    return '<button type="button" class="exercise-suggestion" onclick="selectExerciseSuggestion(\''+inputId+'\',\''+safe+'\')">'+
+      '<span>'+escH(name)+'</span>'+
+      '<small>'+escH(meta)+'</small>'+
+    '</button>';
+  }).join('')+'</div>';
+}
+function exerciseSuggestionButtons(inputId){
+  const el=document.getElementById(inputId);
+  const q=el?el.value:'';
+  const items=exerciseSuggestions(q,6);
+  if(!items.length)return q?'<div class="exercise-suggestion-empty">No saved matches yet. Add it as a new exercise.</div>':'';
+  return items.map(function(name){
+    const safe=name.replace(/'/g,"\\'");
+    const final=lastFinalWorkingSet(name);
+    const meta=final?'last set '+toDisp(final.w)+' '+uLbl()+' x '+final.r:'saved exercise';
+    return '<button type="button" class="exercise-suggestion" onclick="selectExerciseSuggestion(\''+inputId+'\',\''+safe+'\')">'+
+      '<span>'+escH(name)+'</span>'+
+      '<small>'+escH(meta)+'</small>'+
+    '</button>';
+  }).join('');
+}
+function updateExerciseSuggestionPanel(inputId,panelId){
+  const panel=document.getElementById(panelId);
+  if(!panel)return;
+  panel.innerHTML=exerciseSuggestionButtons(inputId);
+}
+function selectExerciseSuggestion(inputId,name){
+  const el=document.getElementById(inputId);
+  if(el)el.value=name;
+  if(inputId==='cex')customEx();
+  else if(inputId==='past-new-ex')addPastExercise();
+  else if(inputId.indexOf('ex-edit-')===0){
+    const idx=parseInt(inputId.replace('ex-edit-',''),10);
+    if(!isNaN(idx))saveExEdit(idx);
+  }
+}
+function attrEsc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function exerciseDatalist(id){
+  return '<datalist id="'+attrEsc(id)+'">'+knownExerciseNames().map(function(name){
+    return '<option value="'+attrEsc(name)+'"></option>';
+  }).join('')+'</datalist>';
+}
 
 function buildQuickWorkoutSummary(clean,prs){
   const highlights=[];
@@ -835,7 +1015,7 @@ function startWorkout(split){
     if(!confirm('You have an unfinished '+spLbl(S.workout.split)+' workout. Discard it and start '+spLbl(sp)+'?'))return;
   }
   // Always build fresh from current splitEx
-  S.workout={date:new Date().toISOString(),split:sp,exercises:(S.splitEx[sp]||[]).filter(function(n){return n&&typeof n==='string';}).map(function(name){return{name:name,sets:[],inputW:getLastW(name),inputR:'5'};})};
+  S.workout={date:new Date().toISOString(),split:sp,exercises:(S.splitEx[sp]||[]).filter(function(n){return n&&typeof n==='string';}).map(makeWorkoutExercise)};
   S.workoutStartTime=Date.now();
   S.addingEx=false;S.editingExIdx=null;S.setVoiceIdx=null;S.dragIdx=null;S.dragOverIdx=null;
   S.inlineAIDraft='';S.inlineAIReply='';S.inlineAILoading=false;
@@ -1002,9 +1182,7 @@ function previewDayWorkout(day){
   S.workout={
     date:new Date().toISOString(),
     split:sp,
-    exercises:(S.splitEx[sp]||[]).map(function(name){
-      return{name:name,sets:[],inputW:getLastW(name),inputR:'5'};
-    })
+    exercises:(S.splitEx[sp]||[]).map(makeWorkoutExercise)
   };
   S.addingEx=false;S.editingExIdx=null;S.setVoiceIdx=null;
   S.inlineAIDraft='';S.inlineAIReply='';S.inlineAILoading=false;
@@ -1022,9 +1200,7 @@ function editTemplate(split){
     date:new Date().toISOString(),
     split:sp,
     templateOnly:true,
-    exercises:(S.splitEx[sp]||[]).map(function(name){
-      return{name:name,sets:[],inputW:getLastW(name),inputR:'5'};
-    })
+    exercises:(S.splitEx[sp]||[]).map(makeWorkoutExercise)
   };
   S.addingEx=false;S.editingExIdx=null;S.setVoiceIdx=null;S.dragIdx=null;S.dragOverIdx=null;
   S.inlineAIDraft='';S.inlineAIReply='';S.inlineAILoading=false;
@@ -1302,8 +1478,9 @@ function logSet(i){
   if(!isCardio&&!r)return;
   flushLogInputs();
   const set={w:isCardio?dW:toKg(dW),r:r};
-  if(ex.nextIsWarmup){set.warmup=true;ex.nextIsWarmup=false;} // auto-reset after logging
+  if(shouldLogWarmup(ex,isCardio)){set.warmup=true;ex.nextIsWarmup=false;} // auto-reset after logging
   S.workout.exercises[i].sets.push(set);
+  if(set.warmup&&!isCardio)loadFinalWorkingInputs(ex);
   // Mark the just-logged set so the row animates in once (cleared after paint).
   S._justSet={ei:i,si:S.workout.exercises[i].sets.length-1};
   // PR = working set that beats the best e1RM from the last logged session.
@@ -1326,7 +1503,13 @@ function logSet(i){
 }
 function delSet(ei,si){if(!S.workout)return;flushLogInputs();S.workout.exercises[ei].sets.splice(si,1);persistActiveWorkoutNow('set deleted');render();}
 function toggleAddEx(){S.addingEx=!S.addingEx;render();}
-function addEx(name){if(!S.workout||S.workout.exercises.find(function(e){return e.name===name;}))return;S.workout.exercises.push({name:name,sets:[],inputW:getLastW(name),inputR:'5'});S.addingEx=false;syncWorkoutToTemplate();persistActiveWorkoutNow('exercise added');render();}
+function addEx(name){
+  if(!S.workout)return;
+  const canonical=canonicalExerciseName(name);
+  if(S.workout.exercises.find(function(e){return normExerciseName(e.name)===normExerciseName(canonical);}))return;
+  S.workout.exercises.push(makeWorkoutExercise(canonical));
+  S.addingEx=false;syncWorkoutToTemplate();persistActiveWorkoutNow('exercise added');render();
+}
 function customEx(){const inp=document.getElementById('cex');if(inp&&inp.value.trim())addEx(inp.value.trim());}
 
 // Manual exercise editing
@@ -1336,7 +1519,16 @@ function saveExEdit(i){
   const inp=document.getElementById('ex-edit-'+i);
   const name=inp?inp.value.trim():'';
   if(!name||!S.workout)return;
-  S.workout.exercises[i].name=name;S.editingExIdx=null;syncWorkoutToTemplate();persistActiveWorkoutNow('exercise renamed');render();
+  const canonical=canonicalExerciseName(name);
+  const ex=S.workout.exercises[i];
+  ex.name=canonical;
+  if(!ex.sets.length){
+    const defaults=exerciseInputDefaults(canonical);
+    ex.inputW=defaults.inputW;
+    ex.inputR=defaults.inputR;
+    ex.nextIsWarmup=defaults.nextIsWarmup;
+  }
+  S.editingExIdx=null;syncWorkoutToTemplate();persistActiveWorkoutNow('exercise renamed');render();
 }
 function removeExFromWorkout(i){if(!S.workout)return;flushLogInputs();S.workout.exercises.splice(i,1);S.editingExIdx=null;syncWorkoutToTemplate();persistActiveWorkoutNow('exercise removed');render();}
 function moveExUp(i){

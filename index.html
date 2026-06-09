@@ -22,7 +22,7 @@
 <title>Forma</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="css/styles.css?v=theme6">
+<link rel="stylesheet" href="css/styles.css?v=exercise-suggest1">
 </head>
 <body>
 <div id="root"></div>
@@ -30,9 +30,9 @@
 <script src="js/supabaseClient.js?v=cloudsave1"></script>
 <script src="js/utils.js"></script>
 <script src="js/storage.js?v=cloudsave1"></script>
-<script src="js/recommendations.js?v=cloudsave1"></script>
+<script src="js/recommendations.js?v=early-recs1"></script>
 <script src="js/stats.js?v=theme1"></script>
-<script src="js/workout.js?v=cloudsave1"></script>
+<script src="js/workout.js?v=exercise-suggest3"></script>
 <script src="js/onboarding.js"></script>
 <script src="js/coachingAnalysis.js"></script>
 <script src="js/ai.js?v=cloudsave1"></script>
@@ -700,7 +700,7 @@ function deletePastExercise(ei){
 }
 function savePastExName(ei){
   const inp=document.getElementById('past-ex-name-'+ei);
-  const name=inp?inp.value.trim():'';
+  const name=canonicalExerciseName(inp?inp.value.trim():'');
   if(!name)return;
   S.workouts[S.selWorkout].exercises[ei].name=name;
   S.editPastExIdx=null;
@@ -708,9 +708,9 @@ function savePastExName(ei){
 }
 function addPastExercise(){
   const inp=document.getElementById('past-new-ex');
-  const name=inp?inp.value.trim():'';
+  const name=canonicalExerciseName(inp?inp.value.trim():'');
   if(!name)return;
-  S.workouts[S.selWorkout].exercises.push({name:name,sets:[],inputW:'135',inputR:'8'});
+  S.workouts[S.selWorkout].exercises.push(makeWorkoutExercise(name));
   if(inp)inp.value='';
   pastSave();render();
 }
@@ -858,9 +858,10 @@ function vWorkoutDetail(){
     '<div style="background:var(--s1);border:1.5px dashed var(--border2);border-radius:10px;padding:12px;margin-bottom:10px">'+
       '<span class="lbl" style="margin-bottom:8px">ADD EXERCISE</span>'+
       '<div style="display:flex;gap:6px">'+
-        '<input id="past-new-ex" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 11px;font-size:12px;color:var(--white);outline:none;font-family:inherit" placeholder="Exercise name..." onkeydown="if(event.key===\'Enter\')addPastExercise()">'+
+        '<input id="past-new-ex" autocomplete="off" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 11px;font-size:12px;color:var(--white);outline:none;font-family:inherit" placeholder="Search or add exercise..." oninput="updateExerciseSuggestionPanel(\'past-new-ex\',\'past-ex-suggestions\')" onfocus="updateExerciseSuggestionPanel(\'past-new-ex\',\'past-ex-suggestions\')" onkeydown="if(event.key===\'Enter\')addPastExercise()">'+
         '<button onclick="addPastExercise()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:8px 14px;font-weight:700;font-size:11px;cursor:pointer;font-family:inherit">ADD</button>'+
       '</div>'+
+      '<div id="past-ex-suggestions" class="exercise-suggestions"></div>'+
     '</div>':'';
 
   return '<div style="background:'+hexA(col,.08)+';border:1px solid '+hexA(col,.25)+';border-radius:12px;padding:16px;margin-bottom:18px">'+
@@ -1164,7 +1165,13 @@ function addSplitEx(){
 function removeSplitEx(split,idx){S.splitEx[split].splice(idx,1);persist('ll_splits',S.splitEx);render();}
 function setUnit(u){
   S.unit=u;persist('ll_unit',u);
-  if(S.workout)S.workout.exercises.forEach(function(ex){ex.inputW=getLastW(ex.name);});
+  if(S.workout)S.workout.exercises.forEach(function(ex){
+    if(ex.sets&&ex.sets.length)return;
+    const defaults=exerciseInputDefaults(ex.name);
+    ex.inputW=defaults.inputW;
+    ex.inputR=defaults.inputR;
+    ex.nextIsWarmup=defaults.nextIsWarmup;
+  });
   render();
 }
 function applyTheme(t){
