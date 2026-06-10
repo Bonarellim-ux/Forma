@@ -1,0 +1,197 @@
+{
+  "version": 2,
+  "exported": "2026-06-10T00:00:00.000Z",
+  "workouts": [
+    {
+      "date": "2026-06-01T18:00:00.000Z",
+      "split": "full-body",
+      "exercises": [
+        {
+          "name": "Goblet Squat",
+          "sets": [
+            { "w": 9.07, "r": 8, "warmup": true },
+            { "w": 13.61, "r": 10 },
+            { "w": 13.61, "r": 9 }
+          ]
+        },
+        {
+          "name": "Bench Press",
+          "sets": [
+            { "w": 20.41, "r": 8, "warmup": true },
+            { "w": 29.48, "r": 8 },
+            { "w": 29.48, "r": 7 }
+          ]
+        },
+        {
+          "name": "Lat Pulldown",
+          "sets": [
+            { "w": 20.41, "r": 10, "warmup": true },
+            { "w": 31.75, "r": 10 },
+            { "w": 31.75, "r": 9 }
+          ]
+        },
+        {
+          "name": "DB Shoulder Press",
+          "sets": [
+            { "w": 6.8, "r": 10, "warmup": true },
+            { "w": 9.07, "r": 10 },
+            { "w": 9.07, "r": 8 }
+          ]
+        },
+        {
+          "name": "Leg Curl",
+          "sets": [
+            { "w": 18.14, "r": 10, "warmup": true },
+            { "w": 27.22, "r": 10 },
+            { "w": 27.22, "r": 9 }
+          ]
+        }
+      ],
+      "debrief": "First full-body session completed. Kept loads conservative and focused on clean reps."
+    },
+    {
+      "date": "2026-06-03T18:00:00.000Z",
+      "split": "full-body",
+      "exercises": [
+        {
+          "name": "Goblet Squat",
+          "sets": [
+            { "w": 9.07, "r": 8, "warmup": true },
+            { "w": 13.61, "r": 11 },
+            { "w": 13.61, "r": 10 }
+          ]
+        },
+        {
+          "name": "Bench Press",
+          "sets": [
+            { "w": 20.41, "r": 8, "warmup": true },
+            { "w": 29.48, "r": 9 },
+            { "w": 29.48, "r": 8 }
+          ]
+        },
+        {
+          "name": "Lat Pulldown",
+          "sets": [
+            { "w": 20.41, "r": 10, "warmup": true },
+            { "w": 31.75, "r": 11 },
+            { "w": 31.75, "r": 10 }
+          ]
+        },
+        {
+          "name": "DB Shoulder Press",
+          "sets": [
+            { "w": 6.8, "r": 10, "warmup": true },
+            { "w": 9.07, "r": 11 },
+            { "w": 9.07, "r": 9 }
+          ]
+        },
+        {
+          "name": "Leg Curl",
+          "sets": [
+            { "w": 18.14, "r": 10, "warmup": true },
+            { "w": 27.22, "r": 11 },
+            { "w": 27.22, "r": 10 }
+          ]
+        }
+      ],
+      "debrief": "Second full-body session. Most exercises added one rep at the same weight."
+    },
+    {
+      "date": "2026-06-05T18:00:00.000Z",
+      "split": "full-body",
+      "exercises": [
+        {
+          "name": "Goblet Squat",
+          "sets": [
+            { "w": 9.07, "r": 8, "warmup": true },
+            { "w": 15.88, "r": 9 },
+            { "w": 15.88, "r": 8 }
+          ]
+        },
+        {
+          "name": "Bench Press",
+          "sets": [
+            { "w": 20.41, "r": 8, "warmup": true },
+            { "w": 31.75, "r": 8 },
+            { "w": 31.75, "r": 7 }
+          ]
+        },
+        {
+          "name": "Lat Pulldown",
+          "sets": [
+            { "w": 20.41, "r": 10, "warmup": true },
+            { "w": 34.02, "r": 9 },
+            { "w": 34.02, "r": 8 }
+          ]
+        },
+        {
+          "name": "DB Shoulder Press",
+          "sets": [
+            { "w": 6.8, "r": 10, "warmup": true },
+            { "w": 11.34, "r": 8 },
+            { "w": 11.34, "r": 7 }
+          ]
+        },
+        {
+          "name": "Leg Curl",
+          "sets": [
+            { "w": 18.14, "r": 10, "warmup": true },
+            { "w": 29.48, "r": 9 },
+            { "w": 29.48, "r": 8 }
+          ]
+        }
+      ],
+      "debrief": "Third full-body session. Small load increases were introduced after early rep progress."
+    },
+    {
+      "date": "2026-06-06T15:30:00.000Z",
+      "split": "cardio",
+      "exercises": [
+        {
+          "name": "Walking",
+          "sets": [
+            { "w": 25, "r": 0 }
+          ]
+        }
+      ],
+      "debrief": "Easy recovery walk after the first training week."
+    }
+  ],
+  "schedule": {
+    "mon": "full-body",
+    "tue": "rest",
+    "wed": "full-body",
+    "thu": "rest",
+    "fri": "full-body",
+    "sat": "rest",
+    "sun": "rest"
+  },
+  "splits": {
+    "full-body": [
+      "Goblet Squat",
+      "Bench Press",
+      "Lat Pulldown",
+      "DB Shoulder Press",
+      "Leg Curl"
+    ],
+    "rest": [],
+    "cardio": [
+      "Walking"
+    ]
+  },
+  "unit": "lbs",
+  "profile": {
+    "name": "Beginner Test",
+    "goal": "Build consistency and learn full-body training",
+    "experience": "Just starting out (< 6 months)",
+    "session_duration": 45,
+    "exercises_per_session": 5,
+    "equipment": "Full commercial gym",
+    "injuries": "",
+    "preferences": "Beginner 3x/week full-body test import.",
+    "bodyweight": 175,
+    "height": "5'10\""
+  },
+  "onboarded": true,
+  "active_workout": null
+}

@@ -1,24 +1,63 @@
 // Storage, import, and export helpers for Forma.
+function normalizeImportedWeight(value,unit){
+  if(value===undefined||value===null||value==='')return 0;
+  const text=String(value).trim().toLowerCase();
+  const num=typeof value==='number'?value:parseFloat(text.replace(/,/g,''));
+  if(!Number.isFinite(num))return 0;
+  if(text.includes('lb')||unit==='lbs')return num/KG2LB;
+  if(text.includes('kg')||unit==='kg')return num;
+  return unit==='lbs'?num/KG2LB:num;
+}
+
+function normalizeImportedSet(set,unit){
+  if(!set)return{w:0,r:0};
+  const hasInternalW=set.w!==undefined;
+  const hasInternalR=set.r!==undefined;
+  const out=Object.assign({},set);
+  if(!hasInternalW){
+    const rawWeight=set.weight!==undefined?set.weight:(set.lbs!==undefined?set.lbs:set.kg);
+    const rawUnit=set.lbs!==undefined?'lbs':(set.kg!==undefined?'kg':(set.unit||unit||S.unit));
+    out.w=normalizeImportedWeight(rawWeight,rawUnit);
+  }else{
+    out.w=Number(set.w)||0;
+  }
+  if(!hasInternalR){
+    out.r=Number(set.reps!==undefined?set.reps:(set.rep!==undefined?set.rep:0))||0;
+  }else{
+    out.r=Number(set.r)||0;
+  }
+  out.warmup=!!(set.warmup||set.isWarmup);
+  return out;
+}
+
+function normalizeImportedWorkouts(workouts,unit){
+  if(!Array.isArray(workouts))return [];
+  return workouts.map(function(workout){
+    if(!workout||!Array.isArray(workout.exercises))return null;
+    const normalized=Object.assign({},workout);
+    normalized.exercises=workout.exercises.filter(Boolean).map(function(ex){
+      const cleanEx=Object.assign({},ex);
+      cleanEx.sets=Array.isArray(ex.sets)?ex.sets.map(function(set){return normalizeImportedSet(set,unit);}).filter(Boolean):[];
+      return cleanEx;
+    });
+    return normalized;
+  }).filter(Boolean);
+}
+
 async function loadData(){
   try{
     if(S.auth&&S.auth.configured&&S.auth.user&&typeof formaLoadCloudState==='function'){
       await formaLoadCloudState();
     }else if(!(S.auth&&S.auth.configured)){
       const load=function(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}};
+      const u=load('ll_unit');       if(u)   S.unit=u;
       const w=load('ll_workouts');
       if(w){
         // Sanitize all historical workouts — ensure every exercise has a valid sets array
-        S.workouts=w.map(function(workout){
-          if(!workout||!Array.isArray(workout.exercises))return workout;
-          workout.exercises=workout.exercises.filter(Boolean).map(function(ex){
-            return Object.assign({},ex,{sets:Array.isArray(ex.sets)?ex.sets:[]});
-          });
-          return workout;
-        }).filter(Boolean);
+        S.workouts=normalizeImportedWorkouts(w,S.unit);
       }
       const sh=load('ll_sched_hist');if(sh)  S.scheduleHistory=sh;
       const sp=load('ll_splits');    if(sp)  S.splitEx=sp;
-      const u=load('ll_unit');       if(u)   S.unit=u;
       const pr=load('ll_profile');   if(pr)  S.profile=Object.assign({},S.profile,pr);
       const ob=load('ll_onboarded'); if(ob)  S.onboarded=ob;
       // Restore active workout but stay on home — user navigates back manually
@@ -39,6 +78,7 @@ async function loadData(){
   }catch(e){
     if(S.auth)S.auth.error='Could not load account data: '+e.message;
   }
+  S.workouts=normalizeImportedWorkouts(S.workouts,S.unit);
   normalizeSplitsData();
   persist('ll_schedule',S.schedule);
   persist('ll_splits',S.splitEx);
@@ -135,7 +175,8 @@ function importData(input){
       if(!confirm('This will replace ALL your current data with the backup from '+new Date(data.exported).toLocaleDateString()+'. Continue?'))return;
       S.importStatus={text:'Importing backup...',color:'var(--blue)'};
       render();
-      if(data.workouts)  {S.workouts=data.workouts;   persist('ll_workouts',data.workouts);}
+      const importUnit=data.unit||S.unit;
+      if(data.workouts)  {S.workouts=normalizeImportedWorkouts(data.workouts,importUnit); persist('ll_workouts',S.workouts);}
       if(data.schedule)  {S.schedule=data.schedule;   persist('ll_schedule',data.schedule);}
       if(data.splits)    {S.splitEx=data.splits;       persist('ll_splits',data.splits);}
       if(data.unit)      {S.unit=data.unit;             persist('ll_unit',data.unit);}
