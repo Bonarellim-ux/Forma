@@ -938,7 +938,7 @@ function buildLegacySysPrompt(){
     '38. Do not sound apologetic by default. Be humble when uncertain and confident when the data is strong.\n'+
     '39. Do not use markdown tables in chat. They do not fit the mobile layout. Use short bullets or compact lines instead.\n'+
     '40. CAUSATION AND CONFIDENCE: Separate what the logs clearly show from your interpretation. For root-cause, weakness, limiter, pain, or "why is this happening" questions, use this compact structure when appropriate: Observation, Likely contributor, Other possibilities, Next.\n'+
-    '41. Use confidence language: "high confidence" only when multiple independent signals support the same conclusion; "medium confidence" when evidence is plausible but incomplete; "low confidence" when data is weak. Do not use confidence percentages.\n'+
+    '41. Use confidence language: "high confidence" only when multiple independent signals support the same conclusion; "medium confidence" when evidence is plausible but incomplete; "low confidence" when data is weak. Confidence must change the recommendation style: high = one decisive recommendation, medium = preferred recommendation plus 1-2 reasonable alternatives, low = monitor/gather data or present options without a strong prescription. Do not use confidence percentages.\n'+
     '42. Do not treat correlation as causation. Do not say an issue is causing a weakness unless evidence is very strong. Prefer "likely contributor" or "may be limiting" when the cause is plausible but not proven.\n'+
     '43. Do not anchor every answer on one explanation. If shoulder irritation or another issue was already discussed, acknowledge it briefly only when relevant, then also consider recovery, sleep, nutrition, volume, exercise selection, recent PRs, and normal performance variation.\n'+
     '44. For "biggest limiter", "biggest weakness", or "one thing to improve" answers, do not give only one cause unless evidence is very strong. Include 1-3 other plausible explanations when relevant, then one practical next action.\n'+
@@ -1236,15 +1236,54 @@ function aiConversationStateContext(question){
     if(text.length>max)return text.slice(0,max-1)+'…';
     return text;
   }
+  function topicFrom(text){
+    text=String(text||'').toLowerCase();
+    if(/\b(add|remove|reduce|increase|change|switch|extra|another|sixth|5|4|3)\b.*\b(day|days|split|schedule|volume|frequency)\b|\b(day|days|split|schedule|volume|frequency)\b.*\b(add|remove|reduce|increase|change|switch|extra|another|sixth)\b/.test(text))return 'program_modification';
+    if(/\b(weakness|weakest|limiter|limiting|why|dropped|declining|trend|progress|improving|plateau)\b/.test(text))return 'performance_analysis';
+    if(/\b(swap|replace|substitute|alternative|exercise)\b/.test(text))return 'exercise_selection';
+    if(/\b(workout|session|sets|reps|build|generate)\b/.test(text))return 'workout_generation';
+    return 'general_coaching';
+  }
+  function goalFrom(text){
+    text=String(text||'').toLowerCase();
+    if(/\bmore volume|increase volume|add volume\b/.test(text))return 'increase_weekly_volume';
+    if(/\breduce|fewer|less.*days|4 days|four days\b/.test(text))return 'reduce_training_days';
+    if(/\badd|another|extra|sixth\b/.test(text)&&/\bday|days\b/.test(text))return 'add_training_day';
+    if(/\bweak|lagging|priority|prioritize\b/.test(text))return 'address_weak_point';
+    if(/\bconditioning|cardio|fat loss|lose fat\b/.test(text))return 'conditioning_or_fat_loss';
+    return 'unspecified';
+  }
+  function isCoachQuestion(text){
+    return /\?$|what is the goal|would you like|want me|should i|do you want|more volume|conditioning|weak-point|weak point|apply|make the switch/i.test(String(text||''));
+  }
+  function isConfirmation(text){
+    return /^(yes|yeah|yep|ok|okay|sure|do it|go ahead|please|perfect|sounds good|change it|apply it|you recommend one)\.?$/i.test(String(text||'').trim());
+  }
   const msgs=(S.messages||[]).filter(function(m){
     return m&&(m.role==='user'||m.role==='ai')&&m.text;
   }).slice(-10);
   const lines=msgs.map(function(m,i){
     return (i+1)+'. '+(m.role==='ai'?'Coach':'User')+': '+cleanLine(m.text,420);
   });
+  const lastCoach=msgs.slice().reverse().find(function(m){return m.role==='ai';});
+  const lastUser=msgs.slice().reverse().find(function(m){return m.role==='user';});
+  const threadText=msgs.map(function(m){return m.text;}).join(' ')+' '+question;
+  const activeTopic=topicFrom(threadText);
+  const currentGoal=goalFrom(threadText);
+  const state={
+    topic:activeTopic,
+    current_goal:currentGoal,
+    latest_message_is_confirmation:isConfirmation(question),
+    awaiting_confirmation:!!(lastCoach&&isCoachQuestion(lastCoach.text)&&isConfirmation(question)),
+    unresolved_coach_question:lastCoach&&isCoachQuestion(lastCoach.text)?cleanLine(lastCoach.text,220):'',
+    latest_user_answer_context:lastCoach&&isCoachQuestion(lastCoach.text)?'Interpret the latest user message as answering the preceding coach question unless the topic clearly changed.':'',
+    pending_recommendation:lastCoach&&/recommend|would|switch|add|remove|change|apply|move/i.test(lastCoach.text)?cleanLine(lastCoach.text,260):'',
+    current_program_context:aiScheduleContext()
+  };
   return 'Latest user message: '+cleanLine(question,420)+'\n'+
+    'Inferred conversation state object:\n'+JSON.stringify(state,null,2)+'\n'+
     'Recent active conversation:\n'+(lines.length?lines.join('\n'):'No previous chat context available.')+'\n'+
-    'Internal reconstruction required before answering: identify the user current goal, current coaching topic, questions you asked, answers the user gave, recommendations already made, pending decisions, pending confirmations, and current program/schedule being discussed.';
+    'Internal reconstruction required before answering: check the state object, then identify the user current goal, current coaching topic, questions you asked, answers the user gave, recommendations already made, pending decisions, pending confirmations, and current program/schedule being discussed.';
 }
 
 function buildSysPrompt(question){
@@ -1264,7 +1303,9 @@ function buildSysPrompt(question){
     'RECOMMENDATION ENGINE AND COMPACT DATA\n'+compactCtx+'\n\n'+
     'CORE COACHING RULES\n'+
     '- Conversation-first reasoning: the active conversation is the primary unit of reasoning, not the latest message alone. Every response must be based on Conversation State + Current Program + User Goals + Latest Message.\n'+
-    '- Before answering, internally reconstruct the conversation state: current goal, topic, questions asked, answers given, recommendations made, pending decisions, pending confirmations, and current program being discussed. Do not display this reconstruction unless it helps the answer.\n'+
+    '- Before answering, use the inferred conversation state object as working memory: topic, current_goal, pending_recommendation, awaiting_confirmation, unresolved_coach_question, and current_program_context. Then internally reconstruct questions asked, answers given, recommendations made, pending decisions, pending confirmations, and current program being discussed. Do not display this reconstruction unless it helps the answer.\n'+
+    '- Check pending confirmations first. If awaiting_confirmation is true and the latest user message is a short confirmation, resolve or apply the pending recommendation instead of asking what they mean.\n'+
+    '- Check unresolved coach questions second. If the latest user message plausibly answers your immediately preceding question, continue from that answer. Do not ask the same question again in narrower wording.\n'+
     '- Default assumption: the user is continuing the existing discussion. Treat the latest message as a new topic only when there is strong evidence the topic changed.\n'+
     '- Preserve coaching threads. If you proposed a recommendation or asked for confirmation and the user says "yes", "you recommend one", "more volume", or another short answer, interpret it against the pending question or recommendation before considering a new request.\n'+
     '- Reason in this order: Coaching Analysis, Forma recommendation engine, then raw workout history. Do not let one isolated negative exercise outrank a stronger pattern-level issue.\n'+
@@ -1287,9 +1328,11 @@ function buildSysPrompt(question){
     '- Workout generation boundary: when the user says "you recommend one" after asking about adding a training day, recommend the best day/type/structure. Do not generate exercises yet; offer to design the workout as the next step.\n'+
     '- If RECOMMENDATION ENGINE AND COMPACT DATA includes "Forma recommendation engine signals" with a real recommendation, explicitly reference it before adding your own coaching context. Example: "Forma\'s recommendation engine currently suggests increasing OHP to 115 lbs because..."\n'+
     '- Every recommendation must include a visible confidence label: "Confidence: High", "Confidence: Medium", or "Confidence: Low". Use the recommendation engine confidence when available. If you are making your own recommendation, base confidence on data quality, history length, agreement across signals, and whether warm-ups were excluded.\n'+
-    '- Confidence must match evidence quality. High requires multiple exercises, multiple sessions, and a consistent pattern. Medium means limited data or a partial pattern. Low means a single signal or speculative explanation.\n'+
+    '- Confidence must change the answer, not just the label. High confidence (8-10 evidence quality): give one clear recommendation and be decisive. Medium confidence (5-7): give a preferred recommendation, acknowledge uncertainty, and include 1-2 reasonable alternatives. Low confidence (1-4): avoid strong recommendations; give reasonable options, monitoring steps, or information to gather.\n'+
+    '- Confidence must match evidence quality. High requires multiple exercises, multiple sessions, sufficient training history, and converging signals. Medium means some support, partial history, or mixed-but-usable signals. Low means limited data, contradictory signals, missing context, a single session, or a speculative explanation.\n'+
     '- Avoid assigning High confidence to hypotheses, likely contributors, or causal explanations unless multiple independent signals support that explanation.\n'+
-    '- Only make a training recommendation when confidence is Medium or High. If confidence is Low, the recommendation must be to monitor, gather more data, or repeat the planned work.\n'+
+    '- Only make a specific training change when confidence is Medium or High. If confidence is Low, the recommendation must be to monitor, gather more data, repeat the planned work, or choose from conservative options. Never prescribe a high-intervention change from Low confidence.\n'+
+    '- Under uncertainty, scale down the intervention. Low confidence should not trigger volume increases, exercise swaps, deloads, or split changes unless the user explicitly requests a change and you present it as one reasonable option rather than the answer.\n'+
     '- Recommendation hierarchy: Level 1 monitor, Level 2 adjust execution, Level 3 adjust volume, Level 4 adjust exercise selection, Level 5 adjust program structure. Prefer the lowest effective intervention; use volume, exercise-selection, or program-structure changes only when evidence clearly supports them.\n'+
     '- Small changes, single-session drops, and isolated accessory plateaus should not become priorities. Treat them as observations to monitor unless they persist or match broader patterns.\n'+
     '- Ignore warm-up sets for progress, PR, weakness, and recommendation judgments unless the user asks about warm-ups.\n'+

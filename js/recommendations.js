@@ -763,7 +763,8 @@ function getLastW(name){
   if(s)return String(toDisp(s.w));
   // Smart default: look up by name, then by keyword
   const n=name.trim();
-  if(EX_DEFAULTS[n]!==undefined)return String(EX_DEFAULTS[n]);
+  const defaults=(typeof EX_DEFAULTS==='object'&&EX_DEFAULTS)?EX_DEFAULTS:{};
+  if(defaults[n]!==undefined)return String(defaults[n]);
   const nl=n.toLowerCase();
   if(nl.includes('deadlift'))return '135';
   if(nl.includes('squat'))return '95';

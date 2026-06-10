@@ -17,7 +17,9 @@
   button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer;font-family:inherit}
   .primary{background:var(--blue);color:#fff}
   .secondary{background:#EAF4FB;color:#0E7BC4;border:1px solid #CBE3F4}
+  .danger{background:#FFF1F1;color:#B83B32;border:1px solid #F0C5C1}
   button:disabled{opacity:.55;cursor:not-allowed}
+  select{border:1px solid var(--border);border-radius:8px;padding:9px 10px;font:inherit;background:#fff;color:var(--ink);font-weight:700}
   .status{font-size:13px;color:var(--muted);margin-top:10px;min-height:20px}
   .run-options{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:13px;color:var(--muted)}
   .run-options input{width:84px;min-height:34px;margin:0}
@@ -28,6 +30,22 @@
   .q{font-size:15px;font-weight:800;margin-bottom:10px}
   .answer{white-space:pre-wrap;font-size:14px;border-left:3px solid var(--blue);padding:10px 12px;background:#F7FBFE;border-radius:0 8px 8px 0;color:#173047}
   .error{border-left-color:#D9534F;background:#FFF4F4;color:#8A2420}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:800;background:#EEF6FC;color:#0E7BC4;border:1px solid #CBE3F4}
+  .pill.pass{background:#EAF8F1;color:#237A4F;border-color:#BFE9D0}
+  .pill.fail{background:#FFF1F1;color:#B83B32;border-color:#F0C5C1}
+  .pill.neutral{background:#F3F6F8;color:var(--muted);border-color:var(--border)}
+  .checklist{display:grid;gap:6px;margin-top:12px}
+  .check{display:flex;gap:8px;font-size:12px;padding:7px 9px;border-radius:8px;background:#F8FBFE;border:1px solid var(--border)}
+  .check.pass{border-color:#BFE9D0;background:#F3FBF6}
+  .check.fail{border-color:#F0C5C1;background:#FFF8F8}
+  .rubric{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:8px;margin-top:12px}
+  .metric{background:#F8FBFE;border:1px solid var(--border);border-radius:9px;padding:8px 9px}
+  .metric b{display:block;font-size:16px;color:var(--ink)}
+  .metric span{font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+  .compare{font-size:12px;color:var(--muted);background:#FAFCFE;border:1px solid var(--border);border-radius:9px;padding:8px 10px;margin-top:10px}
+  details{margin-top:12px}
+  summary{cursor:pointer;font-size:12px;font-weight:800;color:var(--blue)}
   .score{display:grid;grid-template-columns:repeat(4,minmax(110px,1fr));gap:10px;margin-top:14px}
   label{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
   input,textarea{width:100%;margin-top:5px;border:1px solid var(--border);border-radius:8px;padding:8px 9px;font:inherit;background:#fff;color:var(--ink)}
@@ -35,7 +53,7 @@
   textarea{min-height:74px;resize:vertical}
   .notes{grid-column:1/-1}
   .small{font-size:12px;color:var(--muted);margin-top:8px}
-  @media(max-width:700px){.score{grid-template-columns:1fr 1fr}main{padding:18px 12px 36px}}
+  @media(max-width:700px){.score,.rubric{grid-template-columns:1fr 1fr}main{padding:18px 12px 36px}}
 </style>
 </head>
 <body>
@@ -45,15 +63,21 @@
 
   <section class="panel">
     <div class="actions">
-      <button id="run-btn" class="primary">Run AI Test</button>
+      <button id="run-quick-btn" class="primary">Run Quick Regression</button>
+      <button id="run-deep-btn" class="secondary">Run Deep Evaluation</button>
+      <button id="rerun-failed-btn" class="secondary" disabled>Rerun Failed</button>
+      <button id="save-baseline-btn" class="secondary" disabled>Save Baseline</button>
       <button id="copy-btn" class="secondary" disabled>Copy Results</button>
+      <button id="export-btn" class="secondary" disabled>Export JSON</button>
+      <button id="clear-baseline-btn" class="danger" type="button">Clear Baselines</button>
     </div>
     <div class="run-options">
-      <label>Delay seconds<input id="delay-input" type="number" min="0" max="60" value="10"></label>
+      <label>Suite<select id="suite-select"></select></label>
+      <label>Delay seconds<input id="delay-input" type="number" min="0" max="60" value="1"></label>
       <button id="select-all-btn" class="secondary" type="button">Select All</button>
       <button id="select-none-btn" class="secondary" type="button">Select None</button>
     </div>
-    <div id="status" class="status">Ready. This reads Forma data from localStorage and sends questions through the configured proxy.</div>
+    <div id="status" class="status">Ready. Quick mode uses curated mock datasets for faster repeatable checks. Deep mode stores full responses and rubric details.</div>
     <div class="questions" id="questions"></div>
   </section>
 
@@ -103,89 +127,401 @@ const S={
   progressTab:'calendar',selEx:'',chart:null,scoreDetail:null,_scoreResults:{}
 };
 </script>
-<script src="../js/utils.js"></script>
+<script src="../js/utils.js?v=defaults1"></script>
 <script src="../js/storage.js"></script>
 <script src="../js/recommendations.js"></script>
 <script src="../js/stats.js"></script>
 <script src="../js/coachingAnalysis.js"></script>
 <script src="../js/ai.js?v=proxy1"></script>
 <script>
-const QUESTIONS=[
-  "What’s my biggest weakness right now?",
-  "What lift is improving the fastest?",
-  "What should I focus on this week?",
-  "Am I progressing overall?",
-  "Which exercise should I prioritize today?",
-  "Am I ready to increase weight on any exercises?",
-  "Is there any exercise in my program that I should consider replacing?",
-  "What is the biggest thing limiting my progress?",
-  "If I could improve only one thing next month, what would it be?",
-  "Based on my history, what do you think my goal is?"
+const BASELINE_KEY='forma_dev_ai_test_baselines_v1';
+const RESULTS_KEY='forma_dev_ai_test_last_results_v1';
+const RUBRIC=[
+  'overall','contextUse','intentUnderstanding','programReasoning',
+  'evidenceDiscipline','actionQuality','conversationNaturalness','noFabrication'
+];
+const RUBRIC_LABELS={
+  overall:'Overall Score',
+  contextUse:'Context Use',
+  intentUnderstanding:'Intent Understanding',
+  programReasoning:'Program Reasoning',
+  evidenceDiscipline:'Evidence Discipline',
+  actionQuality:'Action Quality',
+  conversationNaturalness:'Conversation Naturalness',
+  noFabrication:'No Fabrication'
+};
+
+const DATASETS={
+  new_user:{
+    label:'New user with no history',
+    profile:{name:'Test',goal:'Build muscle',experience:'Beginner',session_duration:50,equipment:'Commercial Gym'},
+    schedule:{mon:'full body',tue:'rest',wed:'full body',thu:'rest',fri:'full body',sat:'rest',sun:'rest'},
+    splitEx:{'full body':['Squat','Bench Press','Lat Pulldown','Romanian Deadlift','Lateral Raise'],rest:[]},
+    workouts:[]
+  },
+  beginner_two:{
+    label:'Beginner with 2 workouts',
+    profile:{name:'Test',goal:'Build muscle and consistency',experience:'Beginner',session_duration:45,equipment:'Commercial Gym'},
+    schedule:{mon:'upper',tue:'rest',wed:'lower',thu:'rest',fri:'upper',sat:'rest',sun:'rest'},
+    splitEx:{upper:['Bench Press','Lat Pulldown','Dumbbell Shoulder Press','Bicep Curl'],lower:['Squat','Romanian Deadlift','Leg Press','Calf Raise'],rest:[]},
+    workouts:[
+      workout('2026-06-07','upper',[ex('Bench Press',[[95,8],[95,7]]),ex('Lat Pulldown',[[85,10],[85,9]]),ex('Dumbbell Shoulder Press',[[30,10]])]),
+      workout('2026-06-03','lower',[ex('Squat',[[115,8],[115,7]]),ex('Romanian Deadlift',[[95,10],[95,9]]),ex('Leg Press',[[160,10]])])
+    ]
+  },
+  intermediate_eight:{
+    label:'Intermediate with 8 workouts',
+    profile:{name:'Test',goal:'Hypertrophy with strength progress',experience:'Intermediate',session_duration:60,equipment:'Commercial Gym'},
+    schedule:{mon:'push',tue:'pull',wed:'legs',thu:'upper',fri:'lower',sat:'rest',sun:'rest'},
+    splitEx:{push:['Bench Press','Overhead Press','Incline Dumbbell Press','Tricep Pushdown','Lateral Raise'],pull:['Deadlift','Seated Cable Row','Lat Pulldown','Face Pull','Bicep Curl'],legs:['Squat','Romanian Deadlift','Leg Press','Leg Curl','Calf Raise'],upper:['Bench Press','Seated Cable Row','Overhead Press','Lat Pulldown'],lower:['Squat','Romanian Deadlift','Leg Press','Calf Raise'],rest:[]},
+    workouts:[
+      workout('2026-06-08','push',[ex('Bench Press',[[225,6],[225,5]]),ex('Overhead Press',[[115,8]]),ex('Incline Dumbbell Press',[[90,9]]),ex('Tricep Pushdown',[[90,9]]),ex('Lateral Raise',[[60,15]])]),
+      workout('2026-06-06','pull',[ex('Deadlift',[[315,6]]),ex('Seated Cable Row',[[150,10]]),ex('Lat Pulldown',[[145,10]]),ex('Face Pull',[[65,15]]),ex('Bicep Curl',[[45,12]])]),
+      workout('2026-06-04','legs',[ex('Squat',[[275,5]]),ex('Romanian Deadlift',[[205,8]]),ex('Leg Press',[[330,12]])]),
+      workout('2026-06-01','push',[ex('Bench Press',[[225,8],[225,6]]),ex('Overhead Press',[[110,8]]),ex('Incline Dumbbell Press',[[85,10]]),ex('Tricep Pushdown',[[90,10]])]),
+      workout('2026-05-29','pull',[ex('Deadlift',[[305,6]]),ex('Seated Cable Row',[[150,10]]),ex('Lat Pulldown',[[140,10]])]),
+      workout('2026-05-27','legs',[ex('Squat',[[280,5]]),ex('Romanian Deadlift',[[195,8]]),ex('Leg Press',[[320,12]])]),
+      workout('2026-05-24','push',[ex('Bench Press',[[230,7]]),ex('Overhead Press',[[105,9]]),ex('Incline Dumbbell Press',[[80,10]]),ex('Tricep Pushdown',[[95,10]])]),
+      workout('2026-05-22','pull',[ex('Deadlift',[[295,6]]),ex('Seated Cable Row',[[150,9]]),ex('Lat Pulldown',[[135,10]])])
+    ]
+  },
+  contradiction_pressing:{
+    label:'Bench down while OHP and incline improve',
+    profile:{name:'Test',goal:'Strength and hypertrophy',experience:'Intermediate',session_duration:60,equipment:'Commercial Gym',injuries:''},
+    schedule:{mon:'push',tue:'pull',wed:'legs',thu:'upper',fri:'lower',sat:'rest',sun:'rest'},
+    splitEx:{push:['Bench Press','Overhead Press','Incline Dumbbell Press','Tricep Pushdown','Lateral Raise'],pull:['Deadlift','Barbell Row','Lat Pulldown'],legs:['Squat','Romanian Deadlift','Leg Press'],upper:['Bench Press','Overhead Press','Incline Dumbbell Press','Barbell Row'],lower:['Squat','Romanian Deadlift'],rest:[]},
+    workouts:[
+      workout('2026-06-08','push',[ex('Bench Press',[[215,5]]),ex('Overhead Press',[[120,8]]),ex('Incline Dumbbell Press',[[95,10]]),ex('Tricep Pushdown',[[90,8]])]),
+      workout('2026-06-04','legs',[ex('Squat',[[275,5]]),ex('Romanian Deadlift',[[215,8]]),ex('Deadlift',[[335,5]])]),
+      workout('2026-06-01','push',[ex('Bench Press',[[220,6]]),ex('Overhead Press',[[115,8]]),ex('Incline Dumbbell Press',[[90,10]]),ex('Tricep Pushdown',[[95,9]])]),
+      workout('2026-05-25','push',[ex('Bench Press',[[230,7]]),ex('Overhead Press',[[110,8]]),ex('Incline Dumbbell Press',[[85,9]]),ex('Tricep Pushdown',[[100,10]])])
+    ]
+  },
+  low_sleep_mixed:{
+    label:'Low sleep with mixed performance signals',
+    profile:{name:'Test',goal:'Get stronger',experience:'Intermediate',session_duration:60,equipment:'Commercial Gym',preferences:'Sleep has been inconsistent this week.'},
+    schedule:{mon:'push',tue:'pull',wed:'legs',thu:'upper',fri:'lower',sat:'rest',sun:'rest'},
+    splitEx:{push:['Bench Press','Overhead Press','Lateral Raise'],pull:['Deadlift','Barbell Row','Lat Pulldown'],legs:['Squat','Romanian Deadlift','Leg Press'],upper:['Bench Press','Barbell Row'],lower:['Squat','Romanian Deadlift'],rest:[]},
+    workouts:[
+      workout('2026-06-08','legs',[ex('Squat',[[275,4]]),ex('Romanian Deadlift',[[220,9]]),ex('Leg Press',[[350,12]])]),
+      workout('2026-06-06','pull',[ex('Deadlift',[[340,5]]),ex('Barbell Row',[[185,8]])]),
+      workout('2026-06-03','push',[ex('Bench Press',[[225,8]]),ex('Overhead Press',[[120,8]])]),
+      workout('2026-05-29','legs',[ex('Squat',[[280,5]]),ex('Romanian Deadlift',[[210,9]]),ex('Leg Press',[[340,12]])])
+    ]
+  },
+  current_program_five_day:{
+    label:'Current 5-day program modification context',
+    profile:{name:'Test',goal:'Hypertrophy',experience:'Intermediate',session_duration:60,equipment:'Commercial Gym'},
+    schedule:{mon:'push',tue:'pull',wed:'legs',thu:'upper',fri:'lower',sat:'rest',sun:'rest'},
+    splitEx:{push:['Bench Press','Overhead Press','Incline Dumbbell Press','Tricep Pushdown','Lateral Raise'],pull:['Deadlift','Seated Cable Row','Lat Pulldown','Face Pull','Bicep Curl'],legs:['Squat','Romanian Deadlift','Leg Press','Leg Curl','Calf Raise'],upper:['Bench Press','Seated Cable Row','Overhead Press','Lat Pulldown'],lower:['Squat','Romanian Deadlift','Leg Press','Calf Raise'],rest:[]},
+    workouts:[]
+  },
+  low_adherence:{
+    label:'Low adherence user',
+    profile:{name:'Test',goal:'Build consistency and lose fat',experience:'Beginner',session_duration:35,equipment:'Dumbbells only',preferences:'Often misses workouts when sessions are long.'},
+    schedule:{mon:'full body',tue:'rest',wed:'full body',thu:'rest',fri:'full body',sat:'rest',sun:'rest'},
+    splitEx:{'full body':['Goblet Squat','Push-Up','Dumbbell Row','Romanian Deadlift','Plank'],rest:[]},
+    workouts:[
+      workout('2026-06-07','full body',[ex('Goblet Squat',[[35,10]]),ex('Push-Up',[[0,12]])]),
+      workout('2026-05-30','full body',[ex('Goblet Squat',[[35,8]]),ex('Dumbbell Row',[[35,10]])])
+    ]
+  }
+};
+
+const TESTS=[
+  test('add_day_more_volume','Add training day -> user says more volume','quick','current_program_five_day',
+    [{role:'user',text:'I want to add another day to my weekly schedule. What changes should I make?'},{role:'ai',text:'What is the goal of the extra day: more volume, a lagging area, or conditioning?'}],
+    'more volume',
+    [
+      expect('Understands this refers to program-level volume',/program|weekly|overall|schedule|sixth day|training day/i),
+      expect('Does not ask what “more volume” means again',null,/more volume.*today|today.*more volume|do you mean/i,true),
+      expect('Recommends a structural option before exercises',/add|sixth|day|structure|schedule|split/i),
+      expect('Does not immediately generate a full workout',null,/^(.|\n)*(sets|reps).*(sets|reps)/i,true)
+    ]),
+  test('add_day_recommend_one','Add training day -> user says you recommend one','quick','current_program_five_day',
+    [{role:'user',text:'I want to add one more day to my schedule.'},{role:'ai',text:'I can help. Do you want the extra day for more volume, weak points, or conditioning?'}],
+    'You recommend one.',
+    [
+      expect('Uses current 5-day structure',/push|pull|legs|upper|lower|5-day|five-day|current/i),
+      expect('Recommends program-level schedule change',/schedule|split|structure|day|program/i),
+      expect('Does not jump straight to workout generation',null,/3 sets|4 sets|exercise 1|workout:\s*\n/i,true),
+      expect('Offers workout design as a next step only',/if you want|next step|I can.*workout|design.*session/i)
+    ]),
+  test('confirmation_yes','Reduce days -> user says yes after confirmation','quick','current_program_five_day',
+    [{role:'user',text:'I want to reduce from 5 days to 4.'},{role:'ai',text:'I would move you to Upper/Lower four days per week. Want me to apply that schedule?'}],
+    'Yes',
+    [
+      expect('Resolves yes as confirmation',/apply|update|yes|confirmed|upper\/lower|upper lower/i),
+      expect('Does not ask what yes refers to',null,/what.*yes|what.*refer|can you clarify/i,true),
+      expect('Mentions the pending 4-day change',/4-day|four|upper|lower|schedule/i)
+    ]),
+  test('why_recommendation','Ask why a recommendation was made','quick','intermediate_eight',[],
+    'Why did Forma recommend increasing Face Pull today?',
+    [
+      expect('Explains reasoning instead of only restating action',/because|reason|why|based on|data/i),
+      expect('Uses current program or history context',/recent|history|logged|pull|upper back|rear delt|face pull/i),
+      expect('Gives confidence or evidence quality',/confidence|limited|medium|high|low|evidence/i)
+    ]),
+  test('sleep_attribution','Trend question without over-attributing to sleep','quick','low_sleep_mixed',[],
+    'Is sleep the reason my squat dropped?',
+    [
+      expect('Separates observation from interpretation',/observation|data shows|interpretation|may|might|possible/i),
+      expect('Does not claim sleep caused it',null,/sleep (is|was).*caus|because of sleep|sleep caused/i,true),
+      expect('Mentions mixed performance signals',/mixed|while|however|but|other lifts|RDL|deadlift|leg press/i),
+      expect('Gives a monitoring or next-check action',/monitor|next session|watch|repeat|check/i)
+    ]),
+  test('low_data_analysis','Low-data user asks for analysis','quick','beginner_two',[],
+    'What is my biggest weakness?',
+    [
+      expect('Acknowledges limited data',/limited|early|not enough|only|few sessions|data/i),
+      expect('Does not invent a major weakness',null,/biggest weakness is|clearly your weakness|definitely/i,true),
+      expect('Gives a conservative next step',/monitor|baseline|keep logging|repeat|next/i)
+    ]),
+  test('current_program_question','Current program question','quick','current_program_five_day',[],
+    'Does my current program have enough back work?',
+    [
+      expect('Uses current program structure',/push|pull|legs|upper|lower|pull day|upper day/i),
+      expect('Discusses back work specifically',/back|row|pulldown|pull|lats/i),
+      expect('Avoids generic advice only',null,/in general|generally speaking/i,true)
+    ]),
+  test('limited_context_add_day','Add training day with limited context','quick','new_user',[],
+    'I want to add another training day. What should I do?',
+    [
+      expect('Recognizes limited context or low confidence',/limited|not enough|low confidence|need more|without.*history|early/i),
+      expect('Presents multiple reasonable options instead of one firm answer',/option|approach|reasonable|could|possib|alternatively|full body|upper/i),
+      expect('Does not generate a full workout',null,/3 sets|4 sets|exercise 1|workout:\s*\n/i,true),
+      expect('Avoids a strong single prescription',null,/I recommend.*day|best.*is.*day|definitely|clear choice/i,true)
+    ]),
+  test('medium_confidence_volume','Medium confidence recommendation includes alternatives','quick','intermediate_eight',
+    [{role:'user',text:'I want to add another day to my weekly schedule. What changes should I make?'},{role:'ai',text:'What is the goal of the extra day: more volume, a lagging area, or conditioning?'}],
+    'More volume. I think arms might be lagging, but I am not totally sure.',
+    [
+      expect('Gives a preferred program-level option',/lean|prefer|would start|best first|preferred|I would/i),
+      expect('Includes alternatives because evidence is incomplete',/alternative|also reasonable|another option|could also|option/i),
+      expect('Labels medium or low confidence',/confidence[^\\n]*(medium|low)|medium confidence|low confidence/i),
+      expect('Does not generate a full workout',null,/3 sets|4 sets|exercise 1|workout:\s*\n/i,true)
+    ]),
+  test('contradictory_pressing','Contradictory performance signals','quick','contradiction_pressing',[],
+    'Bench is down, OHP is up, incline is up. What is my weakness?',
+    [
+      expect('Identifies conflicting pressing signals',/bench.*down|horizontal|vertical|OHP|incline|mixed|conflicting/i),
+      expect('Does not collapse to one strong cause',null,/definitely|clearly caused|your weakness is squat|sleep caused/i,true),
+      expect('Gives hypotheses, not facts',/hypothesis|possib|may|might|could/i),
+      expect('Confidence medium or lower',/confidence:\s*(medium|low)|medium confidence|low confidence/i),
+      expect('Gives practical next step',/next|monitor|check|technique|repeat|watch/i)
+    ]),
+  test('new_user_baseline','New user asks what to do first','deep','new_user',[],
+    'What should I focus on in my first week?',
+    [
+      expect('Sets expectations around baseline data',/baseline|first week|log|data|learn/i),
+      expect('Avoids advanced trend claims',null,/trend|weakness|limiter|plateau/i,true),
+      expect('Gives simple actionable plan',/focus|start|keep|track|complete/i)
+    ]),
+  test('low_adherence','Low adherence user asks for more intensity','deep','low_adherence',[],
+    'Should I add more exercises to make faster progress?',
+    [
+      expect('Considers adherence risk',/consistency|adherence|miss|short|manageable/i),
+      expect('Does not simply add volume aggressively',null,/add 4|add 5|double|much more volume/i,true),
+      expect('Recommends low-intervention option',/one|small|monitor|keep|first/i)
+    ])
 ];
 const results=[];
+let lastRunIds=[];
 
-function readJson(key){
-  try{const v=localStorage.getItem(key);return v?JSON.parse(v):null;}catch(e){return null;}
+function kg(lbs){return lbs/KG2LB;}
+function ex(name,sets){return{name:name,sets:(sets||[]).map(function(s){return{w:kg(s[0]),r:s[1],warmup:!!s[2]};})};}
+function workout(date,split,exercises){return{date:date+'T12:00:00.000Z',split:split,exercises:exercises||[]};}
+function expect(text,includeAny,excludeAny,critical){return{text:text,includeAny:includeAny,excludeAny:excludeAny,critical:!!critical};}
+function test(id,name,mode,dataset,conversation,prompt,expected_behavior){
+  return{id:id,name:name,mode:mode,dataset:dataset,conversation:conversation||[],prompt:prompt,expected_behavior:expected_behavior||[]};
 }
 
-function loadFormaStateReadOnly(){
-  const workouts=readJson('ll_workouts');
-  if(Array.isArray(workouts)){
-    S.workouts=workouts.filter(Boolean).map(function(w){
-      if(!w||!Array.isArray(w.exercises))return w;
-      return Object.assign({},w,{exercises:w.exercises.filter(Boolean).map(function(ex){
-        return Object.assign({},ex,{sets:Array.isArray(ex.sets)?ex.sets:[]});
-      })});
-    }).filter(Boolean);
-  }
-  const sched=readJson('ll_schedule');if(sched)S.schedule=Object.assign({},S.schedule,sched);
-  const hist=readJson('ll_sched_hist');if(Array.isArray(hist))S.scheduleHistory=hist;
-  const splits=readJson('ll_splits');if(splits)S.splitEx=splits;
-  const unit=readJson('ll_unit');if(unit)S.unit=unit;
-  const profile=readJson('ll_profile');if(profile)S.profile=Object.assign({},S.profile,profile);
-  const active=readJson('ll_active_workout');
-  if(active){
-    S.workout=Object.assign({},active,{
-      exercises:Array.isArray(active.exercises)?active.exercises.filter(Boolean).map(function(ex){
-        return Object.assign({inputW:'',inputR:'5'},ex,{sets:Array.isArray(ex.sets)?ex.sets:[]});
-      }):[]
-    });
-  }
+function readBaselines(){
+  try{return JSON.parse(localStorage.getItem(BASELINE_KEY)||'{}')||{};}catch(e){return{};}
+}
+function writeBaselines(data){
+  try{localStorage.setItem(BASELINE_KEY,JSON.stringify(data||{}));}catch(e){}
+}
+
+function resetFormaState(){
+  S.view='home';S.workouts=[];S.schedule=Object.assign({},DEF_SCHED);S.scheduleHistory=[];
+  S.splitEx=JSON.parse(JSON.stringify(DEF_EX));S.workout=null;S.lastWorkout=null;S.unit='lbs';
+  S.messages=[];S.profile={name:'',goal:'',experience:'',session_duration:60,exercises_per_session:5,equipment:'',injuries:'',preferences:''};
+  S.progressTab='calendar';S.selEx='';S.scoreDetail=null;S._scoreResults={};
+}
+
+function applyDataset(id,conversation){
+  const ds=DATASETS[id]||DATASETS.new_user;
+  resetFormaState();
+  S.profile=Object.assign({},S.profile,ds.profile||{});
+  S.schedule=Object.assign({},DEF_SCHED,ds.schedule||{});
+  S.splitEx=Object.assign({},JSON.parse(JSON.stringify(DEF_EX)),ds.splitEx||{});
+  S.workouts=(ds.workouts||[]).map(function(w){return Object.assign({},w,{exercises:(w.exercises||[]).map(function(e){return Object.assign({},e,{sets:Array.isArray(e.sets)?e.sets:[]});})});});
+  S.messages=(conversation||[]).map(function(m){return{role:m.role==='ai'?'ai':'user',text:m.text||'',time:NOW(),actions:[]};});
   normalizeSplitsData();
+  return ds;
 }
 
 function escapeHtml(value){
   return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function suiteTests(){
+  const suite=document.getElementById('suite-select').value;
+  if(suite==='quick')return TESTS.filter(function(t){return t.mode==='quick';});
+  if(suite==='deep')return TESTS.slice();
+  return TESTS.filter(function(t){return t.dataset===suite;});
+}
+
+function renderSuiteOptions(){
+  const options=[
+    ['quick','Quick Regression'],
+    ['deep','Deep Evaluation'],
+    ['new_user','Dataset: New User'],
+    ['beginner_two','Dataset: Beginner 2 Workouts'],
+    ['intermediate_eight','Dataset: Intermediate 8 Workouts'],
+    ['contradiction_pressing','Dataset: Contradictory Pressing'],
+    ['current_program_five_day','Dataset: Program Changes'],
+    ['low_sleep_mixed','Dataset: Low Sleep Mixed Signals'],
+    ['low_adherence','Dataset: Low Adherence']
+  ];
+  document.getElementById('suite-select').innerHTML=options.map(function(o){return '<option value="'+o[0]+'">'+o[1]+'</option>';}).join('');
+}
+
 function renderQuestionList(){
-  document.getElementById('questions').innerHTML=QUESTIONS.map(function(q,i){
-    return '<label class="question-check"><input type="checkbox" class="question-toggle" data-question="'+i+'" checked><span>'+(i+1)+'. '+escapeHtml(q)+'</span></label>';
+  const list=suiteTests();
+  document.getElementById('questions').innerHTML=list.map(function(t,i){
+    return '<label class="question-check"><input type="checkbox" class="question-toggle" data-test-id="'+t.id+'" checked><span>'+(i+1)+'. <strong>'+escapeHtml(t.name)+'</strong><br><span class="small">'+escapeHtml((DATASETS[t.dataset]||{}).label||t.dataset)+' · '+escapeHtml(t.prompt)+'</span></span></label>';
   }).join('');
 }
 
-function renderResult(index, question, answer, error){
+function testById(id){return TESTS.find(function(t){return t.id===id;});}
+
+function checkExpected(answer,item){
+  const text=String(answer||'');
+  let passed=true;
+  if(item.includeAny instanceof RegExp)passed=passed&&item.includeAny.test(text);
+  if(item.excludeAny instanceof RegExp)passed=passed&&!item.excludeAny.test(text);
+  return passed;
+}
+
+function detectFailurePatterns(test,checks,answer){
+  const failed=checks.filter(function(c){return !c.passed;}).map(function(c){return c.text.toLowerCase();}).join(' | ');
+  const text=String(answer||'').toLowerCase();
+  const labels=[];
+  function add(label,cond){if(cond&&labels.indexOf(label)===-1)labels.push(label);}
+  add('lost_conversation_context',/context|refers|confirmation|program-level/.test(failed));
+  add('ignored_current_program',/current|structure|program/.test(failed));
+  add('unnecessary_clarification',/ask|clarify|means again/.test(failed)||/can you clarify|what do you mean|do you mean/.test(text));
+  add('confirmation_not_resolved',/confirmation|yes/.test(failed));
+  add('jumped_to_workout_generation',/workout generation|full workout|exercise list/.test(failed));
+  add('weak_program_reasoning',/program-level|schedule|structure/.test(failed));
+  add('overconfident_causation',/cause|caused|definitely|clearly/.test(failed)||/definitely|clearly caused/.test(text));
+  add('over_attributed_to_sleep',/sleep/.test(failed)&&/sleep/.test(text));
+  add('invented_data',/invent/.test(failed)||/you mentioned|your note says|injury|pain/.test(text)&&!/pain|injur|sleep/.test(JSON.stringify(test)));
+  add('no_actionable_next_step',/next step|action|monitor|practical/.test(failed));
+  add('generic_advice',/generic/.test(failed)||/in general|generally speaking/.test(text));
+  add('failed_to_explain_reasoning',/reasoning|explains|evidence/.test(failed));
+  return labels;
+}
+
+function scoreRubric(test,checks,patterns,answer){
+  const total=checks.length||1;
+  const passed=checks.filter(function(c){return c.passed;}).length;
+  const ratio=passed/total;
+  function clamp(n){return Math.max(1,Math.min(10,Math.round(n)));}
+  const penalty=patterns.length;
+  const base=clamp(4+ratio*6-penalty*.4);
+  return{
+    overall:base,
+    contextUse:clamp(base-(patterns.includes('lost_conversation_context')?3:0)-(patterns.includes('confirmation_not_resolved')?2:0)),
+    intentUnderstanding:clamp(base-(patterns.includes('unnecessary_clarification')?2:0)-(patterns.includes('jumped_to_workout_generation')?3:0)),
+    programReasoning:clamp(base-(patterns.includes('weak_program_reasoning')?3:0)-(patterns.includes('ignored_current_program')?2:0)),
+    evidenceDiscipline:clamp(base-(patterns.includes('overconfident_causation')?3:0)-(patterns.includes('over_attributed_to_sleep')?2:0)),
+    actionQuality:clamp(base-(patterns.includes('no_actionable_next_step')?3:0)-(patterns.includes('generic_advice')?2:0)),
+    conversationNaturalness:clamp(base-(patterns.includes('unnecessary_clarification')?2:0)-(patterns.includes('lost_conversation_context')?2:0)),
+    noFabrication:clamp(10-(patterns.includes('invented_data')?6:0))
+  };
+}
+
+function evaluateResponse(test,answer,error){
+  const checks=(test.expected_behavior||[]).map(function(item){
+    return{text:item.text,passed:!error&&checkExpected(answer,item),critical:item.critical};
+  });
+  const patterns=error?['api_or_runner_error']:detectFailurePatterns(test,checks,answer);
+  const scores=error?Object.fromEntries(RUBRIC.map(function(k){return[k,1];})):scoreRubric(test,checks,patterns,answer);
+  const failedCritical=checks.some(function(c){return c.critical&&!c.passed;});
+  const pass=!error&&scores.overall>=7&&!failedCritical&&checks.filter(function(c){return !c.passed;}).length<=1;
+  return{checks:checks,patterns:patterns,scores:scores,pass:pass};
+}
+
+function compareBaseline(result){
+  const prior=readBaselines()[result.id];
+  if(!prior)return null;
+  const scoreDiff=result.evaluation.scores.overall-(prior.evaluation&&prior.evaluation.scores?prior.evaluation.scores.overall:0);
+  const prevFailed=(prior.evaluation&&prior.evaluation.checks?prior.evaluation.checks:[]).filter(function(c){return !c.passed;}).length;
+  const currFailed=result.evaluation.checks.filter(function(c){return !c.passed;}).length;
+  return{
+    previousScore:prior.evaluation&&prior.evaluation.scores?prior.evaluation.scores.overall:null,
+    currentScore:result.evaluation.scores.overall,
+    scoreDiff:scoreDiff,
+    previousPass:!!(prior.evaluation&&prior.evaluation.pass),
+    currentPass:result.evaluation.pass,
+    failedDiff:currFailed-prevFailed,
+    previousExcerpt:String(prior.answer||'').slice(0,260)
+  };
+}
+
+function renderResult(index, result, mode){
   const el=document.createElement('article');
   el.className='result';
   el.dataset.index=String(index);
+  const ev=result.evaluation;
+  const failed=ev.checks.filter(function(c){return !c.passed;});
+  const compare=result.comparison;
   el.innerHTML=
-    '<div class="q">Question '+(index+1)+': '+escapeHtml(question)+'</div>'+
-    '<div class="answer'+(error?' error':'')+'">'+escapeHtml(answer||'')+'</div>'+
+    '<div class="q">'+(index+1)+'. '+escapeHtml(result.name)+'</div>'+
+    '<div class="meta">'+
+      '<span class="pill '+(ev.pass?'pass':'fail')+'">'+(ev.pass?'PASS':'FAIL')+'</span>'+
+      '<span class="pill neutral">Overall '+ev.scores.overall+'/10</span>'+
+      '<span class="pill neutral">'+escapeHtml(result.datasetLabel)+'</span>'+
+      (compare?'<span class="pill '+(compare.scoreDiff>=0?'pass':'fail')+'">'+(compare.scoreDiff>=0?'+':'')+compare.scoreDiff+' vs baseline</span>':'<span class="pill neutral">No baseline</span>')+
+    '</div>'+
+    '<div class="small"><strong>Prompt:</strong> '+escapeHtml(result.prompt)+'</div>'+
+    '<div class="answer'+(result.error?' error':'')+'">'+escapeHtml(mode==='quick'?excerpt(result.answer,700):result.answer)+'</div>'+
+    '<div class="rubric">'+RUBRIC.map(function(k){return '<div class="metric"><b>'+ev.scores[k]+'</b><span>'+escapeHtml(RUBRIC_LABELS[k])+'</span></div>';}).join('')+'</div>'+
+    '<div class="checklist">'+ev.checks.map(function(c){
+      return '<div class="check '+(c.passed?'pass':'fail')+'"><strong>'+(c.passed?'✓':'×')+'</strong><span>'+escapeHtml(c.text)+(c.critical?' <em>(critical)</em>':'')+'</span></div>';
+    }).join('')+'</div>'+
+    '<div class="compare"><strong>Failure patterns:</strong> '+(ev.patterns.length?ev.patterns.map(escapeHtml).join(', '):'none')+'<br>'+
+      '<strong>Failed checklist:</strong> '+(failed.length?failed.map(function(c){return escapeHtml(c.text);}).join('; '):'none')+
+      (compare?'<br><strong>Baseline:</strong> previous score '+compare.previousScore+', previous pass '+compare.previousPass+', failed item diff '+(compare.failedDiff>=0?'+':'')+compare.failedDiff:'')+
+    '</div>'+
+    (mode==='deep'?'<details open><summary>Full test context</summary><pre class="answer">'+escapeHtml(JSON.stringify({conversation:result.conversation,prompt:result.prompt,dataset:result.dataset},null,2))+'</pre></details>':'')+
+    (compare?'<details><summary>Previous baseline response excerpt</summary><div class="answer">'+escapeHtml(compare.previousExcerpt)+'</div></details>':'')+
     '<div class="score">'+
-      scoreInput(index,'accuracy','Accuracy 1–10')+
-      scoreInput(index,'usesData','Uses data 1–10')+
-      scoreInput(index,'coachLike','Coach-like 1–10')+
-      scoreInput(index,'trustworthy','Trustworthy 1–10')+
+      RUBRIC.map(function(k){return scoreInput(index,k,RUBRIC_LABELS[k]);}).join('')+
       '<label class="notes">Notes<textarea data-score="'+index+'" data-field="notes"></textarea></label>'+
     '</div>';
   document.getElementById('results').appendChild(el);
+  RUBRIC.forEach(function(k){
+    const input=el.querySelector('[data-field="'+k+'"]');
+    if(input)input.value=String(ev.scores[k]);
+  });
 }
 
 function scoreInput(index,field,label){
   return '<label>'+label+'<input type="number" min="1" max="10" data-score="'+index+'" data-field="'+field+'"></label>';
 }
 
-async function askAI(question){
+function excerpt(text,max){text=String(text||'');return text.length>max?text.slice(0,max-1)+'…':text;}
+
+async function askAI(testCase){
+  applyDataset(testCase.dataset,testCase.conversation);
+  const question=testCase.prompt;
+  const prior=(testCase.conversation||[]).map(function(m){
+    return{role:m.role==='ai'?'assistant':'user',content:m.text||''};
+  });
   const response=await fetch(API,{
     method:'POST',
     headers:apiHeaders(),
@@ -194,7 +530,7 @@ async function askAI(question){
       max_tokens:2500,
       thinking:{type:'enabled',budget_tokens:1024},
       system:buildSysPrompt(question)+'\n\nMODE: DEV AI RESPONSE TEST. Answer the user question normally, but keep the message concise and suitable for mobile chat. Do not include actions unless truly necessary.',
-      messages:[{role:'user',content:question}]
+      messages:prior.concat([{role:'user',content:question}])
     })
   });
   const data=await response.json();
@@ -205,20 +541,33 @@ async function askAI(question){
 
 function wait(ms){return new Promise(function(resolve){setTimeout(resolve,ms);});}
 
-function selectedQuestions(){
-  return Array.from(document.querySelectorAll('.question-toggle:checked')).map(function(input){
-    const index=Number(input.dataset.question);
-    return {index:index,question:QUESTIONS[index]};
-  });
+function aiTesterSetupError(){
+  const missing=[];
+  if(typeof EX_DEFAULTS!=='object')missing.push('EX_DEFAULTS from ../js/utils.js');
+  if(typeof getOverloadSuggestion!=='function')missing.push('getOverloadSuggestion from ../js/recommendations.js');
+  if(typeof buildSysPrompt!=='function')missing.push('buildSysPrompt from ../js/ai.js');
+  if(typeof parseAIResponse!=='function')missing.push('parseAIResponse from ../js/ai.js');
+  if(!missing.length)return '';
+  return 'AI tester setup error: missing '+missing.join(', ')+'. Check dev/ai-test-runner.html script imports before judging coaching quality.';
 }
 
-async function runTests(){
+function selectedQuestions(){
+  return Array.from(document.querySelectorAll('.question-toggle:checked')).map(function(input){
+    return testById(input.dataset.testId);
+  }).filter(Boolean);
+}
+
+async function runTests(mode,onlyTests){
+  const setupError=aiTesterSetupError();
+  if(setupError){
+    document.getElementById('status').textContent=setupError;
+    return;
+  }
   if(!hasKey()){
     document.getElementById('status').textContent=aiKeyMessage();
     return;
   }
-  loadFormaStateReadOnly();
-  const selected=selectedQuestions();
+  const selected=onlyTests&&onlyTests.length?onlyTests:selectedQuestions();
   const delaySeconds=Math.max(0,Number(document.getElementById('delay-input').value)||0);
   const delayMs=delaySeconds*1000;
   if(!selected.length){
@@ -228,44 +577,63 @@ async function runTests(){
   results.length=0;
   document.getElementById('results').innerHTML='';
   document.getElementById('copy-btn').disabled=true;
-  document.getElementById('run-btn').disabled=true;
+  document.getElementById('run-quick-btn').disabled=true;
+  document.getElementById('run-deep-btn').disabled=true;
+  document.getElementById('rerun-failed-btn').disabled=true;
   const estimated=Math.max(0,(selected.length-1)*delaySeconds);
-  document.getElementById('status').textContent='Running '+selected.length+' selected question'+(selected.length===1?'':'s')+'. Estimated pacing wait: '+estimated+'s.';
+  document.getElementById('status').textContent='Running '+selected.length+' '+mode+' test'+(selected.length===1?'':'s')+'. Estimated pacing wait: '+estimated+'s.';
   for(let i=0;i<selected.length;i++){
     const item=selected[i];
-    const q=item.question;
+    const ds=DATASETS[item.dataset]||{};
     document.getElementById('status').textContent='Running '+(i+1)+' of '+selected.length+(delaySeconds&&i<selected.length-1?' • next request waits '+delaySeconds+'s':'');
     try{
-      const answer=await askAI(q);
-      results.push({question:q,answer:answer,error:null});
-      renderResult(i,q,answer,false);
+      const answer=await askAI(item);
+      const evaluation=evaluateResponse(item,answer,null);
+      const result={id:item.id,name:item.name,mode:mode,dataset:item.dataset,datasetLabel:ds.label||item.dataset,conversation:item.conversation,prompt:item.prompt,expected_behavior:item.expected_behavior.map(function(e){return e.text;}),answer:answer,error:null,evaluation:evaluation,ranAt:new Date().toISOString()};
+      result.comparison=compareBaseline(result);
+      results.push(result);
+      renderResult(i,result,mode);
     }catch(err){
       const answer='Error: '+(err&&err.message?err.message:String(err));
-      results.push({question:q,answer:answer,error:answer});
-      renderResult(i,q,answer,true);
+      const evaluation=evaluateResponse(item,answer,answer);
+      const result={id:item.id,name:item.name,mode:mode,dataset:item.dataset,datasetLabel:ds.label||item.dataset,conversation:item.conversation,prompt:item.prompt,expected_behavior:item.expected_behavior.map(function(e){return e.text;}),answer:answer,error:answer,evaluation:evaluation,ranAt:new Date().toISOString()};
+      result.comparison=compareBaseline(result);
+      results.push(result);
+      renderResult(i,result,mode);
     }
     if(delayMs&&i<selected.length-1){
       document.getElementById('status').textContent='Completed '+(i+1)+' of '+selected.length+'. Waiting '+delaySeconds+'s before the next request.';
       await wait(delayMs);
     }
   }
-  document.getElementById('status').textContent='Done. '+results.length+' results generated.';
+  lastRunIds=results.map(function(r){return r.id;});
+  try{localStorage.setItem(RESULTS_KEY,JSON.stringify(results));}catch(e){}
+  const failed=results.filter(function(r){return !r.evaluation.pass;}).length;
+  document.getElementById('status').textContent='Done. '+results.length+' results generated. Failed: '+failed+'.';
   document.getElementById('copy-btn').disabled=false;
-  document.getElementById('run-btn').disabled=false;
+  document.getElementById('export-btn').disabled=false;
+  document.getElementById('save-baseline-btn').disabled=false;
+  document.getElementById('rerun-failed-btn').disabled=failed===0;
+  document.getElementById('run-quick-btn').disabled=false;
+  document.getElementById('run-deep-btn').disabled=false;
 }
 
 function buildMarkdownResults(){
-  return results.map(function(r,i){
+  return '# Forma AI Tester Results\n\nGenerated: '+new Date().toISOString()+'\n\n'+results.map(function(r,i){
     const fields={};
     document.querySelectorAll('[data-score="'+i+'"]').forEach(function(input){
       fields[input.dataset.field]=input.value.trim();
     });
-    let md='## Question '+(i+1)+'\n'+r.question+'\n\n## Answer\n'+r.answer+'\n';
-    md+='\n## Scores\n';
-    md+='- Accuracy: '+(fields.accuracy||'')+'\n';
-    md+='- Uses data: '+(fields.usesData||'')+'\n';
-    md+='- Coach-like: '+(fields.coachLike||'')+'\n';
-    md+='- Trustworthy: '+(fields.trustworthy||'')+'\n';
+    let md='## '+(i+1)+'. '+r.name+'\n';
+    md+='- Test ID: '+r.id+'\n- Mode: '+r.mode+'\n- Dataset: '+r.datasetLabel+'\n- Pass: '+r.evaluation.pass+'\n- Overall: '+(fields.overall||r.evaluation.scores.overall)+'/10\n';
+    md+='- Failure patterns: '+(r.evaluation.patterns.join(', ')||'none')+'\n';
+    if(r.comparison)md+='- Baseline comparison: '+(r.comparison.scoreDiff>=0?'+':'')+r.comparison.scoreDiff+' score, pass '+r.comparison.previousPass+' -> '+r.comparison.currentPass+'\n';
+    md+='\n### Prompt\n'+r.prompt+'\n';
+    md+='\n### Conversation\n'+(r.conversation.length?r.conversation.map(function(m){return '- '+m.role+': '+m.text;}).join('\n'):'none')+'\n';
+    md+='\n### AI Response\n'+r.answer+'\n';
+    md+='\n### Checklist\n'+r.evaluation.checks.map(function(c){return '- '+(c.passed?'PASS':'FAIL')+': '+c.text;}).join('\n')+'\n';
+    md+='\n### Scores\n';
+    RUBRIC.forEach(function(k){md+='- '+RUBRIC_LABELS[k]+': '+(fields[k]||r.evaluation.scores[k])+'\n';});
     md+='- Notes: '+(fields.notes||'')+'\n';
     return md;
   }).join('\n---\n\n');
@@ -283,16 +651,63 @@ async function copyResults(){
   }
 }
 
+function saveBaseline(){
+  const baselines=readBaselines();
+  results.forEach(function(r){baselines[r.id]=r;});
+  writeBaselines(baselines);
+  document.getElementById('status').textContent='Saved '+results.length+' current result'+(results.length===1?'':'s')+' as baselines.';
+}
+
+function clearBaselines(){
+  if(!confirm('Clear all AI tester baselines?'))return;
+  writeBaselines({});
+  document.getElementById('status').textContent='Baselines cleared.';
+}
+
+function exportJson(){
+  const blob=new Blob([JSON.stringify(results,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='forma-ai-test-results-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function rerunFailed(){
+  const failed=results.filter(function(r){return !r.evaluation.pass;}).map(function(r){return testById(r.id);}).filter(Boolean);
+  if(!failed.length)return;
+  runTests('quick-rerun',failed);
+}
+
+function updateForSuite(){renderQuestionList();}
+
+renderSuiteOptions();
 renderQuestionList();
-loadFormaStateReadOnly();
-document.getElementById('run-btn').addEventListener('click',runTests);
+document.getElementById('suite-select').addEventListener('change',updateForSuite);
+document.getElementById('run-quick-btn').addEventListener('click',function(){
+  document.getElementById('suite-select').value='quick';renderQuestionList();runTests('quick');
+});
+document.getElementById('run-deep-btn').addEventListener('click',function(){
+  document.getElementById('suite-select').value='deep';renderQuestionList();runTests('deep');
+});
+document.getElementById('rerun-failed-btn').addEventListener('click',rerunFailed);
+document.getElementById('save-baseline-btn').addEventListener('click',saveBaseline);
+document.getElementById('clear-baseline-btn').addEventListener('click',clearBaselines);
 document.getElementById('copy-btn').addEventListener('click',copyResults);
+document.getElementById('export-btn').addEventListener('click',exportJson);
 document.getElementById('select-all-btn').addEventListener('click',function(){
   document.querySelectorAll('.question-toggle').forEach(function(input){input.checked=true;});
 });
 document.getElementById('select-none-btn').addEventListener('click',function(){
   document.querySelectorAll('.question-toggle').forEach(function(input){input.checked=false;});
 });
+const autoMode=new URLSearchParams(location.search).get('auto');
+if(autoMode==='quick'||autoMode==='deep'){
+  document.getElementById('suite-select').value=autoMode;
+  renderQuestionList();
+  setTimeout(function(){runTests(autoMode);},300);
+}
 </script>
 </body>
 </html>
