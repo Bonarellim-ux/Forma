@@ -388,12 +388,12 @@ function vLog(){
               '<input id="w'+i+'" type="number" value="'+ex.inputW+'" oninput="syncW('+i+',this.value)" onchange="previewE1('+i+')">'+
               '<button onclick="nudgeW('+i+','+step()+')">+</button>'+
             '</div>'+
-            // ── Plate calculator — barbell exercises only ──
-            (isBarbell(ex.name)&&parseFloat(ex.inputW)>0?(function(){
+            '<div id="plate'+i+'">'+(isBarbell(ex.name)&&parseFloat(ex.inputW)>0?(function(){
               try{
                 return plateHtml(parseFloat(ex.inputW));
               }catch(e){return '';}
-            })():'')+'</div>';
+            })():'')+'</div>'+
+          '</div>';
         })()+
         '<div style="flex:1;min-width:0">'+
           '<div style="height:18px;margin-bottom:5px;display:flex;align-items:center">'+
@@ -1322,7 +1322,7 @@ async function requestWorkoutDebrief(){
 }
 
 
-function syncW(i,val){if(S.workout){S.workout.exercises[i].inputW=val;persist('ll_active_workout',S.workout);}previewE1(i);}
+function syncW(i,val){if(S.workout){S.workout.exercises[i].inputW=val;persist('ll_active_workout',S.workout);}updatePlateCalc(i);previewE1(i);}
 function syncR(i,val){if(S.workout){S.workout.exercises[i].inputR=val;persist('ll_active_workout',S.workout);}previewE1(i);}
 
 function nudgeW(i,delta){
@@ -1375,6 +1375,14 @@ function plateHtml(dispW){
     '</span>'+
     '<span class="plate-text">'+p.bar+' '+uLbl()+' bar &middot; '+txt+' per side</span>'+
   '</div>';
+}
+
+function updatePlateCalc(i){
+  const el=document.getElementById('plate'+i);
+  if(!el||!S.workout||!S.workout.exercises||!S.workout.exercises[i])return;
+  const ex=S.workout.exercises[i];
+  const dW=parseFloat(document.getElementById('w'+i)&&document.getElementById('w'+i).value||0);
+  el.innerHTML=(!isCardioEx(ex.name)&&isBarbell(ex.name)&&dW>0)?plateHtml(dW):'';
 }
 
 function previewE1(i){

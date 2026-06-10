@@ -395,6 +395,114 @@ function recommendationDetail(action,whyLines){
   return action+'<br><br>Why:<br>'+whyLines.filter(Boolean).join('<br>');
 }
 
+function recommendationHistoryText(sessions,profile,limit){
+  const rows=(sessions||[]).slice(0,limit||3).map(function(s){
+    return fmtD(s.date)+': '+sessionDisplayWeight(s,profile)+' '+uLbl()+' x '+s.topR;
+  });
+  return rows.length?'Recent working sets: '+rows.join('; ')+'.':'';
+}
+
+function priorWorkingSessionText(sessions){
+  const n=(sessions||[]).length;
+  return n+' prior working '+(n===1?'session':'sessions');
+}
+
+function rawDefaultExerciseLbs(name){
+  const n=String(name||'').trim();
+  const defaults=(typeof EX_DEFAULTS==='object'&&EX_DEFAULTS)?EX_DEFAULTS:{};
+  if(defaults[n]!==undefined)return Number(defaults[n])||0;
+  const nl=n.toLowerCase();
+  if(nl.includes('leg press'))return 150;
+  if(nl.includes('deadlift'))return 135;
+  if(nl.includes('squat'))return 95;
+  if(nl.includes('bench')||nl.includes('press'))return 75;
+  if(nl.includes('row')||nl.includes('pull'))return 55;
+  if(nl.includes('curl')||nl.includes('raise')||nl.includes('fly'))return 20;
+  if(nl.includes('pushdown')||nl.includes('extension')||nl.includes('tricep'))return 35;
+  if(nl.includes('calf'))return 80;
+  return 45;
+}
+
+function profileBodyweightLbs(){
+  const raw=parseFloat(S&&S.profile&&S.profile.bodyweight);
+  if(!raw||raw<=0)return null;
+  if(S.unit==='kg'&&raw<130)return raw*KG2LB;
+  return raw;
+}
+
+function profileExperienceMultiplier(){
+  const exp=String(S&&S.profile&&S.profile.experience||'').toLowerCase();
+  if(exp.includes('5+'))return 1.18;
+  if(exp.includes('3')||exp.includes('advanced'))return 1.1;
+  if(exp.includes('1')||exp.includes('2')||exp.includes('intermediate'))return 1;
+  if(exp.includes('beginner')||exp.includes('starting')||exp.includes('6 months'))return .88;
+  return .95;
+}
+
+function profileHeightInches(){
+  const h=String(S&&S.profile&&S.profile.height||'').trim().toLowerCase();
+  if(!h)return null;
+  const imperial=h.match(/(\d+)\s*'\s*(\d+)?/);
+  if(imperial)return (parseFloat(imperial[1])||0)*12+(parseFloat(imperial[2])||0);
+  const numeric=parseFloat(h);
+  if(!numeric)return null;
+  return numeric>90?numeric/2.54:numeric;
+}
+
+function heightBuildFactor(category){
+  const inches=profileHeightInches();
+  if(!inches)return 1;
+  const influence=category==='lower_compound'?.06:category==='upper_compound'?.04:category==='machine'?.03:.02;
+  return Math.max(.96,Math.min(1.04,1+((inches-69)/10)*influence));
+}
+
+function bodyweightInfluenceForCategory(category){
+  if(category==='lower_compound')return .65;
+  if(category==='upper_compound')return .5;
+  if(category==='unilateral_lower')return .42;
+  if(category==='lower_isolation')return .35;
+  if(category==='upper_isolation')return .22;
+  if(category==='machine')return .35;
+  return .28;
+}
+
+function startingWeightProfileNotes(){
+  const notes=[];
+  const p=S&&S.profile?S.profile:{};
+  if(p.bodyweight)notes.push('bodyweight');
+  if(p.experience)notes.push('training experience');
+  if(p.height)notes.push('height/build context');
+  return notes.length?notes.join(', '):'your saved profile';
+}
+
+function firstTimeStartingTarget(exName){
+  const p=exerciseProgressionProfile(exName);
+  const baseLbs=rawDefaultExerciseLbs(exName);
+  if(p.category==='bodyweight'||baseLbs<=0)return null;
+  const bwLbs=profileBodyweightLbs();
+  const bwRatio=bwLbs?Math.max(.75,Math.min(1.25,bwLbs/175)):1;
+  const bwFactor=1+((bwRatio-1)*bodyweightInfluenceForCategory(p.category));
+  const expFactor=profileExperienceMultiplier();
+  const heightFactor=heightBuildFactor(p.category);
+  // TEMP: based on ACSM Progression Models in Resistance Training for Healthy Adults (Med Sci Sports Exerc, 2009; DOI 10.1249/MSS.0b013e3181915670) and conservative beginner-load practice - estimate a moderate 8-12RM baseline from bodyweight, training experience, and exercise category until Forma has exercise-specific history; replace with rule engine when research database is complete.
+  const adjustedLbs=baseLbs*bwFactor*expFactor*heightFactor;
+  const displayRaw=S.unit==='kg'?adjustedLbs/KG2LB:adjustedLbs;
+  const jump=S.unit==='kg'?Math.min(p.jump||2.5,2.5):(p.jump||5);
+  const rounded=Math.max(jump,Math.round(displayRaw/jump)*jump);
+  const minBarbell=S.unit==='kg'?20:45;
+  const lower=rawDefaultExerciseLbs(exName)>=45&&isBarbell(exName)?Math.max(rounded,minBarbell):rounded;
+  return{
+    weightDisp:Math.round(lower*10)/10,
+    repTarget:p.minTarget+'-'+p.maxTarget,
+    category:p.category,
+    baseLbs:baseLbs,
+    bwLbs:bwLbs,
+    expFactor:expFactor,
+    heightFactor:heightFactor,
+    profileNotes:startingWeightProfileNotes()
+  };
+}
+
 function jumpLabel(jump){
   return jump+' '+(uLbl()==='lbs'?'lb':'kg');
 }
@@ -524,14 +632,17 @@ function starterOverloadSuggestion(exName,currentInputW,sessions){
   if(p.category==='bodyweight')return null;
   const currentDisp=parseFloat(currentInputW)>0?Number(currentInputW):Number(getLastW(exName));
   if(!sessions.length){
-    const repTarget=p.minTarget+'-'+p.maxTarget;
-    // TEMP: based on ACSM Progression Models in Resistance Training for Healthy Adults (Med Sci Sports Exerc, 2009; DOI 10.1249/MSS.0b013e3181915670) - use conservative baseline loading until Forma has enough user-specific history; replace with rule engine when research database is complete.
-    const action='I\'d recommend using '+currentDisp+' '+uLbl()+' as a starting target for '+repTarget+' clean reps.';
+    const start=firstTimeStartingTarget(exName);
+    const startDisp=start?start.weightDisp:currentDisp;
+    const repTarget=start?start.repTarget:p.minTarget+'-'+p.maxTarget;
+    // TEMP: based on ACSM Progression Models in Resistance Training for Healthy Adults (Med Sci Sports Exerc, 2009; DOI 10.1249/MSS.0b013e3181915670) - use profile-adjusted conservative baseline loading until Forma has exercise-specific history; replace with rule engine when research database is complete.
+    const action='I\'d recommend using '+startDisp+' '+uLbl()+' as a starting target for '+repTarget+' clean reps.';
     const detail=recommendationDetail(action,[
       'No prior working sets are logged for this exercise yet.',
-      'Use this as a baseline, then Forma can make more specific recommendations after you log it.'
+      'This starting point uses '+(start?start.profileNotes:'your saved profile')+' plus the exercise category, then keeps the first target conservative.',
+      'Use it as a baseline. After you log one working set, Forma will switch to your actual performance for future recommendations.'
     ]);
-    return recommendationResult({dir:'same',action:'baseline',confidence:'medium',trend:'unknown',state:'baseline',category:p.category,weight:kgFromDisplayWeight(currentDisp),weightDisp:currentDisp,repTarget:repTarget,reason:'Set a baseline',detail:detail});
+    return recommendationResult({dir:'same',action:'baseline',confidence:'medium',trend:'unknown',state:'baseline',category:p.category,weight:kgFromDisplayWeight(startDisp),weightDisp:startDisp,repTarget:repTarget,reason:'Profile-based baseline',detail:detail});
   }
   const last=sessions[0];
   if(!last||last.topW===0)return null;
@@ -547,8 +658,9 @@ function starterOverloadSuggestion(exName,currentInputW,sessions){
     // TEMP: based on ACSM Progression Models in Resistance Training for Healthy Adults (Med Sci Sports Exerc, 2009; DOI 10.1249/MSS.0b013e3181915670) - small load increases after repeated top-of-range performance; replace with rule engine when research database is complete.
     const action='I\'d recommend trying '+sugDisp+' '+uLbl()+' for '+target.label+' reps.';
     const detail=recommendationDetail(action,[
-      'You have only a little history, but you reached the top of the target range twice at '+lastWDisp+' '+uLbl()+'.',
-      'This is an early recommendation, so treat the new load as a test rather than a confirmed trend.'
+      recommendationHistoryText(sessions,p,3),
+      'You reached the top of the '+p.minTarget+'-'+p.maxTarget+' target range at '+lastWDisp+' '+uLbl()+' in back-to-back sessions.',
+      'The '+jumpLabel(p.jump)+' increase is an early test, not a confirmed long-term trend yet.'
     ]);
     return recommendationResult({dir:'up',action:'early_add_weight',confidence:'medium',trend:'early_signal',state:'early_progression',category:p.category,weight:kgFromDisplayWeight(sugDisp),weightDisp:sugDisp,repTarget:target.label,reason:'Early progression test',detail:detail});
   }
@@ -556,9 +668,14 @@ function starterOverloadSuggestion(exName,currentInputW,sessions){
   const action=shouldAddReps?
     'I\'d recommend keeping '+lastWDisp+' '+uLbl()+' and aiming for '+targetReps+' reps.':
     'I\'d recommend repeating '+lastWDisp+' '+uLbl()+' for '+p.minTarget+'-'+p.maxTarget+' clean reps.';
+  const targetRange=p.minTarget+'-'+p.maxTarget;
+  const whyAction=shouldAddReps?
+    'Last time you hit '+lastWDisp+' '+uLbl()+' x '+last.topR+'. Since that is below the top of your '+targetRange+' target range, the next step is '+targetReps+' reps at the same weight before increasing.':
+    'Last time you hit '+lastWDisp+' '+uLbl()+' x '+last.topR+'. Since that is already at the top of your '+targetRange+' target range, repeat it cleanly once more before increasing.';
   const detail=recommendationDetail(action,[
-    sessions.length===1?'You have 1 prior working session logged for this exercise.':'You have 2 prior working sessions logged for this exercise.',
-    'That is enough for useful guidance, but not enough to call a real trend yet.'
+    recommendationHistoryText(sessions,p,3),
+    whyAction,
+    'This is early guidance from '+priorWorkingSessionText(sessions)+', so treat it as a practical next target rather than a long-term trend.'
   ]);
   return recommendationResult({dir:'same',action:shouldAddReps?'early_add_reps':'early_repeat',confidence:'medium',trend:'early_signal',state:'early_guidance',category:p.category,weight:last.topW,weightDisp:lastWDisp,repTarget:shouldAddReps?String(targetReps):p.minTarget+'-'+p.maxTarget,reason:shouldAddReps?'Early rep target':'Repeat and confirm',detail:detail});
 }
@@ -761,20 +878,10 @@ function buildWorkoutRecommendationEvidence(){
 function getLastW(name){
   const s=getLastSession(name);
   if(s)return String(toDisp(s.w));
-  // Smart default: look up by name, then by keyword
-  const n=name.trim();
-  const defaults=(typeof EX_DEFAULTS==='object'&&EX_DEFAULTS)?EX_DEFAULTS:{};
-  if(defaults[n]!==undefined)return String(defaults[n]);
-  const nl=n.toLowerCase();
-  if(nl.includes('deadlift'))return '135';
-  if(nl.includes('squat'))return '95';
-  if(nl.includes('bench')||nl.includes('press'))return '75';
-  if(nl.includes('row')||nl.includes('pull'))return '55';
-  if(nl.includes('curl')||nl.includes('raise')||nl.includes('fly'))return '20';
-  if(nl.includes('pushdown')||nl.includes('extension')||nl.includes('tricep'))return '35';
-  if(nl.includes('calf'))return '80';
-  if(nl.includes('leg press'))return '150';
-  return '45'; // safe fallback (lighter than 135)
+  const start=firstTimeStartingTarget(name);
+  if(start)return String(start.weightDisp);
+  const fallback=S.unit==='kg'?rawDefaultExerciseLbs(name)/KG2LB:rawDefaultExerciseLbs(name);
+  return String(roundToProgressionJump(fallback,S.unit==='kg'?2.5:5));
 }
 
 function toggleSubstitutions(i){
