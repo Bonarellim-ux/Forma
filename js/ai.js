@@ -1376,9 +1376,10 @@ function buildSysPrompt(question){
     '- Keep normal coaching answers concise: one clear next step, the evidence, confidence, and the next check. The next step may be "monitor" when evidence is not strong enough to change training. For medium/low-confidence add-a-training-day questions, include reasonable options before the preferred next step.';
 }
 
-async function sendChat(){
+async function sendChat(promptText){
   const inp=document.getElementById('chat-input');
-  const text=(inp?inp.value.trim():S.chatDraft.trim());
+  const direct=typeof promptText==='string';
+  const text=(direct?promptText:(inp?inp.value:S.chatDraft)).trim();
   if(!text||S.chatLoading)return;
   if(S.chatListening&&S.chatVoiceRec){try{S.chatVoiceRec.stop();}catch(e){} S.chatVoiceRec=null;S.chatListening=false;}
   S.chatDraft='';if(inp){inp.value='';inp.style.height='auto';}
@@ -1427,10 +1428,7 @@ async function sendChat(){
   S.chatLoading=false;render();
 }
 function sendQuick(text){
-  S.chatDraft=text;
-  const inp=document.getElementById('chat-input');
-  if(inp){inp.value=text;autoRes(inp);}
-  sendChat();
+  sendChat(text);
 }
 
 
