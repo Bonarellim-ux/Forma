@@ -132,7 +132,7 @@ const S={
 <script src="../js/recommendations.js"></script>
 <script src="../js/stats.js"></script>
 <script src="../js/coachingAnalysis.js"></script>
-<script src="../js/ai.js?v=proxy1"></script>
+<script src="../js/ai.js?v=restraint1"></script>
 <script>
 const BASELINE_KEY='forma_dev_ai_test_baselines_v1';
 const RESULTS_KEY='forma_dev_ai_test_last_results_v1';
@@ -236,6 +236,8 @@ const TESTS=[
       expect('Understands this refers to program-level volume',/program|weekly|overall|schedule|sixth day|training day/i),
       expect('Does not ask what “more volume” means again',null,/more volume.*today|today.*more volume|do you mean/i,true),
       expect('Recommends a structural option before exercises',/add|sixth|day|structure|schedule|split/i),
+      expect('Gives options or clearly caveats the preferred option',/reasonable options|option|alternative|another approach|could also|without exact|without weekly/i),
+      expect('Does not claim arms are the confirmed gap',null,/best addition.{0,40}arms|dedicated arms day|the gap is direct arm/i,true),
       expect('Does not immediately generate a full workout',null,/^(.|\n)*(sets|reps).*(sets|reps)/i,true)
     ]),
   test('add_day_recommend_one','Add training day -> user says you recommend one','quick','current_program_five_day',
@@ -244,6 +246,9 @@ const TESTS=[
     [
       expect('Uses current 5-day structure',/push|pull|legs|upper|lower|5-day|five-day|current/i),
       expect('Recommends program-level schedule change',/schedule|split|structure|day|program/i),
+      expect('Gives a concrete day or schedule placement',/sat|saturday|sun|sunday|mon|monday|tue|tuesday|wed|wednesday|thu|thursday|fri|friday|schedule would|structure would/i),
+      expect('Includes alternatives or caveats because confidence is not high',/option|alternative|also reasonable|could also|if|without.*set|without.*volume|confidence:\s*medium/i),
+      expect('Does not claim arms are the confirmed gap',null,/best addition.{0,40}arms|dedicated arms day|the gap is direct arm/i,true),
       expect('Does not jump straight to workout generation',null,/3 sets|4 sets|exercise 1|workout:\s*\n/i,true),
       expect('Offers workout design as a next step only',/if you want|next step|I can.*workout|design.*session/i)
     ]),
@@ -266,7 +271,7 @@ const TESTS=[
     'Is sleep the reason my squat dropped?',
     [
       expect('Separates observation from interpretation',/observation|data shows|interpretation|may|might|possible/i),
-      expect('Does not claim sleep caused it',null,/sleep (is|was).*caus|because of sleep|sleep caused/i,true),
+      expect('Does not claim sleep caused it',null,/sleep (is|was).*caus|because of sleep|sleep caused (your|the) (drop|regression|decline)/i,true),
       expect('Mentions mixed performance signals',/mixed|while|however|but|other lifts|RDL|deadlift|leg press/i),
       expect('Gives a monitoring or next-check action',/monitor|next session|watch|repeat|check/i)
     ]),
@@ -289,6 +294,7 @@ const TESTS=[
     [
       expect('Recognizes limited context or low confidence',/limited|not enough|low confidence|need more|without.*history|early/i),
       expect('Presents multiple reasonable options instead of one firm answer',/option|approach|reasonable|could|possib|alternatively|full body|upper/i),
+      expect('Does not claim arms are the confirmed gap',null,/best addition.{0,40}arms|dedicated arms day|the gap is direct arm/i,true),
       expect('Does not generate a full workout',null,/3 sets|4 sets|exercise 1|workout:\s*\n/i,true),
       expect('Avoids a strong single prescription',null,/I recommend.*day|best.*is.*day|definitely|clear choice/i,true)
     ]),
@@ -299,6 +305,8 @@ const TESTS=[
       expect('Gives a preferred program-level option',/lean|prefer|would start|best first|preferred|I would/i),
       expect('Includes alternatives because evidence is incomplete',/alternative|also reasonable|another option|could also|option/i),
       expect('Labels medium or low confidence',/confidence[^\\n]*(medium|low)|medium confidence|low confidence/i),
+      expect('Gives a concrete day or schedule placement',/sat|saturday|sun|sunday|mon|monday|tue|tuesday|wed|wednesday|thu|thursday|fri|friday|schedule would|structure would/i),
+      expect('Does not claim arms are the confirmed gap',null,/best addition.{0,40}arms|dedicated arms day|the gap is direct arm/i,true),
       expect('Does not generate a full workout',null,/3 sets|4 sets|exercise 1|workout:\s*\n/i,true)
     ]),
   test('contradictory_pressing','Contradictory performance signals','quick','contradiction_pressing',[],
@@ -416,6 +424,8 @@ function detectFailurePatterns(test,checks,answer){
   add('confirmation_not_resolved',/confirmation|yes/.test(failed));
   add('jumped_to_workout_generation',/workout generation|full workout|exercise list/.test(failed));
   add('weak_program_reasoning',/program-level|schedule|structure/.test(failed));
+  add('vague_program_action',/concrete day|schedule placement/.test(failed));
+  add('unsupported_specific_muscle_claim',/confirmed gap|arms/.test(failed));
   add('overconfident_causation',/cause|caused|definitely|clearly/.test(failed)||/definitely|clearly caused/.test(text));
   add('over_attributed_to_sleep',/sleep/.test(failed)&&/sleep/.test(text));
   add('invented_data',/invent/.test(failed)||/you mentioned|your note says|injury|pain/.test(text)&&!/pain|injur|sleep/.test(JSON.stringify(test)));
@@ -437,8 +447,8 @@ function scoreRubric(test,checks,patterns,answer){
     contextUse:clamp(base-(patterns.includes('lost_conversation_context')?3:0)-(patterns.includes('confirmation_not_resolved')?2:0)),
     intentUnderstanding:clamp(base-(patterns.includes('unnecessary_clarification')?2:0)-(patterns.includes('jumped_to_workout_generation')?3:0)),
     programReasoning:clamp(base-(patterns.includes('weak_program_reasoning')?3:0)-(patterns.includes('ignored_current_program')?2:0)),
-    evidenceDiscipline:clamp(base-(patterns.includes('overconfident_causation')?3:0)-(patterns.includes('over_attributed_to_sleep')?2:0)),
-    actionQuality:clamp(base-(patterns.includes('no_actionable_next_step')?3:0)-(patterns.includes('generic_advice')?2:0)),
+    evidenceDiscipline:clamp(base-(patterns.includes('overconfident_causation')?3:0)-(patterns.includes('over_attributed_to_sleep')?2:0)-(patterns.includes('unsupported_specific_muscle_claim')?2:0)),
+    actionQuality:clamp(base-(patterns.includes('no_actionable_next_step')?3:0)-(patterns.includes('generic_advice')?2:0)-(patterns.includes('vague_program_action')?2:0)),
     conversationNaturalness:clamp(base-(patterns.includes('unnecessary_clarification')?2:0)-(patterns.includes('lost_conversation_context')?2:0)),
     noFabrication:clamp(10-(patterns.includes('invented_data')?6:0))
   };
