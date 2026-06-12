@@ -1344,47 +1344,6 @@ function syncWorkoutToTemplate(){
 function renameEx(i,name){if(!S.workout)return;flushLogInputs();S.workout.exercises[i].name=name;syncWorkoutToTemplate();persistActiveWorkoutNow('exercise renamed');render();}
 function toggleM2(i){if(!S.workout)return;const ex=S.workout.exercises[i];ex.trackM2=!ex.trackM2;persistActiveWorkoutNow('exercise tracking changed');render();}
 
-// ── PLATE CALCULATOR ─────────────────────────────────────────
-function calcWorkoutPlates(dispW){
-  const bar=S.unit==='lbs'?45:20;
-  const plates=S.unit==='lbs'?[45,35,25,10,5,2.5]:[25,20,15,10,5,2.5,1.25];
-  if(dispW<=bar)return null;
-  let rem=(dispW-bar)/2;
-  const result=[];
-  for(const p of plates){
-    while(rem>=p-0.01){result.push(p);rem=Math.round((rem-p)*100)/100;}
-  }
-  if(rem>0.15)return null; // can't make exact weight
-  return{bar,plates:result};
-}
-function plateHtml(dispW){
-  const p=calcWorkoutPlates(dispW);
-  if(!p||!p.plates.length)return '';
-  const colors={45:'#1A9ED4',35:'#D4A020',25:'#2DAA70',20:'#2DAA70',15:'#E8693A',10:'#7B6FE0',5:'#9AB8CC',2.5:'#C44',1.25:'#C44'};
-  const counts={};
-  p.plates.forEach(function(pl){counts[pl]=(counts[pl]||0)+1;});
-  const dots=Object.keys(counts).map(function(pl){
-    const c=colors[pl]||'#9AB8CC';
-    return '<span class="plate-dot" style="--plate-color:'+c+'"></span>';
-  }).join('');
-  const txt=Object.keys(counts).map(function(pl){return(counts[pl]>1?counts[pl]+'x':'')+pl;}).join(' + ');
-  return '<div class="plate-calc">'+
-    '<span class="plate-visual" aria-label="Plate calculator">'+
-      '<span class="plate-sleeve"></span>'+
-      dots+
-    '</span>'+
-    '<span class="plate-text">'+p.bar+' '+uLbl()+' bar &middot; '+txt+' per side</span>'+
-  '</div>';
-}
-
-function updatePlateCalc(i){
-  const el=document.getElementById('plate'+i);
-  if(!el||!S.workout||!S.workout.exercises||!S.workout.exercises[i])return;
-  const ex=S.workout.exercises[i];
-  const dW=parseFloat(document.getElementById('w'+i)&&document.getElementById('w'+i).value||0);
-  el.innerHTML=(!isCardioEx(ex.name)&&isBarbell(ex.name)&&dW>0)?plateHtml(dW):'';
-}
-
 function previewE1(i){
   const el=document.getElementById('prev'+i);if(!el)return;
   const ex=S.workout&&S.workout.exercises[i];
