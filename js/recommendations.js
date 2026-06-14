@@ -152,24 +152,26 @@ function getRecentExerciseSessions(exName,limit){
 function exerciseProgressionProfile(exName){
   const n=normExName(exName);
   const category=classifyExerciseCategory(exName);
-  const isLower=category==='lower_compound'||category==='lower_isolation'||category==='unilateral_lower';
+  const isLower=category==='lower_compound'||category==='lower_isolation'||category==='unilateral_lower'||category==='machine_lower_compound';
   const isUnilateral=category==='unilateral_lower';
-  const isCompound=category==='upper_compound'||category==='lower_compound';
+  const isCompound=category==='upper_compound'||category==='lower_compound'||category==='machine_compound'||category==='machine_lower_compound'||category==='dumbbell_compound';
   const isLowerIsolation=category==='lower_isolation';
-  const isUpperIsolation=category==='upper_isolation';
+  const isUpperIsolation=category==='upper_isolation'||category==='small_isolation';
   let jump;
   if(S.unit==='kg'){
-    jump=category==='lower_compound'?5:2.5;
+    jump=category==='lower_compound'||category==='machine_lower_compound'?5:2.5;
   }else{
-    if(category==='lower_compound')jump=10;
-    else if(category==='lower_isolation'||category==='upper_compound'||category==='unilateral_lower')jump=5;
-    else if(category==='upper_isolation')jump=2.5;
+    if(category==='lower_compound'||category==='machine_lower_compound')jump=10;
+    else if(category==='lower_isolation'||category==='upper_compound'||category==='unilateral_lower'||category==='machine_compound'||category==='dumbbell_compound')jump=5;
+    else if(category==='upper_isolation'||category==='small_isolation')jump=2.5;
     else jump=5;
   }
   let minTarget=8,maxTarget=12;
   if(category==='lower_compound'){minTarget=5;maxTarget=10;}
   else if(category==='upper_compound'){minTarget=6;maxTarget=10;}
+  else if(category==='machine_compound'||category==='machine_lower_compound'||category==='dumbbell_compound'){minTarget=8;maxTarget=12;}
   else if(category==='upper_isolation'){minTarget=10;maxTarget=15;}
+  else if(category==='small_isolation'){minTarget=12;maxTarget=20;}
   else if(category==='bodyweight'){minTarget=8;maxTarget=15;}
   return{
     category:category,
@@ -188,12 +190,19 @@ function exerciseProgressionProfile(exName){
 function classifyExerciseCategory(exName){
   const n=normExName(exName);
   if(/\b(pull up|pull-up|pullups|pull ups|push up|push-up|dip|chin up|chin-up)\b/.test(n))return 'bodyweight';
+  if(n.includes('lateral raise')||n.includes('rear delt')||n.includes('face pull')||n.includes('y raise')||n.includes('pec deck')||n.includes('reverse pec'))return 'small_isolation';
+  if((n.includes('dumbbell')||/\bdb\b/.test(n))&&(n.includes('press')||n.includes('row')))return 'dumbbell_compound';
+  if(n.includes('machine')||n.includes('smith')||n.includes('hack squat')||n.includes('leg press')||n.includes('chest press')||n.includes('pulldown')||n.includes('high row')||n.includes('t bar row')){
+    if(n.includes('leg press')||n.includes('hack squat'))return 'machine_lower_compound';
+    if(n.includes('kickback'))return 'lower_isolation';
+    if(n.includes('curl')||n.includes('extension')||n.includes('fly')||n.includes('raise'))return 'upper_isolation';
+    return 'machine_compound';
+  }
   if(n.includes('lunge')||n.includes('split squat')||n.includes('step up')||n.includes('step-up'))return 'unilateral_lower';
-  if(n.includes('leg extension')||n.includes('leg curl')||n.includes('calf')||n.includes('seated calf'))return 'lower_isolation';
+  if(n.includes('leg extension')||n.includes('leg curl')||n.includes('calf')||n.includes('seated calf')||n.includes('glute kickback'))return 'lower_isolation';
   if(n.includes('squat')||n.includes('deadlift')||n.includes('rdl')||n.includes('romanian deadlift')||n.includes('leg press')||n.includes('hack squat')||n.includes('hip thrust'))return 'lower_compound';
-  if(n.includes('curl')||n.includes('lateral raise')||n.includes('raise')||n.includes('fly')||n.includes('pushdown')||n.includes('face pull')||n.includes('rear delt'))return 'upper_isolation';
+  if(n.includes('curl')||n.includes('raise')||n.includes('fly')||n.includes('pushdown')||n.includes('extension'))return 'upper_isolation';
   if(n.includes('bench')||n.includes('press')||n.includes('row')||n.includes('pulldown')||n.includes('lat pulldown')||n.includes('overhead'))return 'upper_compound';
-  if(n.includes('machine')||n.includes('smith')||n.includes('cable'))return 'machine';
   return 'unknown';
 }
 
@@ -327,6 +336,14 @@ function profileExperienceMultiplier(){
   return .95;
 }
 
+function profileExperienceLevel(){
+  const exp=String(S&&S.profile&&S.profile.experience||'').toLowerCase();
+  if(exp.includes('5+')||exp.includes('advanced')||exp.includes('3'))return 'advanced';
+  if(exp.includes('1')||exp.includes('2')||exp.includes('intermediate'))return 'intermediate';
+  if(exp.includes('beginner')||exp.includes('novice')||exp.includes('starting')||exp.includes('6 months'))return 'beginner';
+  return 'unknown';
+}
+
 function profileHeightInches(){
   const h=String(S&&S.profile&&S.profile.height||'').trim().toLowerCase();
   if(!h)return null;
@@ -342,6 +359,101 @@ function heightBuildFactor(category){
   if(!inches)return 1;
   const influence=category==='lower_compound'?.06:category==='upper_compound'?.04:category==='machine'?.03:.02;
   return Math.max(.96,Math.min(1.04,1+((inches-69)/10)*influence));
+}
+
+function firstTimeLoadBasis(exName){
+  const n=normExName(exName);
+  return n.includes('dumbbell')||/\bdb\b/.test(n)?'per hand':'total load';
+}
+
+function firstTimeUsesBarbell(exName){
+  const n=normExName(exName);
+  if(n.includes('goblet')||n.includes('dumbbell')||/\bdb\b/.test(n))return false;
+  return isBarbell(exName);
+}
+
+function firstTimeCalibrationRangeLbs(exName,category,level){
+  const n=normExName(exName);
+  const intermediate=level==='intermediate'||level==='advanced';
+  if(n.includes('goblet squat'))return intermediate?{min:25,max:65}:{min:20,max:50};
+  if(n.includes('back squat')||n==='squat')return intermediate?{min:65,max:115}:{min:45,max:95};
+  if(n.includes('bench'))return intermediate?{min:55,max:95}:{min:45,max:75};
+  if(n.includes('lat pulldown')||n.includes('pulldown'))return intermediate?{min:50,max:85}:{min:40,max:70};
+  if((n.includes('db')||n.includes('dumbbell'))&&n.includes('shoulder press'))return intermediate?{min:12.5,max:30}:{min:10,max:25};
+  if(n.includes('romanian deadlift')||n.includes('rdl'))return intermediate?{min:55,max:115}:{min:45,max:95};
+  if(n.includes('leg press'))return intermediate?{min:120,max:220}:{min:90,max:180};
+  if(n.includes('bicep curl')||n.includes('curl'))return intermediate?{min:12.5,max:30}:{min:10,max:25};
+  if(n.includes('tricep')||n.includes('pushdown'))return intermediate?{min:25,max:45}:{min:20,max:40};
+  if(n.includes('lateral raise'))return intermediate?{min:7.5,max:17.5}:{min:5,max:15};
+  if(category==='lower_compound')return intermediate?{min:55,max:115}:{min:45,max:95};
+  if(category==='upper_compound')return intermediate?{min:45,max:95}:{min:35,max:75};
+  if(category==='machine_lower_compound')return intermediate?{min:120,max:220}:{min:90,max:180};
+  if(category==='machine_compound')return intermediate?{min:50,max:100}:{min:40,max:70};
+  if(category==='dumbbell_compound')return intermediate?{min:15,max:35}:{min:10,max:25};
+  if(category==='lower_isolation')return intermediate?{min:30,max:80}:{min:20,max:60};
+  if(category==='small_isolation')return intermediate?{min:7.5,max:20}:{min:5,max:15};
+  if(category==='upper_isolation')return intermediate?{min:10,max:30}:{min:5,max:20};
+  return intermediate?{min:15,max:40}:{min:5,max:25};
+}
+
+function firstTimeExactCalibrationMatch(exName){
+  const n=normExName(exName);
+  return [
+    'bench press',
+    'back squat',
+    'goblet squat',
+    'lat pulldown',
+    'db shoulder press',
+    'dumbbell shoulder press',
+    'romanian deadlift',
+    'leg press',
+    'bicep curl',
+    'tricep pushdown',
+    'lateral raise'
+  ].includes(n);
+}
+
+function firstTimeFallbackSource(exName,category){
+  if(firstTimeExactCalibrationMatch(exName))return 'exact_match';
+  if(category==='unknown')return 'unknown_fallback';
+  return 'category_fallback';
+}
+
+function firstTimeRepTarget(exName,category){
+  const n=normExName(exName);
+  if(category==='unknown')return '8-12';
+  if(category==='machine_compound'||category==='machine_lower_compound')return '8-12';
+  if(category==='dumbbell_compound')return '8-12';
+  if(category==='small_isolation')return '12-20';
+  if(category==='upper_isolation'||category==='lower_isolation')return '10-15';
+  if(category==='lower_compound')return '5-10';
+  if(category==='upper_compound')return '5-10';
+  if(n.includes('curl')||n.includes('pushdown')||n.includes('extension')||n.includes('fly'))return '10-15';
+  return '8-12';
+}
+
+function firstTimeCalibrationPosition(level){
+  const bwLbs=profileBodyweightLbs();
+  const bwScore=bwLbs?Math.max(0,Math.min(1,(bwLbs-110)/130)):.45;
+  const sex=String(S&&S.profile&&S.profile.sex||'').toLowerCase();
+  const sexAdjust=sex.includes('female')?-.18:sex.includes('male')?.04:0;
+  const expAdjust=level==='advanced'?.28:level==='intermediate'?.18:level==='beginner'?-.08:0;
+  return Math.max(0,Math.min(1,.35+bwScore*.25+sexAdjust+expAdjust));
+}
+
+function firstTimeConfidence(level){
+  return level==='intermediate'||level==='advanced'?'medium':'low';
+}
+
+function firstTimeRecommendationConfidence(level,source){
+  if(source!=='exact_match')return 'low';
+  return firstTimeConfidence(level);
+}
+
+function firstTimeConfidenceReason(level,source){
+  if(source==='unknown_fallback')return 'No logged working sets and no strong exercise-category match.';
+  if(source==='category_fallback')return 'No exact exercise history; using a broad movement/category match.';
+  return level==='intermediate'||level==='advanced'?'Some training experience, but no app history or prior lifting numbers.':'No logged working sets yet.';
 }
 
 function bodyweightInfluenceForCategory(category){
@@ -366,27 +478,27 @@ function startingWeightProfileNotes(){
 function firstTimeStartingTarget(exName){
   const p=exerciseProgressionProfile(exName);
   const baseLbs=rawDefaultExerciseLbs(exName);
-  if(p.category==='bodyweight'||baseLbs<=0)return null;
-  const bwLbs=profileBodyweightLbs();
-  const bwRatio=bwLbs?Math.max(.75,Math.min(1.25,bwLbs/175)):1;
-  const bwFactor=1+((bwRatio-1)*bodyweightInfluenceForCategory(p.category));
-  const expFactor=profileExperienceMultiplier();
-  const heightFactor=heightBuildFactor(p.category);
-  // TEMP: based on ACSM Progression Models in Resistance Training for Healthy Adults (Med Sci Sports Exerc, 2009; DOI 10.1249/MSS.0b013e3181915670) and conservative beginner-load practice - estimate a moderate 8-12RM baseline from bodyweight, training experience, and exercise category until Forma has exercise-specific history; replace with rule engine when research database is complete.
-  const adjustedLbs=baseLbs*bwFactor*expFactor*heightFactor;
-  const displayRaw=S.unit==='kg'?adjustedLbs/KG2LB:adjustedLbs;
+  if(p.category==='bodyweight')return null;
+  const level=profileExperienceLevel();
+  const source=firstTimeFallbackSource(exName,p.category);
+  const range=firstTimeCalibrationRangeLbs(exName,p.category,level);
+  const position=firstTimeCalibrationPosition(level);
+  // TEMP: based on ACSM Progression Models in Resistance Training for Healthy Adults (Med Sci Sports Exerc, 2009; DOI 10.1249/MSS.0b013e3181915670) and conservative beginner-load practice - no-history recommendations are calibration loads, not strength predictions; replace with rule engine when research database is complete.
+  const calibrationLbs=range.min+(range.max-range.min)*position;
+  const displayRaw=S.unit==='kg'?calibrationLbs/KG2LB:calibrationLbs;
   const jump=S.unit==='kg'?Math.min(p.jump||2.5,2.5):(p.jump||5);
   const rounded=Math.max(jump,Math.round(displayRaw/jump)*jump);
   const minBarbell=S.unit==='kg'?20:45;
-  const lower=rawDefaultExerciseLbs(exName)>=45&&isBarbell(exName)?Math.max(rounded,minBarbell):rounded;
+  const lower=firstTimeUsesBarbell(exName)?Math.max(rounded,minBarbell):rounded;
   return{
     weightDisp:Math.round(lower*10)/10,
-    repTarget:p.minTarget+'-'+p.maxTarget,
+    repTarget:firstTimeRepTarget(exName,p.category),
     category:p.category,
     baseLbs:baseLbs,
-    bwLbs:bwLbs,
-    expFactor:expFactor,
-    heightFactor:heightFactor,
+    source:source,
+    loadBasis:firstTimeLoadBasis(exName),
+    confidence:firstTimeRecommendationConfidence(level,source),
+    confidenceReason:firstTimeConfidenceReason(level,source),
     profileNotes:startingWeightProfileNotes()
   };
 }
@@ -471,7 +583,7 @@ function classifyProgressionState(ctx){
 }
 
 function recommendationResult(opts){
-  if(!opts||opts.confidence==='low')return null;
+  if(!opts||opts.confidence==='low'&&opts.state!=='baseline')return null;
   return{
     dir:opts.dir||'same',
     type:opts.action,
@@ -484,6 +596,9 @@ function recommendationResult(opts){
     weightDisp:opts.weightDisp,
     repTarget:opts.repTarget,
     reason:opts.reason,
+    source:opts.source,
+    loadBasis:opts.loadBasis,
+    confidenceReason:opts.confidenceReason,
     detail:opts.detail
   };
 }
@@ -523,14 +638,20 @@ function starterOverloadSuggestion(exName,currentInputW,sessions){
     const start=firstTimeStartingTarget(exName);
     const startDisp=start?start.weightDisp:currentDisp;
     const repTarget=start?start.repTarget:p.minTarget+'-'+p.maxTarget;
-    // TEMP: based on ACSM Progression Models in Resistance Training for Healthy Adults (Med Sci Sports Exerc, 2009; DOI 10.1249/MSS.0b013e3181915670) - use profile-adjusted conservative baseline loading until Forma has exercise-specific history; replace with rule engine when research database is complete.
-    const action='I\'d recommend using '+startDisp+' '+uLbl()+' as a starting target for '+repTarget+' clean reps.';
-    const detail=recommendationDetail(action,[
+    const loadBasis=start&&start.loadBasis==='per hand'?' per hand':'';
+    // TEMP: based on ACSM Progression Models in Resistance Training for Healthy Adults (Med Sci Sports Exerc, 2009; DOI 10.1249/MSS.0b013e3181915670) - use a conservative calibration load until Forma has exercise-specific history; replace with rule engine when research database is complete.
+    const action='I\'d recommend using '+startDisp+' '+uLbl()+loadBasis+' as a calibration load for '+repTarget+' clean reps.';
+    const why=start&&start.source==='unknown_fallback'?[
+      'No prior working sets and no strong exercise-category match.',
+      'Use this as a conservative calibration load, not a prediction of your strength.',
+      'Adjust after your first logged set. After that, Forma can use your actual performance for future recommendations.'
+    ]:[
       'No prior working sets are logged for this exercise yet.',
-      'This starting point uses '+(start?start.profileNotes:'your saved profile')+' plus the exercise category, then keeps the first target conservative.',
-      'Use it as a baseline. After you log one working set, Forma will switch to your actual performance for future recommendations.'
-    ]);
-    return recommendationResult({dir:'same',action:'baseline',confidence:'medium',trend:'unknown',state:'baseline',category:p.category,weight:kgFromDisplayWeight(startDisp),weightDisp:startDisp,repTarget:repTarget,reason:'Profile-based baseline',detail:detail});
+      start&&start.source==='category_fallback'?'This uses a broad movement/category match because there is no exact exercise match.':'This is a conservative calibration load, not a prediction of your strength.',
+      'Adjust after your first logged set. After that, Forma can use your actual performance for future recommendations.'
+    ];
+    const detail=recommendationDetail(action,why);
+    return recommendationResult({dir:'same',action:'baseline',confidence:start&&start.confidence?start.confidence:'low',trend:'unknown',state:'baseline',category:p.category,weight:kgFromDisplayWeight(startDisp),weightDisp:startDisp,repTarget:repTarget,reason:'Conservative calibration load',source:start&&start.source,loadBasis:start&&start.loadBasis,confidenceReason:start&&start.confidenceReason,detail:detail});
   }
   const last=sessions[0];
   if(!last||last.topW===0)return null;
