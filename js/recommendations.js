@@ -776,6 +776,84 @@ function compoundDeclineCount(){
   }).length;
 }
 
+function calibrationPhaseIntro(sessions){
+  const n=(sessions||[]).length;
+  return[
+    'Early calibration phase — this is based on only '+n+' logged '+(n===1?'session':'sessions')+'.',
+    'The goal is to find your working range, not maximize load yet.'
+  ];
+}
+
+function calibrationSameWeightSessions(sessions,profile,weightDisp){
+  return sessions.filter(function(s){
+    return sameProgressionWeight(sessionDisplayWeight(s,profile),weightDisp,profile.jump);
+  });
+}
+
+function calibrationRepStats(sessions,profile,weightDisp){
+  const same=calibrationSameWeightSessions(sessions,profile,weightDisp).slice(0,3);
+  if(!same.length)return{minReps:0,maxReps:0,repRange:0,reps:[]};
+  const reps=same.map(function(s){return s.topR;});
+  const minReps=Math.min.apply(null,reps);
+  const maxReps=Math.max.apply(null,reps);
+  return{minReps:minReps,maxReps:maxReps,repRange:maxReps-minReps,reps:reps,sameCount:same.length};
+}
+
+function calibrationSupportsDoubleJump(profile){
+  return profile.isCompound&&!profile.isUpperIsolation&&!profile.isLowerIsolation&&profile.category!=='small_isolation';
+}
+
+function calibrationMinDisplayWeight(exName,profile,value){
+  const displayJump=S.unit==='lbs'?2.5:1;
+  let lower=roundToProgressionJump(value,displayJump);
+  if(firstTimeUsesBarbell(exName)){
+    const minBarbell=S.unit==='kg'?20:45;
+    lower=Math.max(lower,minBarbell);
+  }
+  return Math.max(lower,displayJump);
+}
+
+function fullEngineInconsistentPerformance(sessions,atSameWeight){
+  if(sessions.length>6||atSameWeight.length<3)return false;
+  const reps=atSameWeight.map(function(s){return s.topR;});
+  return Math.max.apply(null,reps)-Math.min.apply(null,reps)>=3;
+}
+
+function fullEngineRepProgressionBlocked(last,profile,sessions,lastWDisp,minReps,maxReps){
+  if(last.topR>=profile.minTarget)return false;
+  if(maxReps>=profile.minTarget&&sameWeightRepTrend(sessions,lastWDisp,profile)==='up')return false;
+  if(sessions.length>=3){
+    const chronological=sessions.slice(0,3).reverse();
+    const oldest=chronological[0].topR;
+    const newest=chronological[chronological.length-1].topR;
+    if(newest>=profile.minTarget)return false;
+    if(newest>=oldest+2&&newest>=profile.minTarget-1)return false;
+  }
+  return true;
+}
+
+function fullEngineBelowMinAlternative(exName,sessions,profile,last,lastWDisp,minReps,maxReps,trend,e1Text){
+  const targetRange=profile.minTarget+'-'+profile.maxTarget;
+  const shouldReduce=maxReps<=profile.minTarget-2||minReps<=profile.minTarget-2;
+  if(shouldReduce){
+    const reducedDisp=calibrationMinDisplayWeight(exName,profile,lastWDisp-profile.jump);
+    const action='I\'d recommend reducing slightly to '+reducedDisp+' '+uLbl()+' and aiming for '+targetRange+' reps.';
+    const detail=recommendationDetail(action,[
+      'Recent top sets stayed below the '+targetRange+' target range at '+lastWDisp+' '+uLbl()+'.',
+      'Reduce slightly to keep reps in target range.',
+      e1Text
+    ].filter(Boolean));
+    return recommendationResult({dir:'down',action:'reduce_or_recover',confidence:trend&&trend.confidence?trend.confidence:'medium',trend:trend&&trend.trend?trend.trend:'stable',state:'recovering',category:profile.category,weight:kgFromDisplayWeight(reducedDisp),weightDisp:reducedDisp,repTarget:targetRange,reason:'Load above early range',detail:detail});
+  }
+  const action='I\'d recommend holding '+lastWDisp+' '+uLbl()+' for '+targetRange+' clean reps.';
+  const detail=recommendationDetail(action,[
+    'Recent top sets stayed below the '+targetRange+' target range at '+lastWDisp+' '+uLbl()+'.',
+    'Repeat this load to confirm baseline before increasing weight or reps.',
+    e1Text
+  ].filter(Boolean));
+  return recommendationResult({dir:'same',action:'hold',confidence:trend&&trend.confidence?trend.confidence:'medium',trend:trend&&trend.trend?trend.trend:'stable',state:'recovering',category:profile.category,weight:last.topW,weightDisp:lastWDisp,repTarget:targetRange,reason:'Repeat to confirm baseline',detail:detail});
+}
+
 function starterOverloadSuggestion(exName,currentInputW,sessions){
   const p=exerciseProgressionProfile(exName);
   if(p.category==='bodyweight'&&!sessions.length){
@@ -821,42 +899,83 @@ function starterOverloadSuggestion(exName,currentInputW,sessions){
   const last=sessions[0];
   if(!last||last.topW===0)return null;
   const lastWDisp=sessionDisplayWeight(last,p);
+  const displayJump=S.unit==='lbs'?2.5:1;
+  const calIntro=calibrationPhaseIntro(sessions);
+  const repStats=calibrationRepStats(sessions,p,lastWDisp);
+  const targetRange=p.minTarget+'-'+p.maxTarget;
+
+  if(repStats.sameCount>=2&&repStats.repRange>=3){
+    const action='I\'d recommend repeating '+lastWDisp+' '+uLbl()+' for '+targetRange+' clean reps.';
+    const detail=recommendationDetail(action,calIntro.concat([
+      recommendationHistoryText(sessions,p,3),
+      'Your recent reps at this weight have varied quite a bit ('+repStats.reps.slice().reverse().join(' → ')+').',
+      'Repeat this load to confirm baseline before increasing weight or reps.'
+    ]));
+    return recommendationResult({dir:'same',action:'early_repeat',confidence:'medium',trend:'early_signal',state:'early_guidance',category:p.category,weight:last.topW,weightDisp:lastWDisp,repTarget:targetRange,reason:'Stabilize early data',detail:detail});
+  }
+
+  const belowMin=repStats.maxReps<p.minTarget||last.topR<p.minTarget;
+  if(belowMin){
+    const shouldReduce=repStats.maxReps<=p.minTarget-2||repStats.minReps<=p.minTarget-2;
+    if(shouldReduce){
+      const reducedDisp=calibrationMinDisplayWeight(exName,p,lastWDisp-p.jump);
+      const action='I\'d recommend reducing slightly to '+reducedDisp+' '+uLbl()+' and aiming for '+targetRange+' reps.';
+      const detail=recommendationDetail(action,calIntro.concat([
+        recommendationHistoryText(sessions,p,3),
+        'Recent top sets stayed below the '+targetRange+' target range at '+lastWDisp+' '+uLbl()+'.',
+        'Reduce slightly to keep reps in target range.'
+      ]));
+      return recommendationResult({dir:'down',action:'reduce_or_recover',confidence:'medium',trend:'early_signal',state:'early_guidance',category:p.category,weight:kgFromDisplayWeight(reducedDisp),weightDisp:reducedDisp,repTarget:targetRange,reason:'Load above early range',detail:detail});
+    }
+    const action='I\'d recommend repeating '+lastWDisp+' '+uLbl()+' for '+targetRange+' clean reps.';
+    const detail=recommendationDetail(action,calIntro.concat([
+      recommendationHistoryText(sessions,p,3),
+      'Recent top sets stayed below the '+targetRange+' target range at '+lastWDisp+' '+uLbl()+'.',
+      'Repeat this load to confirm baseline before increasing weight or reps.'
+    ]));
+    return recommendationResult({dir:'same',action:'hold',confidence:'medium',trend:'early_signal',state:'early_guidance',category:p.category,weight:last.topW,weightDisp:lastWDisp,repTarget:targetRange,reason:'Repeat to confirm baseline',detail:detail});
+  }
+
   const prior=sessions[1]||null;
-  const targetReps=Math.min(p.maxTarget,last.topR+1);
-  const shouldAddReps=last.topR<p.maxTarget;
   const sameAsPrior=prior&&sameProgressionWeight(sessionDisplayWeight(prior,p),lastWDisp,p.jump);
   const repeatedTop=sameAsPrior&&last.topR>=p.maxTarget&&prior.topR>=p.maxTarget;
-  if(repeatedTop&&sessions.length>=2){
-    const sugDisp=roundToProgressionJump(lastWDisp+p.jump,S.unit==='lbs'?2.5:1);
+  const stableAtTop=repStats.repRange<=1;
+  const allAtMaxTop=repStats.sameCount>=2&&repStats.maxReps>=p.maxTarget&&stableAtTop;
+  if((repeatedTop&&sessions.length>=2)||(allAtMaxTop&&sessions.length>=2)){
+    let jumpSteps=1;
+    if(calibrationSupportsDoubleJump(p)&&repStats.sameCount>=3&&repStats.repRange===0&&repStats.minReps>=p.maxTarget){
+      jumpSteps=2;
+    }
+    const sugDisp=roundToProgressionJump(lastWDisp+jumpSteps*p.jump,displayJump);
     const target=weightIncreaseRepTarget(p,last.topR);
-    // TEMP: based on ACSM Progression Models in Resistance Training for Healthy Adults (Med Sci Sports Exerc, 2009; DOI 10.1249/MSS.0b013e3181915670) - small load increases after repeated top-of-range performance; replace with rule engine when research database is complete.
+    const jumpText=jumpSteps>1?(jumpSteps*p.jump)+' '+uLbl():jumpLabel(p.jump);
     const action='I\'d recommend trying '+sugDisp+' '+uLbl()+' for '+target.label+' reps.';
-    const detail=recommendationDetail(action,[
+    const detail=recommendationDetail(action,calIntro.concat([
       recommendationHistoryText(sessions,p,3),
-      'You reached the top of the '+p.minTarget+'-'+p.maxTarget+' target range at '+lastWDisp+' '+uLbl()+' in back-to-back sessions.',
-      'The '+jumpLabel(p.jump)+' increase is an early test, not a confirmed long-term trend yet.'
-    ]);
+      'You reached the top of the '+targetRange+' target range at '+lastWDisp+' '+uLbl()+' with stable performance.',
+      'The '+jumpText+' increase is an early calibration step, not a confirmed long-term trend yet.'
+    ]));
     return recommendationResult({dir:'up',action:'early_add_weight',confidence:'medium',trend:'early_signal',state:'early_progression',category:p.category,weight:kgFromDisplayWeight(sugDisp),weightDisp:sugDisp,repTarget:target.label,reason:'Early progression test',detail:detail});
   }
-  // TEMP: based on ACSM Progression Models in Resistance Training for Healthy Adults (Med Sci Sports Exerc, 2009; DOI 10.1249/MSS.0b013e3181915670) - progress reps before load when history is sparse; replace with rule engine when research database is complete.
+
+  const targetReps=Math.min(p.maxTarget,last.topR+1);
+  const shouldAddReps=last.topR<p.maxTarget&&last.topR>=p.minTarget;
   const action=shouldAddReps?
     'I\'d recommend keeping '+lastWDisp+' '+uLbl()+' and aiming for '+targetReps+' reps.':
-    'I\'d recommend repeating '+lastWDisp+' '+uLbl()+' for '+p.minTarget+'-'+p.maxTarget+' clean reps.';
-  const targetRange=p.minTarget+'-'+p.maxTarget;
+    'I\'d recommend repeating '+lastWDisp+' '+uLbl()+' for '+targetRange+' clean reps.';
   const whyAction=shouldAddReps?
     'Last time you hit '+lastWDisp+' '+uLbl()+' x '+last.topR+'. Since that is below the top of your '+targetRange+' target range, the next step is '+targetReps+' reps at the same weight before increasing.':
     'Last time you hit '+lastWDisp+' '+uLbl()+' x '+last.topR+'. Since that is already at the top of your '+targetRange+' target range, repeat it cleanly once more before increasing.';
-  const detail=recommendationDetail(action,[
+  const detail=recommendationDetail(action,calIntro.concat([
     recommendationHistoryText(sessions,p,3),
-    whyAction,
-    'This is early guidance from '+priorWorkingSessionText(sessions)+', so treat it as a practical next target rather than a long-term trend.'
-  ]);
-  return recommendationResult({dir:'same',action:shouldAddReps?'early_add_reps':'early_repeat',confidence:'medium',trend:'early_signal',state:'early_guidance',category:p.category,weight:last.topW,weightDisp:lastWDisp,repTarget:shouldAddReps?String(targetReps):p.minTarget+'-'+p.maxTarget,reason:shouldAddReps?'Early rep target':'Repeat and confirm',detail:detail});
+    whyAction
+  ]));
+  return recommendationResult({dir:'same',action:shouldAddReps?'early_add_reps':'early_repeat',confidence:'medium',trend:'early_signal',state:'early_guidance',category:p.category,weight:last.topW,weightDisp:lastWDisp,repTarget:shouldAddReps?String(targetReps):targetRange,reason:shouldAddReps?'Early rep target':'Repeat and confirm',detail:detail});
 }
 
 function getOverloadSuggestion(exName,currentInputW){
   const sessions=getRecentExerciseSessions(exName,6);
-  if(sessions.length<3)return starterOverloadSuggestion(exName,currentInputW,sessions);
+  if(sessions.length<4)return starterOverloadSuggestion(exName,currentInputW,sessions);
   if(sessions.some(function(s){return s.topW===0;}))return null; // bodyweight loading needs separate logic
 
   const p=exerciseProgressionProfile(exName);
@@ -869,6 +988,14 @@ function getOverloadSuggestion(exName,currentInputW){
     return sameProgressionWeight(sessionDisplayWeight(s,p),lastWDisp,p.jump);
   });
   const sameRecent=atSameWeight.slice(0,3);
+  if(fullEngineInconsistentPerformance(sessions,atSameWeight)){
+    const action='I\'d recommend repeating '+lastWDisp+' '+uLbl()+' for '+p.minTarget+'-'+p.maxTarget+' clean reps.';
+    const detail=recommendationDetail(action,[
+      'Performance has been inconsistent across recent sessions.',
+      'Repeat the current load to collect more data before progressing.'
+    ]);
+    return recommendationResult({dir:'same',action:'hold',confidence:'medium',trend:'mixed',state:'plateaued',category:p.category,weight:last.topW,weightDisp:lastWDisp,repTarget:p.minTarget+'-'+p.maxTarget,reason:'Stabilize reps',detail:detail});
+  }
   const recentHigh=Math.max.apply(null,sessions.map(function(s){return sessionDisplayWeight(s,p);}));
   const lastIsRecentHigh=sameProgressionWeight(lastWDisp,recentHigh,p.jump);
   const currentBelowRecentSuccess=successfulHigherWeight(sessions,currentDisp,p);
@@ -959,6 +1086,9 @@ function getOverloadSuggestion(exName,currentInputW){
   }
 
   if(state==='plateaued'){
+    if(fullEngineRepProgressionBlocked(last,p,sessions,lastWDisp,minReps,maxReps)){
+      return fullEngineBelowMinAlternative(exName,sessions,p,last,lastWDisp,minReps,maxReps,trend,e1Text);
+    }
     const targetReps=maxReps+1;
     const action='I\'d recommend keeping '+lastWDisp+' '+uLbl()+' and aiming for '+targetReps+' reps.';
     const detail=recommendationDetail(action,[
@@ -969,6 +1099,9 @@ function getOverloadSuggestion(exName,currentInputW){
   }
 
   if(state==='building_reps'){
+    if(fullEngineRepProgressionBlocked(last,p,sessions,lastWDisp,minReps,maxReps)){
+      return fullEngineBelowMinAlternative(exName,sessions,p,last,lastWDisp,minReps,maxReps,trend,e1Text);
+    }
     const targetReps=maxReps+1;
     const action='I\'d recommend keeping '+lastWDisp+' '+uLbl()+' and aiming for '+targetReps+' reps.';
     const detail=recommendationDetail(action,[
@@ -980,6 +1113,9 @@ function getOverloadSuggestion(exName,currentInputW){
   }
 
   if(state==='consolidating_new_weight'){
+    if(fullEngineRepProgressionBlocked(last,p,sessions,lastWDisp,minReps,maxReps)){
+      return fullEngineBelowMinAlternative(exName,sessions,p,last,lastWDisp,minReps,maxReps,trend,e1Text);
+    }
     const targetReps=Math.min(p.maxTarget,last.topR+1);
     let action,why;
     if(p.category==='lower_compound'&&last.topR<p.minTarget+1){
