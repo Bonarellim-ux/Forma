@@ -1,6 +1,6 @@
 # Calibration Recommendation Tester
 
-Generated: 2026-06-15T01:12:37.557Z
+Generated: 2026-06-15T01:25:26.019Z
 
 Purpose: stress-test Forma recommendations during the **calibration phase** (1–3 logged sessions). Uses production `getOverloadSuggestion` / `starterOverloadSuggestion`.
 
@@ -126,6 +126,7 @@ The goal is to find your working range, not maximize load yet.
 Recent working sets: Jun 11: 60 lbs x 5; Jun 8: 60 lbs x 4; Jun 5: 60 lbs x 4.
 Recent top sets stayed below the 6-10 target range at 60 lbs.
 Reduce slightly to keep reps in target range.
+The goal is to rebuild clean reps before progressing.
 ```
 
 </details>
@@ -210,6 +211,7 @@ The goal is to find your working range, not maximize load yet.
 Recent working sets: Jun 11: 50 lbs x 4; Jun 8: 50 lbs x 3; Jun 5: 50 lbs x 3.
 Recent top sets stayed below the 6-10 target range at 50 lbs.
 Reduce slightly to keep reps in target range.
+The goal is to rebuild clean reps before progressing.
 ```
 
 </details>

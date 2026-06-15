@@ -173,7 +173,10 @@ function homeRecommendationLine(sug){
   if(sug.action==='baseline')return wt?'Start around '+wt:'Set a baseline';
   if(sug.action==='hold'&&wt)return 'Hold '+wt;
   if(sug.action==='reduce_weight'&&wt)return 'Reduce to '+wt;
-  if(sug.action==='reduce_or_recover')return 'Hold progression today';
+  if(sug.action==='reduce_or_recover'){
+    if(sug.dir==='down'&&wt)return 'Reduce to '+wt;
+    return 'Hold progression today';
+  }
   const text=typeof recommendationActionText==='function'?recommendationActionText(sug):String(sug.detail||sug.reason||'').replace(/<br>/g,' ');
   return text.replace(/\s+and aiming for .*/i,'');
 }

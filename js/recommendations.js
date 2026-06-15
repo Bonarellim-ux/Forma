@@ -841,8 +841,8 @@ function fullEngineBelowMinAlternative(exName,sessions,profile,last,lastWDisp,mi
     const detail=recommendationDetail(action,[
       'Recent top sets stayed below the '+targetRange+' target range at '+lastWDisp+' '+uLbl()+'.',
       'Reduce slightly to keep reps in target range.',
-      e1Text
-    ].filter(Boolean));
+      'The goal is to rebuild clean reps before progressing.'
+    ]);
     return recommendationResult({dir:'down',action:'reduce_or_recover',confidence:trend&&trend.confidence?trend.confidence:'medium',trend:trend&&trend.trend?trend.trend:'stable',state:'recovering',category:profile.category,weight:kgFromDisplayWeight(reducedDisp),weightDisp:reducedDisp,repTarget:targetRange,reason:'Load above early range',detail:detail});
   }
   const action='I\'d recommend holding '+lastWDisp+' '+uLbl()+' for '+targetRange+' clean reps.';
@@ -923,7 +923,8 @@ function starterOverloadSuggestion(exName,currentInputW,sessions){
       const detail=recommendationDetail(action,calIntro.concat([
         recommendationHistoryText(sessions,p,3),
         'Recent top sets stayed below the '+targetRange+' target range at '+lastWDisp+' '+uLbl()+'.',
-        'Reduce slightly to keep reps in target range.'
+        'Reduce slightly to keep reps in target range.',
+        'The goal is to rebuild clean reps before progressing.'
       ]));
       return recommendationResult({dir:'down',action:'reduce_or_recover',confidence:'medium',trend:'early_signal',state:'early_guidance',category:p.category,weight:kgFromDisplayWeight(reducedDisp),weightDisp:reducedDisp,repTarget:targetRange,reason:'Load above early range',detail:detail});
     }

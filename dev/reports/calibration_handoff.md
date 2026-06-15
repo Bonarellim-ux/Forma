@@ -1,6 +1,6 @@
 # Calibration → Full Engine Handoff Test
 
-Generated: 2026-06-15T01:12:37.636Z
+Generated: 2026-06-15T01:25:26.094Z
 
 Purpose: verify that exercises with 4 logged sessions do not regress after 1–3 session calibration logic. **No production code was modified for this report.**
 
@@ -48,7 +48,7 @@ I'd recommend reducing slightly to 55 lbs and aiming for 6-10 reps.
 Why:
 Recent top sets stayed below the 6-10 target range at 60 lbs.
 Reduce slightly to keep reps in target range.
-Your estimated 1RM is trending up.
+The goal is to rebuild clean reps before progressing.
 ```
 
 </details>
@@ -73,7 +73,7 @@ I'd recommend reducing slightly to 45 lbs and aiming for 6-10 reps.
 Why:
 Recent top sets stayed below the 6-10 target range at 50 lbs.
 Reduce slightly to keep reps in target range.
-Your estimated 1RM is trending up.
+The goal is to rebuild clean reps before progressing.
 ```
 
 </details>

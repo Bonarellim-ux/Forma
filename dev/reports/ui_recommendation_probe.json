@@ -1,0 +1,157 @@
+{
+  "generated": "2026-06-15T01:17:59.599Z",
+  "test1": {
+    "label": "Test 1 Beginner import",
+    "schedule": {
+      "mon": "full-body",
+      "tue": "rest",
+      "wed": "full-body",
+      "thu": "rest",
+      "fri": "full-body",
+      "sat": "rest",
+      "sun": "full-body"
+    },
+    "items": [
+      {
+        "exercise": "Goblet Squat",
+        "tester": {
+          "action": "early_add_reps",
+          "weightDisp": 35,
+          "repTarget": "10"
+        },
+        "homeLine": "Stay at 35 lbs",
+        "homePlan": "Goblet Squat: aim for 10 reps",
+        "workoutAction": "Keeping 35 lbs and aiming for 10 reps",
+        "workoutWhy": "Early calibration phase — this is based on only 3 logged sessions.\nThe goal is to find your working range, not maximize load yet.\nRecent working sets: Jun 5: 35 lbs x 9; Jun 3: 30 lbs x 11; Jun 1: 30 lbs x 10.\nLast time you hit 35 lbs x 9. Since that is below the top of your 5-10 target range, the next step is 10 reps at the same weight before increasing."
+      },
+      {
+        "exercise": "Bench Press",
+        "tester": {
+          "action": "early_add_reps",
+          "weightDisp": 70,
+          "repTarget": "9"
+        },
+        "homeLine": "Stay at 70 lbs",
+        "homePlan": "Bench Press: aim for 9 reps",
+        "workoutAction": "Keeping 70 lbs and aiming for 9 reps",
+        "workoutWhy": "Early calibration phase — this is based on only 3 logged sessions.\nThe goal is to find your working range, not maximize load yet.\nRecent working sets: Jun 5: 70 lbs x 8; Jun 3: 65 lbs x 9; Jun 1: 65 lbs x 8.\nLast time you hit 70 lbs x 8. Since that is below the top of your 6-10 target range, the next step is 9 reps at the same weight before increasing."
+      },
+      {
+        "exercise": "Lat Pulldown",
+        "tester": {
+          "action": "early_add_reps",
+          "weightDisp": 75,
+          "repTarget": "10"
+        },
+        "homeLine": "Stay at 75 lbs",
+        "homePlan": "Lat Pulldown: aim for 10 reps",
+        "workoutAction": "Keeping 75 lbs and aiming for 10 reps",
+        "workoutWhy": "Early calibration phase — this is based on only 3 logged sessions.\nThe goal is to find your working range, not maximize load yet.\nRecent working sets: Jun 5: 75 lbs x 9; Jun 3: 70 lbs x 11; Jun 1: 70 lbs x 10.\nLast time you hit 75 lbs x 9. Since that is below the top of your 8-12 target range, the next step is 10 reps at the same weight before increasing."
+      },
+      {
+        "exercise": "DB Shoulder Press",
+        "tester": {
+          "action": "early_add_reps",
+          "weightDisp": 25,
+          "repTarget": "9"
+        },
+        "homeLine": "Stay at 25 lbs",
+        "homePlan": "DB Shoulder Press: aim for 9 reps",
+        "workoutAction": "Keeping 25 lbs and aiming for 9 reps",
+        "workoutWhy": "Early calibration phase — this is based on only 3 logged sessions.\nThe goal is to find your working range, not maximize load yet.\nRecent working sets: Jun 5: 25 lbs x 8; Jun 3: 20 lbs x 11; Jun 1: 20 lbs x 10.\nLast time you hit 25 lbs x 8. Since that is below the top of your 8-12 target range, the next step is 9 reps at the same weight before increasing."
+      },
+      {
+        "exercise": "Leg Curl",
+        "tester": {
+          "action": "early_add_reps",
+          "weightDisp": 65,
+          "repTarget": "10"
+        },
+        "homeLine": "Stay at 65 lbs",
+        "homePlan": "Leg Curl: aim for 10 reps",
+        "workoutAction": "Keeping 65 lbs and aiming for 10 reps",
+        "workoutWhy": "Early calibration phase — this is based on only 3 logged sessions.\nThe goal is to find your working range, not maximize load yet.\nRecent working sets: Jun 5: 65 lbs x 9; Jun 3: 60 lbs x 11; Jun 1: 60 lbs x 10.\nLast time you hit 65 lbs x 9. Since that is below the top of your 8-12 target range, the next step is 10 reps at the same weight before increasing."
+      }
+    ]
+  },
+  "test2": {
+    "label": "Test 2 Too hard",
+    "sessions": "60×5 → 60×4 → 60×4 → 60×4",
+    "snapshot": {
+      "tester": {
+        "dir": "down",
+        "action": "reduce_or_recover",
+        "weightDisp": 55,
+        "repTarget": "6-10"
+      },
+      "homeLine": "Hold progression today",
+      "homePlan": "Bench Press: hold progression today",
+      "workoutAction": "Reducing slightly to 55 lbs and aiming for 6-10 reps",
+      "workoutWhy": "Recent top sets stayed below the 6-10 target range at 60 lbs.\nReduce slightly to keep reps in target range.\nYour estimated 1RM is trending up."
+    }
+  },
+  "test3": {
+    "label": "Test 3 Overestimated",
+    "sessions": "50×4 → 50×3 → 50×3 → 50×3",
+    "snapshot": {
+      "tester": {
+        "dir": "down",
+        "action": "reduce_or_recover",
+        "weightDisp": 45,
+        "repTarget": "6-10"
+      },
+      "homeLine": "Hold progression today",
+      "homePlan": "Bench Press: hold progression today",
+      "workoutAction": "Reducing slightly to 45 lbs and aiming for 6-10 reps",
+      "workoutWhy": "Recent top sets stayed below the 6-10 target range at 50 lbs.\nReduce slightly to keep reps in target range.\nYour estimated 1RM is trending up."
+    }
+  },
+  "test4": {
+    "label": "Test 4 Inconsistent",
+    "sessions": "60×10 → 60×5 → 60×8 → 60×7",
+    "snapshot": {
+      "tester": {
+        "dir": "same",
+        "action": "hold",
+        "weightDisp": 60,
+        "repTarget": "6-10"
+      },
+      "homeLine": "Hold 60 lbs",
+      "homePlan": "Bench Press: hold 60 lbs",
+      "workoutAction": "Repeating 60 lbs for 6-10 clean reps",
+      "workoutWhy": "Performance has been inconsistent across recent sessions.\nRepeat the current load to collect more data before progressing."
+    }
+  },
+  "test5": {
+    "label": "Test 5 Appropriate",
+    "sessions": "60×8 → 60×8 → 60×7 → 60×8",
+    "snapshot": {
+      "tester": {
+        "dir": "same",
+        "action": "add_reps",
+        "weightDisp": 60,
+        "repTarget": "9"
+      },
+      "homeLine": "Stay at 60 lbs",
+      "homePlan": "Bench Press: aim for 9 reps",
+      "workoutAction": "Keeping 60 lbs and aiming for 9 reps",
+      "workoutWhy": "You've moved from 7 to 8 reps over your recent sessions.\nYou are still below the top of the target range, so the next progression is another rep.\nYour estimated 1RM has stayed about the same."
+    }
+  },
+  "test6": {
+    "label": "Test 6 Too easy",
+    "sessions": "60×10 → 60×10 → 60×10",
+    "snapshot": {
+      "tester": {
+        "dir": "up",
+        "action": "early_add_weight",
+        "weightDisp": 70,
+        "repTarget": "6-8"
+      },
+      "homeLine": "Increase to 70 lbs",
+      "homePlan": "Bench Press: increase to 70 lbs",
+      "workoutAction": "Trying 70 lbs for 6-8 reps",
+      "workoutWhy": "Early calibration phase — this is based on only 3 logged sessions.\nThe goal is to find your working range, not maximize load yet.\nRecent working sets: Jun 11: 60 lbs x 10; Jun 8: 60 lbs x 10; Jun 5: 60 lbs x 10.\nYou reached the top of the 6-10 target range at 60 lbs with stable performance.\nThe 10 lbs increase is an early calibration step, not a confirmed long-term trend yet."
+    }
+  }
+}

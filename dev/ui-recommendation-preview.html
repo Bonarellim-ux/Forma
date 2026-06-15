@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Forma Recommendation UI Preview (dev)</title>
+<link rel="stylesheet" href="../css/styles.css?v=exercise-suggest1">
+<style>
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;padding:20px}
+  h1{font-size:20px;margin:0 0 4px}
+  .meta{font-size:12px;color:var(--muted);margin-bottom:18px}
+  .case{background:var(--card,#fff);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px}
+  .case h2{font-size:15px;margin:0 0 6px}
+  .hist{font-size:12px;color:var(--muted);margin-bottom:10px}
+  .home-goals{background:linear-gradient(135deg,#0D1E2E 0%,#102B42 58%,#15587D 100%);border-radius:14px;padding:14px;margin-bottom:10px;color:#fff}
+  .home-goals div{font-size:13px;margin:4px 0}
+  pre{white-space:pre-wrap;font-size:12px;background:var(--s1,#f5f8fb);border:1px solid var(--border);border-radius:10px;padding:10px;margin:8px 0 0}
+</style>
+</head>
+<body>
+<h1>Recommendation UI Preview</h1>
+<div class="meta">Dev-only preview using production recommendation logic + the same home/workout formatting helpers from index.html and workout.js.</div>
+<div id="root"></div>
+<script src="../js/constants.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/importNormalization.js"></script>
+<script src="../js/exerciseSubstitutions.js"></script>
+<script src="../js/plateCalculator.js"></script>
+<script src="../js/recommendations.js"></script>
+<script src="../data/test-imports/beginner_1week_full_body.json" type="application/json" id="beginner-data"></script>
+<script>
+const S={unit:'lbs',workouts:[],profile:{},schedule:{},splitEx:{},workout:null,onboarded:true,recWhyIdx:0,recAppliedIdx:null};
+function recommendationActionText(sug){
+  if(!sug||!sug.detail)return '';
+  const text=String(sug.detail).split('<br><br>Why:<br>')[0].replace(/^I'd recommend /,'').replace(/\.$/,'');
+  return text.charAt(0).toUpperCase()+text.slice(1);
+}
+function recommendationWhyText(sug){
+  if(!sug||!sug.detail)return '';
+  const parts=String(sug.detail).split('<br><br>Why:<br>');
+  return parts.length>1?parts[1].replace(/<br>/g,'\n'):'';
+}
+function homeRecommendationLine(sug){
+  if(!sug)return '';
+  const unit=uLbl();
+  const wt=sug.weightDisp!==undefined&&sug.weightDisp!==null?String(sug.weightDisp)+' '+unit:null;
+  if(sug.action==='add_weight'||sug.action==='early_add_weight')return wt?'Increase to '+wt:'Add weight';
+  if(sug.action==='add_reps'||sug.action==='early_add_reps')return wt?'Stay at '+wt:'Add reps';
+  if(sug.action==='early_repeat')return wt?'Repeat '+wt:'Repeat last working set';
+  if(sug.action==='baseline')return wt?'Start around '+wt:'Set a baseline';
+  if(sug.action==='hold'&&wt)return 'Hold '+wt;
+  if(sug.action==='reduce_weight'&&wt)return 'Reduce to '+wt;
+  if(sug.action==='reduce_or_recover'){
+    if(sug.dir==='down'&&wt)return 'Reduce to '+wt;
+    return 'Hold progression today';
+  }
+  return recommendationActionText(sug).replace(/\s+and aiming for .*/i,'');
+}
+function homePlanItems(exs){
+  return (exs||[]).map(function(name){
+    const sug=getOverloadSuggestion(name,'');
+    if(!sug)return null;
+    const action=homeRecommendationLine(sug)
+      .replace(/^Stay at /,'stay at ')
+      .replace(/^Increase to /,'increase to ')
+      .replace(/^Repeat /,'repeat ')
+      .replace(/^Start around /,'start around ')
+      .replace(/^Hold /,'hold ')
+      .replace(/^Reduce to /,'reduce to ');
+    const short=(sug.action==='add_reps'||sug.action==='early_add_reps')&&sug.repTarget?'aim for '+sug.repTarget+' reps':action;
+    return name+': '+short;
+  }).filter(Boolean);
+}
+function vExerciseRecommendationRow(sug,i,ex){
+  if(!sug)return '';
+  const action=recommendationActionText(sug);
+  const why=recommendationWhyText(sug);
+  if(!action)return '';
+  const open=S.recWhyIdx===i;
+  return '<div class="rec-row">'+
+    '<div class="rec-row-main">'+
+      '<div class="rec-row-mark">→</div>'+
+      '<div class="rec-row-copy">'+
+        '<div class="rec-row-label">Recommendation</div>'+
+        '<div class="rec-row-action">'+escH(action)+'</div>'+
+        '<div class="rec-row-hint">Tap to apply</div>'+
+      '</div>'+
+      (why?'<button class="rec-why-btn" type="button">'+(open?'Hide':'Why?')+'</button>':'')+
+    '</div>'+
+    (open&&why?'<div class="rec-row-why"><div class="rec-row-why-label">Why</div><div class="rec-row-why-text">'+escH(why)+'</div></div>':'')+
+  '</div>';
+}
+function isoDaysAgo(days){const d=new Date();d.setDate(d.getDate()-days);return d.toISOString();}
+function benchWorkouts(sessions){
+  const ch=sessions.slice().reverse();
+  return ch.map(function(s,i){
+    return{date:isoDaysAgo((ch.length-i)*3),split:'full-body',exercises:[{name:'Bench Press',sets:[{w:toKg(s.w),r:s.r,warmup:false}]}]};
+  });
+}
+function applyBase(){
+  S.profile={sex:'male',age:28,height:"5'10\"",bodyweight:170,experience:'Just starting out (< 6 months)',goal:'General fitness',equipment:'Full commercial gym'};
+  S.schedule={mon:'full-body',tue:'rest',wed:'full-body',thu:'rest',fri:'full-body',sat:'rest',sun:'full-body'};
+  S.splitEx={'full-body':['Bench Press'],'rest':[]};
+}
+function renderCase(title,history,sessions){
+  applyBase();
+  S.workouts=benchWorkouts(sessions);
+  const sug=getOverloadSuggestion('Bench Press','');
+  const ex={name:'Bench Press',inputW:'65',inputR:'8',sets:[]};
+  const home=homePlanItems(['Bench Press']);
+  return '<div class="case"><h2>'+escH(title)+'</h2><div class="hist">'+escH(history)+'</div>'+
+    '<div class="home-goals"><strong>Home card — Goals for today</strong>'+home.map(function(x){return '<div>• '+escH(x)+'</div>';}).join('')+'</div>'+
+    '<div style="font-size:11px;font-weight:700;color:var(--muted);margin:8px 0 4px">Workout view — Bench Press</div>'+
+    vExerciseRecommendationRow(sug,0,ex)+
+    '<pre><strong>Why (expanded)</strong>\n'+escH(recommendationWhyText(sug))+'</pre></div>';
+}
+function renderBeginner(data){
+  applyBase();
+  S.workouts=normalizeImportedWorkouts(data.workouts,S.unit);
+  S.schedule=Object.assign({},data.schedule,{sun:'full-body'});
+  S.splitEx=data.splits;
+  S.profile=Object.assign({},data.profile);
+  const exs=S.splitEx['full-body']||[];
+  const home=homePlanItems(exs).slice(0,3);
+  let rows='';
+  exs.forEach(function(name,i){
+    const sug=getOverloadSuggestion(name,'');
+    rows+='<div style="font-size:11px;font-weight:700;color:var(--muted);margin:12px 0 4px">Workout view — '+escH(name)+'</div>'+
+      vExerciseRecommendationRow(sug,i,{name:name,inputW:'',inputR:'8',sets:[]})+
+      '<pre><strong>Why</strong>\n'+escH(recommendationWhyText(sug))+'</pre>';
+  });
+  return '<div class="case"><h2>Test 1 — Beginner import</h2><div class="hist">data/test-imports/beginner_1week_full_body.json</div>'+
+    '<div class="home-goals"><strong>Home card — Goals for today (top 3)</strong>'+home.map(function(x){return '<div>• '+escH(x)+'</div>';}).join('')+'</div>'+rows+'</div>';
+}
+fetch('../data/test-imports/beginner_1week_full_body.json').then(function(r){return r.json();}).then(function(data){
+  document.getElementById('root').innerHTML=
+    renderBeginner(data)+
+    renderCase('Test 2 — Too hard continues','60×5 → 60×4 → 60×4 → 60×4',[{w:60,r:5},{w:60,r:4},{w:60,r:4},{w:60,r:4}])+
+    renderCase('Test 3 — Overestimated continues','50×4 → 50×3 → 50×3 → 50×3',[{w:50,r:4},{w:50,r:3},{w:50,r:3},{w:50,r:3}])+
+    renderCase('Test 4 — Inconsistent continues','60×10 → 60×5 → 60×8 → 60×7',[{w:60,r:10},{w:60,r:5},{w:60,r:8},{w:60,r:7}])+
+    renderCase('Test 5 — Appropriate continues','60×8 → 60×8 → 60×7 → 60×8',[{w:60,r:8},{w:60,r:8},{w:60,r:7},{w:60,r:8}])+
+    renderCase('Test 6 — Too easy','60×10 → 60×10 → 60×10',[{w:60,r:10},{w:60,r:10},{w:60,r:10}]);
+}).catch(function(err){
+  document.getElementById('root').innerHTML='<pre>Error: '+escH(String(err))+'</pre>';
+});
+</script>
+</body>
+</html>
