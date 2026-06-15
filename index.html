@@ -163,15 +163,25 @@ function homeGreeting(){
   return part+(name?', '+escH(name):'');
 }
 
+function homeLoadSuffix(sug){
+  return sug&&sug.loadBasis==='per hand'?' per hand':'';
+}
+function homeWeightText(sug){
+  if(!sug||sug.weightDisp===undefined||sug.weightDisp===null)return null;
+  return String(sug.weightDisp)+' '+uLbl()+homeLoadSuffix(sug);
+}
 function homeRecommendationLine(sug){
   if(!sug)return '';
-  const unit=uLbl();
-  const wt=sug.weightDisp!==undefined&&sug.weightDisp!==null?String(sug.weightDisp)+' '+unit:null;
+  const wt=homeWeightText(sug);
   if(sug.action==='add_weight'||sug.action==='early_add_weight')return wt?'Increase to '+wt:'Add weight';
   if(sug.action==='add_reps'||sug.action==='early_add_reps')return wt?'Stay at '+wt:'Add reps';
   if(sug.action==='early_repeat')return wt?'Repeat '+wt:'Repeat last working set';
   if(sug.action==='baseline')return wt?'Start around '+wt:'Set a baseline';
-  if(sug.action==='hold'&&wt)return 'Hold '+wt;
+  if(sug.action==='hold'){
+    if(sug.reason==='Hold progression'&&wt)return 'Hold '+wt;
+    if(wt)return 'Repeat '+wt;
+    return 'Hold progression today';
+  }
   if(sug.action==='reduce_weight'&&wt)return 'Reduce to '+wt;
   if(sug.action==='reduce_or_recover'){
     if(sug.dir==='down'&&wt)return 'Reduce to '+wt;

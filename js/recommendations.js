@@ -573,6 +573,82 @@ function firstTimeConfidenceReason(level,source){
   return parts.join(' ');
 }
 
+function categoryCalibrationLabel(category,exName){
+  const n=normExName(exName);
+  if(category==='dumbbell_compound'){
+    if(n.includes('press'))return 'dumbbell press';
+    if(n.includes('row'))return 'dumbbell row';
+    return 'dumbbell compound lift';
+  }
+  if(category==='upper_compound'){
+    if(n.includes('bench'))return 'barbell bench press';
+    if(n.includes('overhead')||n.includes('shoulder'))return 'barbell overhead press';
+    return 'upper-body compound lift';
+  }
+  if(category==='lower_compound'){
+    if(n.includes('squat'))return 'barbell squat';
+    if(n.includes('deadlift')||n.includes('rdl'))return 'barbell deadlift';
+    return 'lower-body compound lift';
+  }
+  if(category==='machine_compound')return 'machine compound lift';
+  if(category==='machine_lower_compound')return 'machine lower-body lift';
+  if(category==='upper_isolation')return 'upper-body isolation lift';
+  if(category==='lower_isolation')return 'lower-body isolation lift';
+  if(category==='small_isolation')return 'small-muscle isolation lift';
+  if(category==='unilateral_lower')return 'unilateral lower-body lift';
+  if(category==='bodyweight')return 'bodyweight exercise';
+  if(category==='unknown')return 'general strength exercise';
+  return 'strength exercise';
+}
+
+function firstTimeSourceInterpretation(start,p,exName){
+  const source=start&&start.source;
+  const category=start&&start.category||p.category;
+  const label=categoryCalibrationLabel(category,exName);
+  if(source==='unknown_fallback')return 'a conservative general starting point because there is no strong exercise-category match';
+  if(source==='category_fallback')return 'a conservative category-based starting point for '+label+' because there is no exact exercise match in your history';
+  if(source==='equipment_adjusted_calibration'||source==='safer_calibration'){
+    return start&&start.adjustmentReason?start.adjustmentReason:('a conservative equipment-adjusted starting point for '+label);
+  }
+  const profileNotes=(start&&start.profileNotes)||startingWeightProfileNotes();
+  return 'a conservative '+label+' starting point informed by '+profileNotes;
+}
+
+function firstTimeCalibrationWhyLines(exName,start,p){
+  const why=[
+    'No prior working sets yet.',
+    'I\'m using '+firstTimeSourceInterpretation(start,p,exName)+' and treating this as a calibration load, not a strength prediction.'
+  ];
+  if(start&&start.loadBasis==='per hand')why.push('Load is per dumbbell/hand, not combined.');
+  if(start&&start.equipmentAdjusted&&start.adjustmentReason&&!why.some(function(line){return line.indexOf(start.adjustmentReason)>=0;})){
+    why.push(start.adjustmentReason);
+  }
+  if(profileAge()>=50)why.push('Starting conservatively given age and no Forma training history.');
+  if(profileReturningFromBreak())why.push('Rebuild baseline gradually after time away from training.');
+  why.push('After your first logged set, Forma will adjust from your actual performance.');
+  return why;
+}
+
+function sameWeightSessionsDeclining(sessions){
+  if(!sessions||sessions.length<3)return false;
+  return repTrendDeclined(sessions)||e1TrendDeclined(sessions);
+}
+
+function stabilizeLoadWhyLines(atSameWeight,profile,lastWDisp,topSetHistory){
+  if(sameWeightSessionsDeclining(atSameWeight)){
+    const history=topSetHistory||recentTopSetText(atSameWeight.slice(0,Math.min(3,atSameWeight.length)));
+    return[
+      history?'Recent performance is trending down ('+history.replace(/\.$/,'')+'), so repeating '+lastWDisp+' '+uLbl()+' is safer than progressing.':'Recent performance is trending down, so repeating the load is safer than progressing.',
+      'The goal is to rebuild clean reps before increasing.'
+    ];
+  }
+  const history=topSetHistory||recentTopSetText(atSameWeight.slice(0,Math.min(3,atSameWeight.length)));
+  return[
+    history?'Your recent reps have been inconsistent at this weight: '+history+'.':'Performance has been inconsistent across recent sessions.',
+    'Repeat the current load to collect more data before progressing.'
+  ];
+}
+
 function bodyweightInfluenceForCategory(category){
   if(category==='lower_compound')return .65;
   if(category==='upper_compound')return .5;
@@ -861,11 +937,13 @@ function starterOverloadSuggestion(exName,currentInputW,sessions){
     if(!start)return null;
     const action='I\'d recommend '+start.displayText+' as a calibration set.';
     const why=[
-      'No prior working sets are logged for this exercise yet.',
-      'This is a conservative calibration set, not a prediction of your strength.',
-      start.adjustmentReason||'Adjust after your first logged set. After that, Forma can use your actual performance for future recommendations.'
+      'No prior working sets yet.',
+      start.adjustmentReason?
+        start.adjustmentReason+' Treat this as a conservative calibration set, not a strength prediction.':
+        'I\'m using a conservative bodyweight starting point for '+categoryCalibrationLabel('bodyweight',exName)+' and treating this as a calibration set, not a strength prediction.',
+      'After your first logged set, Forma will adjust from your actual performance.'
     ];
-    if(profileAge()>=50)why.push('Use a conservative ramp-up given age and no Forma training history.');
+    if(profileAge()>=50)why.push('Starting conservatively given age and no Forma training history.');
     if(profileReturningFromBreak())why.push('Rebuild baseline gradually after time away from training.');
     const detail=recommendationDetail(action,why);
     return recommendationResult({dir:'same',action:'baseline',confidence:'low',trend:'unknown',state:'baseline',category:'bodyweight',weight:0,weightDisp:0,repTarget:start.repTarget,reason:'Conservative calibration set',source:start.source,loadBasis:start.loadBasis,variation:start.variation,displayText:start.displayText,equipmentAdjusted:start.equipmentAdjusted,adjustmentReason:start.adjustmentReason,confidenceReason:start.confidenceReason,detail:detail});
@@ -881,17 +959,7 @@ function starterOverloadSuggestion(exName,currentInputW,sessions){
     const action=start&&start.variation?
       'I\'d recommend '+start.variation+' — '+startDisp+' '+uLbl()+loadBasis+' for '+repTarget+' clean reps.':
       'I\'d recommend using '+startDisp+' '+uLbl()+loadBasis+' as a calibration load for '+repTarget+' clean reps.';
-    const why=start&&start.source==='unknown_fallback'?[
-      'No prior working sets and no strong exercise-category match.',
-      'Use this as a conservative calibration load, not a prediction of your strength.',
-      'Adjust after your first logged set. After that, Forma can use your actual performance for future recommendations.'
-    ]:[
-      'No prior working sets are logged for this exercise yet.',
-      start&&start.adjustmentReason?start.adjustmentReason:(start&&start.source==='category_fallback'?'This uses a broad movement/category match because there is no exact exercise match.':'This is a conservative calibration load, not a prediction of your strength.'),
-      'Adjust after your first logged set. After that, Forma can use your actual performance for future recommendations.'
-    ];
-    if(profileAge()>=50&&!start.adjustmentReason)why.splice(2,0,'Use a conservative ramp-up given age and no Forma training history.');
-    if(profileReturningFromBreak()&&!start.adjustmentReason)why.splice(2,0,'Rebuild baseline gradually after time away from training.');
+    const why=firstTimeCalibrationWhyLines(exName,start,p);
     const detail=recommendationDetail(action,why);
     const reasonLabel=start&&(start.source==='equipment_adjusted_calibration'||start.source==='safer_calibration')?'Equipment-adjusted calibration load':'Conservative calibration load';
     return recommendationResult({dir:'same',action:'baseline',confidence:start&&start.confidence?start.confidence:'low',trend:'unknown',state:'baseline',category:start&&start.category?start.category:p.category,weight:kgFromDisplayWeight(startDisp),weightDisp:startDisp,repTarget:repTarget,reason:reasonLabel,source:start&&start.source,loadBasis:start&&start.loadBasis,variation:start&&start.variation,displayText:start&&start.displayText,equipmentAdjusted:start&&start.equipmentAdjusted,adjustmentReason:start&&start.adjustmentReason,confidenceReason:start&&start.confidenceReason,detail:detail});
@@ -991,10 +1059,7 @@ function getOverloadSuggestion(exName,currentInputW){
   const sameRecent=atSameWeight.slice(0,3);
   if(fullEngineInconsistentPerformance(sessions,atSameWeight)){
     const action='I\'d recommend repeating '+lastWDisp+' '+uLbl()+' for '+p.minTarget+'-'+p.maxTarget+' clean reps.';
-    const detail=recommendationDetail(action,[
-      'Performance has been inconsistent across recent sessions.',
-      'Repeat the current load to collect more data before progressing.'
-    ]);
+    const detail=recommendationDetail(action,stabilizeLoadWhyLines(atSameWeight,p,lastWDisp));
     return recommendationResult({dir:'same',action:'hold',confidence:'medium',trend:'mixed',state:'plateaued',category:p.category,weight:last.topW,weightDisp:lastWDisp,repTarget:p.minTarget+'-'+p.maxTarget,reason:'Stabilize reps',detail:detail});
   }
   const recentHigh=Math.max.apply(null,sessions.map(function(s){return sessionDisplayWeight(s,p);}));
@@ -1138,11 +1203,7 @@ function getOverloadSuggestion(exName,currentInputW){
 
   if(sameRecent.length>=3&&repRange>=2){
     const action='I\'d recommend holding '+lastWDisp+' '+uLbl()+' for now.';
-    const detail=recommendationDetail(action,[
-      'Your recent reps have been inconsistent at this weight: '+topSetHistory+'.',
-      'The next goal is to stabilize clean reps before increasing.',
-      e1Text
-    ]);
+    const detail=recommendationDetail(action,stabilizeLoadWhyLines(sameRecent,p,lastWDisp,topSetHistory).concat(e1Text?[e1Text]:[]));
     return recommendationResult({dir:'same',action:'hold',confidence:'medium',trend:trend.trend,state:'plateaued',category:p.category,weight:last.topW,weightDisp:lastWDisp,reason:'Stabilize reps',detail:detail});
   }
 
