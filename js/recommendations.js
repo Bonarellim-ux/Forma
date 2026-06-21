@@ -2,6 +2,15 @@
 
 function normExName(name){return String(name||'').trim().toLowerCase().replace(/[-_]/g,' ').replace(/\s+/g,' ');}
 
+// Workouts newest-first by date. Deterministic: equal dates keep original array order (stable tiebreaker)
+// so the "last session" the engine reads can never flip between runs/engines.
+function workoutsByDateDesc(){
+  return (S.workouts||[])
+    .map(function(w,i){return{w:w,i:i};})
+    .sort(function(a,b){var d=new Date(b.w.date)-new Date(a.w.date);return d!==0?d:a.i-b.i;})
+    .map(function(o){return o.w;});
+}
+
 function makeSub(name,muscle,pattern,reason){return{name:name,muscle:muscle,pattern:pattern,reason:reason};}
 
 function getExerciseSubstitutions(name){
@@ -99,7 +108,7 @@ function getSubstitutionByName(oldName,newName){
 }
 
 function getLastSession(name){
-  for(const w of S.workouts){
+  for(const w of workoutsByDateDesc()){
     const ex=w.exercises&&w.exercises.find(e=>e&&e.name===name);
     if(!ex||!Array.isArray(ex.sets)||!ex.sets.length)continue;
     try{
@@ -111,7 +120,7 @@ function getLastSession(name){
 }
 
 function getLastWorkingSets(name){
-  for(const w of S.workouts){
+  for(const w of workoutsByDateDesc()){
     const ex=w.exercises&&w.exercises.find(e=>e&&e.name===name);
     if(!ex||!Array.isArray(ex.sets))continue;
     try{
@@ -124,10 +133,8 @@ function getLastWorkingSets(name){
 
 function getRecentExerciseSessions(exName,limit){
   const target=normExName(exName);
-  return (S.workouts||[])
+  return workoutsByDateDesc()
     .filter(function(w){return w&&w.date&&Array.isArray(w.exercises);})
-    .slice()
-    .sort(function(a,b){return new Date(b.date)-new Date(a.date);})
     .map(function(w){
       const ex=w.exercises.find(function(e){return e&&normExName(e.name)===target;});
       if(!ex||!Array.isArray(ex.sets))return null;
@@ -327,38 +334,12 @@ function profileBodyweightLbs(){
   return raw;
 }
 
-function profileExperienceMultiplier(){
-  const exp=String(S&&S.profile&&S.profile.experience||'').toLowerCase();
-  if(exp.includes('5+'))return 1.18;
-  if(exp.includes('3')||exp.includes('advanced'))return 1.1;
-  if(exp.includes('1')||exp.includes('2')||exp.includes('intermediate'))return 1;
-  if(exp.includes('beginner')||exp.includes('starting')||exp.includes('6 months'))return .88;
-  return .95;
-}
-
 function profileExperienceLevel(){
   const exp=String(S&&S.profile&&S.profile.experience||'').toLowerCase();
   if(exp.includes('5+')||exp.includes('advanced')||exp.includes('3'))return 'advanced';
   if(exp.includes('1')||exp.includes('2')||exp.includes('intermediate'))return 'intermediate';
   if(exp.includes('beginner')||exp.includes('novice')||exp.includes('starting')||exp.includes('6 months'))return 'beginner';
   return 'unknown';
-}
-
-function profileHeightInches(){
-  const h=String(S&&S.profile&&S.profile.height||'').trim().toLowerCase();
-  if(!h)return null;
-  const imperial=h.match(/(\d+)\s*'\s*(\d+)?/);
-  if(imperial)return (parseFloat(imperial[1])||0)*12+(parseFloat(imperial[2])||0);
-  const numeric=parseFloat(h);
-  if(!numeric)return null;
-  return numeric>90?numeric/2.54:numeric;
-}
-
-function heightBuildFactor(category){
-  const inches=profileHeightInches();
-  if(!inches)return 1;
-  const influence=category==='lower_compound'?.06:category==='upper_compound'?.04:category==='machine'?.03:.02;
-  return Math.max(.96,Math.min(1.04,1+((inches-69)/10)*influence));
 }
 
 function profileAge(){
@@ -647,16 +628,6 @@ function stabilizeLoadWhyLines(atSameWeight,profile,lastWDisp,topSetHistory){
     history?'Your recent reps have been inconsistent at this weight: '+history+'.':'Performance has been inconsistent across recent sessions.',
     'Repeat the current load to collect more data before progressing.'
   ];
-}
-
-function bodyweightInfluenceForCategory(category){
-  if(category==='lower_compound')return .65;
-  if(category==='upper_compound')return .5;
-  if(category==='unilateral_lower')return .42;
-  if(category==='lower_isolation')return .35;
-  if(category==='upper_isolation')return .22;
-  if(category==='machine')return .35;
-  return .28;
 }
 
 function startingWeightProfileNotes(){

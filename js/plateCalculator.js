@@ -4,17 +4,6 @@ function isBarbell(exName){
   const n=(exName||'').toLowerCase();
   return BARBELL_EX.some(function(k){return n.includes(k);});
 }
-function calcPlates(totalLbs){
-  const barWeight=45;
-  const available=[45,35,25,10,5,2.5];
-  let remaining=Math.max(0,(totalLbs-barWeight)/2);
-  const result=[];
-  available.forEach(function(p){
-    const count=Math.floor(remaining/p+0.01); // +0.01 for float tolerance
-    if(count>0){result.push({p:p,n:count});remaining=Math.round((remaining-p*count)*100)/100;}
-  });
-  return result;
-}
 function calcWorkoutPlates(dispW){
   const bar=S.unit==='lbs'?45:20;
   const plates=S.unit==='lbs'?[45,35,25,10,5,2.5]:[25,20,15,10,5,2.5,1.25];

@@ -24,6 +24,9 @@ function NOW(){return new Date().toLocaleTimeString('en-US',{hour:'numeric',minu
 function e1rm(w,r){return Math.round(w*(1+r/30));}
 function fmtD(iso){return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric'});}
 function todayKey(){return ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];}
+// Local 'YYYY-MM-DD' key. Use this (not toISOString, which is UTC) so a workout maps to the
+// same calendar day across heatmap and calendar views regardless of timezone.
+function localYMD(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function toDisp(kg){return S.unit==='lbs'?Math.round(kg*KG2LB*10)/10:kg;}
 function toKg(v){return S.unit==='lbs'?Math.round(v/KG2LB*100)/100:v;}
 function uLbl(){return S.unit;}

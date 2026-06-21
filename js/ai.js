@@ -3,6 +3,31 @@
 const API='https://forma-proxy.bonarelli-m.workers.dev';
 const MODEL='claude-sonnet-4-6';
 
+// Single POST helper for all AI calls. Checks the HTTP status BEFORE parsing so a 429/5xx
+// or an HTML error page surfaces as a friendly message instead of a raw "Unexpected token" parse error.
+// A 30s AbortController prevents a hung proxy from leaving a spinner stuck forever.
+async function aiPost(body,opts){
+  opts=opts||{};
+  const ctrl=typeof AbortController!=='undefined'?new AbortController():null;
+  const timer=ctrl?setTimeout(function(){ctrl.abort();},opts.timeout||30000):null;
+  let resp;
+  try{
+    resp=await fetch(API,{method:'POST',headers:apiHeaders(),body:JSON.stringify(body),signal:ctrl?ctrl.signal:undefined});
+  }catch(e){
+    if(timer)clearTimeout(timer);
+    if(e&&e.name==='AbortError')throw new Error('The AI took too long to respond. Try again.');
+    throw new Error('Network error — check your connection and try again.');
+  }
+  if(timer)clearTimeout(timer);
+  if(!resp.ok){
+    if(resp.status===429)throw new Error('Too many requests — wait a moment and try again.');
+    if(resp.status>=500)throw new Error('The AI service is temporarily unavailable (HTTP '+resp.status+'). Try again shortly.');
+    let detail='';try{const ed=await resp.json();if(ed&&ed.error&&ed.error.message)detail=': '+ed.error.message;}catch(_){}
+    throw new Error('Request failed (HTTP '+resp.status+')'+detail);
+  }
+  return resp;
+}
+
 // ── EXERCISE SCIENCE KNOWLEDGE BASE ──────────────────────────
 // Evidence-based exercise data used for AI recommendations.
 // Sources: Schoenfeld (2010, 2015, 2020), NSCA guidelines, ACE, 
@@ -234,11 +259,11 @@ async function sendQuickAI(){
   // Push user message to chat history so it shows in AI tab
   S.messages.push({role:'user',text:text,time:NOW(),actions:[]});
   try{
-    const resp=await fetch(API,{method:'POST',headers:apiHeaders(),body:JSON.stringify({
+    const resp=await aiPost({
       model:MODEL,max_tokens:2000,
       system:buildSysPrompt(text)+'\n\nMODE: QUICK COMMAND. The user is making a fast request from the home screen. Be brief — one or two sentences max. Execute the action immediately. No lengthy explanations.',
       messages:[{role:'user',content:text}]
-    })});
+    });
     const data=await resp.json();
     if(data.error)throw new Error(data.error.message);
     const parsed=parseAIResponse(extractText(data.content));
@@ -423,7 +448,7 @@ async function requestChartAnalysis(){
       const best=ws.reduce(function(b,s){return e1rm(s.w,s.r)>e1rm(b.w,b.r)?s:b;},ws[0]);
       return{date:fmtD(w.date),top:toDisp(best.w)+uLbl()+'×'+best.r,e1rm:Math.round(Math.max.apply(null,ws.map(function(s){return e1rm(s.w,s.r);}))*10)/10};
     }).filter(Boolean).reverse();
-    const resp=await fetch(API,{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:MODEL,max_tokens:600,messages:[{role:'user',content:
+    const resp=await aiPost({model:MODEL,max_tokens:600,messages:[{role:'user',content:
       'You are an expert strength coach. Analyze this athlete\'s '+ex+' progression and give a short, specific insight.\n\n'+
       'DATA ('+rows.length+' sessions, '+S.unit+'):\n'+rows.map(function(r){return r.date+': '+r.top+' \u2192 e1RM '+r.e1rm;}).join('\n')+'\n\n'+
       'Profile: '+JSON.stringify(S.profile)+'\n\n'+
@@ -431,7 +456,7 @@ async function requestChartAnalysis(){
       '### Trend\nOne sentence on the trajectory \u2014 cite actual numbers.\n'+
       '### Strengths\nWhat is going well? Reference specific data points.\n'+
       '### Next step\nOne concrete recommendation with exact target weight/reps for the next session.\n'+
-      'Keep it under 120 words total. Be specific, not generic.'}]})});
+      'Keep it under 120 words total. Be specific, not generic.'}]});
     const data=await resp.json();
     if(data.error)throw new Error(data.error.message);
     S.chartAnalysis=parseAIResponse(extractText(data.content)).message||extractText(data.content);
@@ -498,7 +523,15 @@ function toggleInlineVoice(){
   if(!S.inlineAIVoiceRec){S.inlineAIListening=false;const vb=document.getElementById('inline-vbtn');if(vb)vb.className='sm-vc-btn';}
 }
 
+// Only these action shapes are ever applied. Anything else (malformed JSON, prose that
+// happened to parse, an injected instruction) is ignored rather than mutating state.
+const ALLOWED_AI_ACTIONS={update_profile:1,update_schedule:1,update_split_exercises:1,add_exercise:1,remove_exercise:1,workout_reorder_exercises:1,workout_add_exercise:1,workout_remove_exercise:1,workout_swap_exercise:1,log_set:1,set_cardio_mode:1,navigate:1};
+
 function applyAction(action){
+  if(!action||typeof action!=='object'||!ALLOWED_AI_ACTIONS[action.type]){
+    if(action&&action.type)console.warn('applyAction: ignored unknown action type',action.type);
+    return false;
+  }
   try{
     if(action.type==='update_profile'&&action.updates){
       Object.assign(S.profile,action.updates);
@@ -594,7 +627,13 @@ function parseAIResponse(text){
   try{
     const clean=text.replace(/```json|```/g,'').trim();
     const s=clean.indexOf('{');const e=clean.lastIndexOf('}');
-    return JSON.parse(s!==-1?clean.slice(s,e+1):clean);
+    const parsed=JSON.parse(s!==-1?clean.slice(s,e+1):clean);
+    // Normalize shape: guarantee a string message and an array of actions, regardless of what parsed
+    if(!parsed||typeof parsed!=='object')return {message:text,actions:[]};
+    return {
+      message:typeof parsed.message==='string'?parsed.message:text,
+      actions:Array.isArray(parsed.actions)?parsed.actions:[]
+    };
   }catch(e){
     // AI returned plain text instead of JSON — treat it as a message with no actions
     return {message:text,actions:[]};
@@ -1406,7 +1445,7 @@ async function sendChat(promptText){
       return{role:m.role==='ai'?'assistant':'user',content:m.text||''};
     });
     const apiMsgs=prior.concat([{role:'user',content:text}]);
-    const resp=await fetch(API,{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:MODEL,max_tokens:5000,thinking:{type:"enabled",budget_tokens:1800},system:buildSysPrompt(text),messages:apiMsgs})});
+    const resp=await aiPost({model:MODEL,max_tokens:5000,thinking:{type:"adaptive"},output_config:{effort:"medium"},system:buildSysPrompt(text),messages:apiMsgs});
     const data=await resp.json();
     if(data.error)throw new Error('API error: '+data.error.message);
     const parsed=parseAIResponse(extractText(data.content));
@@ -1461,7 +1500,7 @@ async function sendInlineAI(){
       'Use workout_reorder_exercises when user says "reorder", "put X first", "start with X", or lists exercises in a new order. The first name in the array appears at the top of the screen.\n'+
       'Use set_cardio_mode with mode="time_only" when user says "only time", "no distance", "just minutes", "remove distance".\n'+
       'Use workout_swap_exercise when user says "swap X for Y" or "do Y instead of X". Capitalize exercise names.';
-    const resp=await fetch(API,{method:'POST',headers:apiHeaders(),body:JSON.stringify({model:MODEL,max_tokens:6000,thinking:{type:"enabled",budget_tokens:4000},system:sys,messages:[{role:'user',content:text}]})});
+    const resp=await aiPost({model:MODEL,max_tokens:6000,thinking:{type:"adaptive"},output_config:{effort:"medium"},system:sys,messages:[{role:'user',content:text}]});
     const data=await resp.json();
     if(data.error)throw new Error(data.error.message);
     const parsed=parseAIResponse(extractText(data.content));
@@ -1526,11 +1565,11 @@ async function sendRecommend(){
       'Be concise — 4–5 sentences. Verify anatomy before stating it.\n'+
       'If the workout looks complete, say so and suggest finishing.';
 
-    const resp=await fetch(API,{method:'POST',headers:apiHeaders(),body:JSON.stringify({
-      model:MODEL,max_tokens:14000,thinking:{type:'enabled',budget_tokens:10000},
+    const resp=await aiPost({
+      model:MODEL,max_tokens:14000,thinking:{type:'adaptive'},output_config:{effort:'high'},
       system:sys,
       messages:[{role:'user',content:'Based on what I have done in my '+spLbl(w.split)+' workout today, what single exercise should I do next?'}]
-    })});
+    });
     const data=await resp.json();
     if(data.error)throw new Error(data.error.message);
     const parsed=parseAIResponse(extractText(data.content));
@@ -1558,12 +1597,12 @@ async function sendExInstructChat(){
       messages.push({role:m.role==='user'?'user':'assistant',content:m.text});
     });
     messages.push({role:'user',content:text});
-    const resp=await fetch(API,{method:'POST',headers:apiHeaders(),body:JSON.stringify({
+    const resp=await aiPost({
       model:MODEL,max_tokens:2500,
-      thinking:{type:'enabled',budget_tokens:1024},
+      thinking:{type:'adaptive'},output_config:{effort:'medium'},
       system:'You are an expert strength coach. Answer concisely about the exercise "'+S.exInstructPanel+'". Be practical, specific, and under 120 words unless the question genuinely needs more detail.',
       messages:messages
-    })});
+    });
     const data=await resp.json();
     if(data.error)throw new Error(data.error.message);
     S.exInstructChat.push({role:'ai',text:extractText(data.content)});
@@ -1601,12 +1640,11 @@ async function showExInstruct(name){
   let text=null;
   // Attempt 1: with thinking (budget ≥1024 required)
   try{
-    const resp=await fetch(API,{method:'POST',headers:apiHeaders(),body:JSON.stringify({
-      model:MODEL,max_tokens:3000,thinking:{type:'enabled',budget_tokens:1024},
+    const resp=await aiPost({
+      model:MODEL,max_tokens:3000,thinking:{type:'adaptive'},output_config:{effort:'medium'},
       stream:false,system:sys,messages:[{role:'user',content:prompt}]
-    })});
+    });
     const raw=await resp.text();
-    console.log('[ExInstruct attempt1 raw]',raw.slice(0,400));
     const data=JSON.parse(raw);
     if(!data.error) text=extractText(data.content);
     else console.warn('[ExInstruct attempt1 api error]',JSON.stringify(data.error));
@@ -1614,12 +1652,11 @@ async function showExInstruct(name){
   // Attempt 2: without thinking
   if(!text){
     try{
-      const resp=await fetch(API,{method:'POST',headers:apiHeaders(),body:JSON.stringify({
+      const resp=await aiPost({
         model:MODEL,max_tokens:1000,stream:false,
         system:sys,messages:[{role:'user',content:prompt}]
-      })});
+      });
       const raw=await resp.text();
-      console.log('[ExInstruct attempt2 raw]',raw.slice(0,400));
       const data=JSON.parse(raw);
       if(!data.error) text=extractText(data.content);
       else console.warn('[ExInstruct attempt2 api error]',JSON.stringify(data.error));

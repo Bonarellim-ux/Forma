@@ -247,7 +247,9 @@ function caDetectPatterns(exercises,groups){
     if(oneDecliner.length===1&&groupImprovers.length>=2)patterns.push(caPattern(oneDecliner[0].exercise+' may be exercise-specific because the broader '+group+' group is progressing.','medium',[oneDecliner[0].exercise+' declining',groupImprovers.map(function(e){return e.exercise+' improving';}).join(', ')],5,'exercise_specific_issue'));
   });
   exercises.forEach(function(e){
-    if(e.trend==='declining'&&Math.abs(e.repChange)<=1&&Math.abs(e.e1rmChange)<=5&&e.sessions>=3)patterns.push(caPattern(e.exercise+' looks plateaued rather than broadly regressing.','medium',[e.recentTop+' vs '+e.baselineTop],3,'plateau'));
+    // e1rmChange is in display units; scale the "small change" threshold so kg users aren't ~2x looser (5kg vs 5lb)
+    var plateauThresh=(S.unit==='kg')?2.5:5;
+    if(e.trend==='declining'&&Math.abs(e.repChange)<=1&&Math.abs(e.e1rmChange)<=plateauThresh&&e.sessions>=3)patterns.push(caPattern(e.exercise+' looks plateaued rather than broadly regressing.','medium',[e.recentTop+' vs '+e.baselineTop],3,'plateau'));
   });
   const decliningCompounds=exercises.filter(function(e){return e.trend==='declining'&&e.priorityWeight>=3;});
   if(decliningCompounds.length>=2)patterns.push(caPattern('Possible recovery issue: multiple major compounds are declining.','medium',decliningCompounds.map(function(e){return e.exercise+' '+e.e1rmChange+' '+uLbl();}),9,'recovery_signal'));

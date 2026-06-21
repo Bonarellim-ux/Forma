@@ -73,15 +73,11 @@ function applyCloudState(data){
   if(!data||typeof data!=='object')return;
   formaCloudApplying=true;
   if(Array.isArray(data.workouts)){
-    S.workouts=data.workouts.map(function(workout){
-      if(!workout||!Array.isArray(workout.exercises))return workout;
-      workout.exercises=workout.exercises.filter(Boolean).map(function(ex){
-        return Object.assign({},ex,{sets:Array.isArray(ex.sets)?ex.sets:[]});
-      });
-      return workout;
-    }).filter(Boolean);
+    // Route cloud workouts through the same normalization as local load (set weights/units/warmup),
+    // not just a sets-array guard, so legacy/foreign-unit payloads can't bypass it.
+    S.workouts=normalizeImportedWorkouts(data.workouts,data.unit||S.unit);
   }
-  if(data.schedule)S.schedule=Object.assign({},S.schedule,data.schedule);
+  if(data.schedule)S.schedule=Object.assign({},DEF_SCHED,data.schedule);
   if(Array.isArray(data.scheduleHistory))S.scheduleHistory=data.scheduleHistory.slice(-20);
   if(data.splits)S.splitEx=data.splits;
   if(data.unit)S.unit=data.unit;

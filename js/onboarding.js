@@ -781,7 +781,10 @@ function obExercisePool(split,p){
 }
 function obBuildProgram(d){
   const p=obCanonicalProfile(d);
-  const candidates=obSplitTemplates().filter(function(t){return t.days===p.daysPerWeek;}).map(function(t){return obTemplateScore(t,p);}).sort(function(a,b){return b.score-a.score;});
+  let candidates=obSplitTemplates().filter(function(t){return t.days===p.daysPerWeek;}).map(function(t){return obTemplateScore(t,p);}).sort(function(a,b){return b.score-a.score;});
+  // No template for the chosen day count (e.g. the "2 days" option has no exact template):
+  // score ALL templates instead — the day-mismatch penalty already favors the nearest fit.
+  if(!candidates.length)candidates=obSplitTemplates().map(function(t){return obTemplateScore(t,p);}).sort(function(a,b){return b.score-a.score;});
   const best=candidates[0];
   SPLIT_LBL.full='Full Body';SPLIT_LBL.priority='Priority';SPLIT_LBL.chest_back='Chest & Back';SPLIT_LBL.shoulders_arms='Shoulders & Arms';
   const seq=best.labels.slice();
@@ -835,7 +838,7 @@ async function obGenerate(){
     S.profile.injuries=d.injuries||S.profile.injuries;
     S.profile.preferences=[d.exercise_preferences?('Likes: '+d.exercise_preferences):'',d.exercise_dislikes?('Avoids: '+d.exercise_dislikes):''].filter(Boolean).join(' | ');
     S.profile.program_reasoning=plan;
-    if(d.bodyweight)S.profile.bodyweight=parseFloat(d.bodyweight)||S.profile.bodyweight;
+    if(d.bodyweight){var _bw=parseFloat(d.bodyweight);if(isFinite(_bw)&&_bw>0)S.profile.bodyweight=_bw;}
     if(d.height)S.profile.height=d.height;
     S.schedule=plan.schedule;
     S.splitEx=Object.assign({},S.splitEx,plan.splitEx);
@@ -852,7 +855,7 @@ async function obGenerate(){
     S.profile.experience=d.experience||S.profile.experience;
     S.profile.equipment=d.equipment||S.profile.equipment;
     S.profile.injuries=d.injuries||S.profile.injuries;
-    if(d.bodyweight)S.profile.bodyweight=parseFloat(d.bodyweight)||S.profile.bodyweight;
+    if(d.bodyweight){var _bw=parseFloat(d.bodyweight);if(isFinite(_bw)&&_bw>0)S.profile.bodyweight=_bw;}
     if(d.height)S.profile.height=d.height;
     persist('ll_profile',S.profile);
   }

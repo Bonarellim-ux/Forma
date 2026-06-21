@@ -7,7 +7,7 @@ async function loadData(){
     }else if(!(S.auth&&S.auth.configured)){
       const load=function(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}};
       const u=load('ll_unit');       if(u)   S.unit=u;
-      const sc=load('ll_schedule');  if(sc)  S.schedule=sc;
+      const sc=load('ll_schedule');  if(sc)  S.schedule=Object.assign({},DEF_SCHED,sc); // merge over defaults like cloud load, so a partial stored schedule never drops a day
       const w=load('ll_workouts');
       if(w){
         // Sanitize all historical workouts — ensure every exercise has a valid sets array
@@ -29,6 +29,8 @@ async function loadData(){
           aw.exercises=[];
         }
         S.workout=aw;
+        // Restore the workout clock so a mid-session reload keeps elapsed time / final duration
+        if(aw.startTime)S.workoutStartTime=aw.startTime;
       }
     }
     // Don't restore messages — fresh chat each session
@@ -47,8 +49,18 @@ async function loadData(){
   }
 }
 
+var _persistQuotaWarned=false;
 function persist(key,val){
-  try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}
+  try{localStorage.setItem(key,JSON.stringify(val));}
+  catch(e){
+    // Surface quota failures once instead of silently losing every write
+    const quota=e&&(e.name==='QuotaExceededError'||e.code===22||e.code===1014);
+    if(quota&&!_persistQuotaWarned){
+      _persistQuotaWarned=true;
+      console.error('localStorage quota exceeded — local saves are failing.',e);
+      try{alert('Storage is full — Forma can no longer save changes on this device. Export your data (Settings → Export) so you don’t lose it, then free up space.');}catch(_){}
+    }
+  }
   if(typeof formaScheduleCloudSave==='function')formaScheduleCloudSave();
 }
 

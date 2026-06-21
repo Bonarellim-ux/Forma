@@ -736,7 +736,7 @@ function vFeedback(){
     const items=[];
     if(sm.durationMin) items.push({val:sm.durationMin+'m',lbl:'DURATION'});
     if(sm.totalSets)   items.push({val:sm.totalSets,lbl:'SETS'});
-    if(sm.totalVol)    items.push({val:sm.totalVol.toLocaleString(),lbl:'LBS MOVED'});
+    if(sm.totalVol)    items.push({val:sm.totalVol.toLocaleString(),lbl:uLbl().toUpperCase()+' MOVED'});
     if(!items.length)return '';
     return '<div style="display:flex;gap:8px;margin-bottom:14px">'+
       items.map(function(it){
@@ -1017,6 +1017,7 @@ function startWorkout(split){
   // Always build fresh from current splitEx
   S.workout={date:new Date().toISOString(),split:sp,exercises:(S.splitEx[sp]||[]).filter(function(n){return n&&typeof n==='string';}).map(makeWorkoutExercise)};
   S.workoutStartTime=Date.now();
+  S.workout.startTime=S.workoutStartTime;
   S.addingEx=false;S.editingExIdx=null;S.setVoiceIdx=null;S.dragIdx=null;S.dragOverIdx=null;
   S.inlineAIDraft='';S.inlineAIReply='';S.inlineAILoading=false;
   go('log');

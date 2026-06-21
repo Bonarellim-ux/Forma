@@ -237,11 +237,13 @@ function vStrengthScore(){
   }
   function getScore(val,std){
     if(!val||val===0)return 0;
-    if(val>=std[4])return Math.min(100,Math.round(90+10*(val-std[4])/std[4]));
+    // Guard against rounded standards that collide at low bodyweight (denominator 0 -> NaN -> broken bar)
+    if(val>=std[4])return Math.min(100,Math.round(90+10*(std[4]>0?(val-std[4])/std[4]:0)));
     for(let i=0;i<std.length-1;i++){
       if(val<std[i+1]){
         const base=(i+1)*18;
-        const pct=(val-std[i])/(std[i+1]-std[i]);
+        const denom=std[i+1]-std[i];
+        const pct=denom>0?(val-std[i])/denom:0;
         return Math.round(base+pct*18);
       }
     }
@@ -276,7 +278,6 @@ function vStrengthScore(){
       return result;
     });
 
-    const avgScore=Math.round(subResults.reduce(function(a,r){return a+r.score;},0)/subResults.length);
     const avgLevel=Math.round(subResults.reduce(function(a,r){return a+r.level;},0)/subResults.length);
 
     return '<div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px">'+
@@ -499,17 +500,18 @@ function vHeatmap(){
   const start=new Date(today);
   start.setDate(today.getDate()-(WEEKS*7));
   const dow=start.getDay();
-  start.setDate(start.getDate()+(dow===0?1:dow===1?0:8-dow));
+  // Snap back to the Monday on/before start (Mon=1). Snapping forward would shrink the window.
+  start.setDate(start.getDate()-((dow+6)%7));
 
-  // Build lookup: 'YYYY-MM-DD' -> {split, idx}
+  // Build lookup: 'YYYY-MM-DD' (local) -> {split, idx}
   const lookup={};
   S.workouts.forEach(function(w,idx){
     const d=new Date(w.date);
     if(isNaN(d.getTime()))return;
-    const key=d.toISOString().slice(0,10);
+    const key=localYMD(d);
     if(!lookup[key])lookup[key]={split:w.split,idx:idx};
   });
-  const todayKey2=today.toISOString().slice(0,10);
+  const todayKey2=localYMD(today);
 
   // Stats
   const totalDays=S.workouts.length;
@@ -537,7 +539,7 @@ function vHeatmap(){
       const date=new Date(start);
       date.setDate(start.getDate()+w*7+d);
       if(date>today){gridHtml+='<div style="width:14px;height:14px"></div>';continue;}
-      const key=date.toISOString().slice(0,10);
+      const key=localYMD(date);
       const entry=lookup[key];
       const isToday=key===todayKey2;
       const col=entry?spCol(entry.split):'none';
