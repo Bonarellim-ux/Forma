@@ -380,15 +380,12 @@ function vHome(){
       const isT=d===today;
       const isSel=d===selDay;
       const isR=dsp==='rest';
-      return '<div class="home-week-day" onclick="S.selStripDay=\''+d+'\';render()">'+
-        '<div class="home-week-label '+(isT?'today ':'')+(isSel?'selected':'')+'">'+DAY_FULL[d].slice(0,1)+'</div>'+
-        '<div class="home-week-tile '+(isSel?'selected ':'')+(isR?'rest':'')+'" style="'+
-          'background:'+(isT?dc:isSel?hexA(dc,.18):isR?'rgba(255,255,255,.72)':hexA(dc,.09))+';'+
-          'border:1.5px solid '+(isT?dc:isSel?dc:isR?'rgba(168,200,228,.62)':hexA(dc,.22))+';'+
-          'box-shadow:'+(isT?'0 8px 16px '+hexA(dc,.24):(isSel?'0 7px 14px '+hexA(dc,.14):'0 4px 10px rgba(13,30,46,.035)'))+'">'+
-          '<div class="home-week-tile-text" style="color:'+(isT?'#fff':isR?'var(--dim)':dc)+'">'+
-            (isR?'—':spLbl(dsp))+
-          '</div>'+
+      const cls='home-week-day'+(isT?' today':'')+(isSel?' selected':'')+(isR?' rest':'');
+      return '<div class="'+cls+'" onclick="S.selStripDay=\''+d+'\';render()">'+
+        '<div class="home-week-label">'+DAY_FULL[d].slice(0,1)+'</div>'+
+        '<div class="home-week-tile">'+
+          (isR?'':'<span class="home-week-dot" style="background:'+dc+'"></span>')+
+          '<span class="home-week-tile-text">'+(isR?'Rest':spLbl(dsp))+'</span>'+
         '</div>'+
         (isSel?'<div class="home-week-indicator"></div>':'<div class="home-week-indicator-spacer"></div>')+
       '</div>';
@@ -412,18 +409,16 @@ function vHome(){
       (selIsRest?
         '<div style="font-size:12px;color:var(--muted);padding:4px 0">Rest day — no exercises scheduled.</div>':
         (selExs.length?
-          '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">'+
+          '<div style="display:flex;flex-direction:column;margin-bottom:12px">'+
             selExs.map(function(e,i){
               const last=getLastSession(e);
-              return '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(244,248,252,.55);border:1px solid rgba(200,220,240,.55);border-radius:10px;padding:7px 8px">'+
-                '<div style="display:flex;align-items:center;gap:8px">'+
-                  '<div style="width:20px;height:20px;border-radius:6px;background:'+hexA(selCol,.1)+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
-                    '<span style="font-size:9px;font-weight:700;color:'+selCol+'">'+(i+1)+'</span>'+
-                  '</div>'+
-                  '<span style="font-size:12px;font-weight:600;color:var(--white)">'+e+'</span>'+
+              return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 2px'+(i>0?';border-top:1px solid var(--divider)':'')+'">'+
+                '<div style="display:flex;align-items:center;gap:12px;min-width:0">'+
+                  '<span style="font-size:11px;font-weight:700;color:var(--muted);font-family:var(--mono);width:15px;text-align:right;flex-shrink:0">'+(i+1)+'</span>'+
+                  '<span style="font-size:13px;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e+'</span>'+
                 '</div>'+
-                (last?'<span style="font-size:10px;color:var(--muted);font-family:var(--mono)">'+toDisp(last.w)+' '+uLbl()+'</span>':
-                  '<span style="font-size:10px;color:var(--muted);font-weight:600">First time</span>')+
+                (last?'<span style="font-size:11px;color:var(--sub);font-family:var(--mono);flex-shrink:0">'+toDisp(last.w)+' '+uLbl()+'</span>':
+                  '<span style="font-size:11px;color:var(--muted);flex-shrink:0">First time</span>')+
               '</div>';
             }).join('')+
           '</div>'+
@@ -464,10 +459,13 @@ function vHome(){
       const wc=spCol(w.split);
       const totalSets=w.exercises.reduce(function(acc,e){return acc+e.sets.length;},0);
       const exCount=w.exercises.filter(function(e){return e.sets.length;}).length;
-      return '<div class="recent-session-card" style="background:'+hexA(wc,.05)+';border:1px solid '+hexA(wc,.22)+';border-radius:14px;padding:13px 15px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline;gap:12px;box-shadow:0 4px 14px rgba(13,30,46,.04)">'+
-        '<div style="min-width:0">'+
-          '<div style="font-size:14px;font-weight:800;color:var(--white);letter-spacing:-.02em">'+spLbl(w.split)+' Day</div>'+
-          '<div style="font-size:11px;color:var(--sub);margin-top:3px">'+exCount+' exercise'+(exCount===1?'':'s')+' · '+totalSets+' sets</div>'+
+      return '<div class="recent-session-card" style="background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:13px 15px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:12px;box-shadow:var(--sh-xs)">'+
+        '<div style="display:flex;align-items:center;gap:11px;min-width:0">'+
+          '<span style="width:8px;height:8px;border-radius:50%;background:'+wc+';flex-shrink:0"></span>'+
+          '<div style="min-width:0">'+
+            '<div style="font-size:14px;font-weight:800;color:var(--white);letter-spacing:-.02em">'+spLbl(w.split)+' Day</div>'+
+            '<div style="font-size:11px;color:var(--sub);margin-top:2px">'+exCount+' exercise'+(exCount===1?'':'s')+' · '+totalSets+' sets</div>'+
+          '</div>'+
         '</div>'+
         '<span style="font-size:11px;color:var(--muted);font-family:var(--mono);flex-shrink:0">'+fmtD(w.date)+'</span>'+
       '</div>';

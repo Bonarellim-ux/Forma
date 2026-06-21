@@ -163,7 +163,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 /* ── Content ─────────────────────────────────────────────────── */
 .content{flex:1;overflow-y:auto;overflow-x:hidden;padding:18px;width:100%;min-height:0;scrollbar-width:none}
 .content::-webkit-scrollbar{display:none}
-.has-nav{padding-bottom:72px!important}
+.has-nav{padding-bottom:calc(66px + env(safe-area-inset-bottom))!important}
 .is-chat{padding:0 0 72px!important}
 
 /* ── Bottom nav ──────────────────────────────────────────────── */
@@ -177,9 +177,11 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
   border-top:1px solid var(--border);
   z-index:9999;
   display:flex;
-  height:58px;
   min-height:58px;
-  padding:6px 8px max(6px,env(safe-area-inset-bottom));
+  /* Let the bar grow for the home-indicator instead of clipping the buttons,
+     and trim the inset so the icons sit lower (less empty gap). The bottom
+     strip stays nav-coloured, so it blends into the device edge. */
+  padding:6px 8px max(6px,calc(env(safe-area-inset-bottom) - 12px));
   box-shadow:0 -8px 28px rgba(47,72,96,.08);
 }
 .nav button{
@@ -526,16 +528,21 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 .home-week-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .home-week-title{font-size:11px;font-weight:900;color:var(--muted);letter-spacing:.1em}
 .home-week-edit{background:none;border:none;color:var(--blue);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;padding:0;display:flex;align-items:center;gap:4px}
-.home-week-strip{display:flex;gap:7px;margin-bottom:15px}
-.home-week-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;min-width:0}
-.home-week-label{font-size:11px;font-weight:800;letter-spacing:.07em;line-height:1;color:var(--muted)}
-.home-week-label.today{color:var(--white)}
-.home-week-label.selected{color:var(--blue)}
-.home-week-tile{width:100%;height:50px;border-radius:var(--r-lg);display:flex;align-items:center;justify-content:center;transition:transform .16s var(--ease-out),box-shadow .16s var(--ease-out),filter .16s var(--ease-out)}
-.home-week-tile.selected{transform:translateY(-2px);box-shadow:var(--sh-md);filter:saturate(1.05)}
-.home-week-day:active .home-week-tile{transform:scale(.94)}
-.home-week-tile-text{font-size:10px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;text-align:center;letter-spacing:0}
-.home-week-indicator{width:18px;height:3px;border-radius:999px;background:var(--blue)}
+.home-week-strip{display:flex;gap:6px;margin-bottom:16px}
+.home-week-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;min-width:0}
+.home-week-label{font-size:10px;font-weight:700;letter-spacing:.04em;line-height:1;color:var(--muted);transition:color .16s}
+.home-week-day.today .home-week-label{color:var(--blue)}
+.home-week-day.selected .home-week-label{color:var(--white)}
+/* Neutral tile; the split type reads from a small colour dot + ink label, not a full tint. */
+.home-week-tile{width:100%;height:48px;border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:var(--card-bg);border:1px solid var(--border);transition:transform .16s var(--ease-out),box-shadow .16s var(--ease-out),border-color .16s var(--ease-out),background .16s var(--ease-out)}
+.home-week-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.home-week-tile-text{font-size:9px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;padding:0 3px;text-align:center;letter-spacing:-.01em}
+.home-week-day.today .home-week-tile{background:var(--soft-blue);border-color:var(--blue)}
+.home-week-day.selected .home-week-tile{border-color:var(--blue2);box-shadow:var(--sh-sm);transform:translateY(-1px)}
+.home-week-day.rest .home-week-tile{background:var(--bg)}
+.home-week-day.rest .home-week-tile-text{color:var(--muted);font-weight:600}
+.home-week-day:active .home-week-tile{transform:scale(.95)}
+.home-week-indicator{width:16px;height:3px;border-radius:999px;background:var(--blue)}
 .home-week-indicator-spacer{height:3px}
 
 /* ── Feature tour ────────────────────────────────────────────── */
@@ -653,37 +660,13 @@ html[data-theme="dark"] .nav button.on{
   background:rgba(69,180,234,.10);
   box-shadow:inset 0 0 0 1px rgba(69,180,234,.08);
 }
+/* Neutral tiles in dark mode read from the themed surface/border tokens; the
+   colour dots keep their hue (no global desaturate filter). */
 html[data-theme="dark"] .home-week-tile{
-  filter:saturate(.58) brightness(.82);
-  box-shadow:0 5px 12px rgba(0,0,0,.16)!important;
+  box-shadow:0 4px 12px rgba(0,0,0,.18);
 }
-html[data-theme="dark"] .home-week-tile.selected{
-  filter:saturate(.68) brightness(.90);
-  box-shadow:0 8px 18px rgba(0,0,0,.24)!important;
-}
-html[data-theme="dark"] .home-week-tile.rest{
-  background:#121615!important;
-  border-color:rgba(78,89,92,.55)!important;
-}
-html[data-theme="dark"] .home-week-tile[style*="background:#B96A4E"]{
-  background:rgba(185,106,78,.34)!important;
-  border-color:rgba(185,106,78,.64)!important;
-}
-html[data-theme="dark"] .home-week-tile[style*="background:#4F8FA8"]{
-  background:rgba(79,143,168,.28)!important;
-  border-color:rgba(79,143,168,.58)!important;
-}
-html[data-theme="dark"] .home-week-tile[style*="background:#3E8F67"]{
-  background:rgba(62,143,103,.28)!important;
-  border-color:rgba(62,143,103,.58)!important;
-}
-html[data-theme="dark"] .home-week-tile[style*="background:#756FB6"]{
-  background:rgba(117,111,182,.28)!important;
-  border-color:rgba(117,111,182,.58)!important;
-}
-html[data-theme="dark"] .home-week-tile[style*="background:#9A8448"]{
-  background:rgba(154,132,72,.28)!important;
-  border-color:rgba(154,132,72,.58)!important;
+html[data-theme="dark"] .home-week-day.selected .home-week-tile{
+  box-shadow:0 8px 18px rgba(0,0,0,.26);
 }
 html[data-theme="dark"] [style*="background:linear-gradient(135deg,#0D1E2E"]{
   background:linear-gradient(135deg,#111615 0%,#151A1B 58%,#172431 100%)!important;

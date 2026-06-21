@@ -6,6 +6,12 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8732"],
       "port": 8732
+    },
+    {
+      "name": "forma-preview",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "python3 -m http.server ${PORT:-8733}"],
+      "autoPort": true
     }
   ]
 }
