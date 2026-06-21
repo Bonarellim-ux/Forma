@@ -405,7 +405,8 @@ function vLog(){
             '<button onclick="nudgeR('+i+',1)">+</button>'+
           '</div>'+
         '</div>'+
-      '</div>';
+      '</div>'+
+      '<div id="prev'+i+'" class="e1-preview" style="min-height:15px;margin-top:7px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums">'+(ex.inputW!==''&&ex.inputW!=null?e1PreviewHtml(ex.name,parseFloat(ex.inputW)||0,parseInt(ex.inputR)||0):'')+'</div>';
 
     // ── Card header ─────────────────────────────
     const isDragging=S.dragIdx===i;
@@ -1345,23 +1346,25 @@ function syncWorkoutToTemplate(){
 function renameEx(i,name){if(!S.workout)return;flushLogInputs();S.workout.exercises[i].name=name;syncWorkoutToTemplate();persistActiveWorkoutNow('exercise renamed');render();}
 function toggleM2(i){if(!S.workout)return;const ex=S.workout.exercises[i];ex.trackM2=!ex.trackM2;persistActiveWorkoutNow('exercise tracking changed');render();}
 
+// Inner HTML for the live estimated-1RM preview. Plates are shown separately via #plate{i},
+// so this intentionally does NOT repeat them. Returns '' when there's nothing to preview.
+function e1PreviewHtml(name,dW,r){
+  if(isCardioEx(name))return '';
+  if(dW===0&&r>0)return '<span style="color:var(--sub)">Bodyweight &times; '+r+' reps</span>';
+  if(dW>0&&r>0){
+    const val=e1rm(toKg(dW),r);
+    const last=getLastSession(name);
+    const isPR=last&&val>last.e1;
+    return 'e1RM <span style="color:'+(isPR?'#2DAA70':'var(--blue)')+'">'+toDisp(val)+' '+uLbl()+'</span>'+(isPR?' <span style="color:#2DAA70">&#9650; PR</span>':'');
+  }
+  return '';
+}
 function previewE1(i){
   const el=document.getElementById('prev'+i);if(!el)return;
   const ex=S.workout&&S.workout.exercises[i];
-  if(ex&&isCardioEx(ex.name)){el.innerHTML='';return;}
-  const dW=parseFloat(document.getElementById('w'+i)&&document.getElementById('w'+i).value||0);
-  const r=parseInt(document.getElementById('r'+i)&&document.getElementById('r'+i).value||0);
-  if(dW===0&&r>0){
-    // Bodyweight exercise
-    el.innerHTML='<span style="color:var(--sub)">Bodyweight &times; '+r+' reps</span>';
-  } else if(dW>0&&r>0){
-    const kgW=toKg(dW);const val=e1rm(kgW,r);
-    const last=S.workout?getLastSession(S.workout.exercises[i]&&S.workout.exercises[i].name):null;
-    const isPR=last&&val>last.e1;
-    el.innerHTML=
-      'e1RM <span style="color:'+(isPR?'#2DAA70':'var(--blue)')+'">'+toDisp(val)+' '+uLbl()+'</span>'+(isPR?' <span style="color:#2DAA70">&#9650; PR</span>':'')+
-      plateHtml(dW);
-  }else el.innerHTML='';
+  const dW=parseFloat((document.getElementById('w'+i)||{}).value||0);
+  const r=parseInt((document.getElementById('r'+i)||{}).value||0);
+  el.innerHTML=e1PreviewHtml(ex&&ex.name,dW,r);
 }
 
 function toggleSetWarmup(ei,si){if(!S.workout)return;const s=S.workout.exercises[ei].sets[si];s.warmup=!s.warmup;persistActiveWorkoutNow('set warmup changed');render();}
