@@ -1,6 +1,6 @@
 # Recommendation Explanation Tester
 
-Generated: 2026-06-15T02:32:53.633Z
+Generated: 2026-06-21T22:40:08.960Z
 
 Purpose: evaluate whether Forma recommendation explanations are clear, trustworthy, and understandable. Uses production `getOverloadSuggestion` and the same UI text helpers as the app (`homeRecommendationLine`, `recommendationActionText`, `recommendationWhyText`). No AI API.
 
@@ -108,7 +108,7 @@ After your first logged set, Forma will adjust from your actual performance.
 | Home card text | Increase to 70 lbs |
 | Home plan line | Bench Press: increase to 70 lbs |
 | Workout action text | Trying 70 lbs for 6-8 reps |
-| Why / explanation | Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 11: 60 lbs x 10; Jun 8: 60 lbs x 10; Jun 5: 60 lbs x 10. You reached the top of the 6-10 target range at 60 lbs with stable performance. The 10 lbs increase is an early calibration step, not a confirmed long-term trend yet. |
+| Why / explanation | Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 17: 60 lbs x 10; Jun 14: 60 lbs x 10; Jun 11: 60 lbs x 10. You reached the top of the 6-10 target range at 60 lbs with stable performance. The 10 lbs increase is an early calibration step, not a confirmed long-term trend yet. |
 
 #### Explanation checks
 
@@ -136,7 +136,7 @@ I'd recommend trying 70 lbs for 6-8 reps.
 Why:
 Early calibration phase — this is based on only 3 logged sessions.
 The goal is to find your working range, not maximize load yet.
-Recent working sets: Jun 11: 60 lbs x 10; Jun 8: 60 lbs x 10; Jun 5: 60 lbs x 10.
+Recent working sets: Jun 17: 60 lbs x 10; Jun 14: 60 lbs x 10; Jun 11: 60 lbs x 10.
 You reached the top of the 6-10 target range at 60 lbs with stable performance.
 The 10 lbs increase is an early calibration step, not a confirmed long-term trend yet.
 ```
@@ -165,7 +165,7 @@ The 10 lbs increase is an early calibration step, not a confirmed long-term tren
 | Home card text | Reduce to 55 lbs |
 | Home plan line | Bench Press: reduce to 55 lbs |
 | Workout action text | Reducing slightly to 55 lbs and aiming for 6-10 reps |
-| Why / explanation | Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 11: 60 lbs x 5; Jun 8: 60 lbs x 4; Jun 5: 60 lbs x 4. Recent top sets stayed below the 6-10 target range at 60 lbs. Reduce slightly to keep reps in target range. The goal is to rebuild clean reps before progressing. |
+| Why / explanation | Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 17: 60 lbs x 5; Jun 14: 60 lbs x 4; Jun 11: 60 lbs x 4. Recent top sets stayed below the 6-10 target range at 60 lbs. Reduce slightly to keep reps in target range. The goal is to rebuild clean reps before progressing. |
 
 #### Explanation checks
 
@@ -193,7 +193,7 @@ I'd recommend reducing slightly to 55 lbs and aiming for 6-10 reps.
 Why:
 Early calibration phase — this is based on only 3 logged sessions.
 The goal is to find your working range, not maximize load yet.
-Recent working sets: Jun 11: 60 lbs x 5; Jun 8: 60 lbs x 4; Jun 5: 60 lbs x 4.
+Recent working sets: Jun 17: 60 lbs x 5; Jun 14: 60 lbs x 4; Jun 11: 60 lbs x 4.
 Recent top sets stayed below the 6-10 target range at 60 lbs.
 Reduce slightly to keep reps in target range.
 The goal is to rebuild clean reps before progressing.
@@ -223,7 +223,7 @@ The goal is to rebuild clean reps before progressing.
 | Home card text | Repeat 60 lbs |
 | Home plan line | Bench Press: repeat 60 lbs |
 | Workout action text | Repeating 60 lbs for 6-10 clean reps |
-| Why / explanation | Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 11: 60 lbs x 10; Jun 8: 60 lbs x 5; Jun 5: 60 lbs x 8. Your recent reps at this weight have varied quite a bit (8 → 5 → 10). Repeat this load to confirm baseline before increasing weight or reps. |
+| Why / explanation | Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 17: 60 lbs x 10; Jun 14: 60 lbs x 5; Jun 11: 60 lbs x 8. Your recent reps at this weight have varied quite a bit (8 → 5 → 10). Repeat this load to confirm baseline before increasing weight or reps. |
 
 #### Explanation checks
 
@@ -251,7 +251,7 @@ I'd recommend repeating 60 lbs for 6-10 clean reps.
 Why:
 Early calibration phase — this is based on only 3 logged sessions.
 The goal is to find your working range, not maximize load yet.
-Recent working sets: Jun 11: 60 lbs x 10; Jun 8: 60 lbs x 5; Jun 5: 60 lbs x 8.
+Recent working sets: Jun 17: 60 lbs x 10; Jun 14: 60 lbs x 5; Jun 11: 60 lbs x 8.
 Your recent reps at this weight have varied quite a bit (8 → 5 → 10).
 Repeat this load to confirm baseline before increasing weight or reps.
 ```
@@ -280,7 +280,7 @@ Repeat this load to confirm baseline before increasing weight or reps.
 | Home card text | Stay at 60 lbs |
 | Home plan line | Bench Press: aim for 9 reps |
 | Workout action text | Keeping 60 lbs and aiming for 9 reps |
-| Why / explanation | Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 11: 60 lbs x 8; Jun 8: 60 lbs x 8; Jun 5: 60 lbs x 7. Last time you hit 60 lbs x 8. Since that is below the top of your 6-10 target range, the next step is 9 reps at the same weight before increasing. |
+| Why / explanation | Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 17: 60 lbs x 8; Jun 14: 60 lbs x 8; Jun 11: 60 lbs x 7. Last time you hit 60 lbs x 8. Since that is below the top of your 6-10 target range, the next step is 9 reps at the same weight before increasing. |
 
 #### Explanation checks
 
@@ -308,7 +308,7 @@ I'd recommend keeping 60 lbs and aiming for 9 reps.
 Why:
 Early calibration phase — this is based on only 3 logged sessions.
 The goal is to find your working range, not maximize load yet.
-Recent working sets: Jun 11: 60 lbs x 8; Jun 8: 60 lbs x 8; Jun 5: 60 lbs x 7.
+Recent working sets: Jun 17: 60 lbs x 8; Jun 14: 60 lbs x 8; Jun 11: 60 lbs x 7.
 Last time you hit 60 lbs x 8. Since that is below the top of your 6-10 target range, the next step is 9 reps at the same weight before increasing.
 ```
 
