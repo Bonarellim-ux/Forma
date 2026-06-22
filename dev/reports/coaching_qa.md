@@ -1,6 +1,6 @@
 # Forma Coaching QA Tester
 
-Generated: 2026-06-21T22:42:24.338Z
+Generated: 2026-06-22T00:41:43.719Z
 
 Purpose: test whether Forma feels like a real coach across common user questions — beyond deterministic exercise recommendations.
 
@@ -9,18 +9,28 @@ Mode: **live AI via production proxy**
 ## Summary
 
 - Scenarios: 10
-- Coaching pass: 10/10
+- Coaching pass: 9/9
 - Coaching fail: 0
-- API/runtime failures: 0 (separate from coaching quality)
+- API/runtime failures: 1 (separate from coaching quality)
+
+### Top failure patterns
+
+| Pattern | Count |
+|---|---:|
+| no_actionable_next_step | 1 |
+
+### API/runtime failures (not coaching failures)
+
+- **Should I add another training day?**: API HTTP 529: {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"},"request_id":"req_011CcHNJ5BD5fRV95TouboXG"}
 
 | # | Scenario | Pass | Overall | Failed checks | Patterns | API |
 |---:|---|:---:|:---:|:---:|---|:---:|
 | 1 | What should I do next workout? | yes | 10 | 0 | — | no |
-| 2 | Why did my squat go down? | yes | 10 | 0 | — | no |
+| 2 | Why did my squat go down? | yes | 8 | 1 | no_actionable_next_step | no |
 | 3 | Should I deload? | yes | 10 | 0 | — | no |
 | 4 | What is my biggest weakness? (low-data beginner) | yes | 10 | 0 | — | no |
-| 5 | What is my biggest weakness? (intermediate mixed data) | yes | 10 | 0 | — | no |
-| 6 | Should I add another training day? | yes | 10 | 0 | — | no |
+| 5 | What is my biggest weakness? (intermediate mixed data) | yes | 9 | 1 | — | no |
+| 6 | Should I add another training day? | API error | — | — | — | yes |
 | 7 | I want to reduce to 4 days. | yes | 10 | 0 | — | no |
 | 8 | User says yes after coach asks to apply change | yes | 10 | 0 | — | no |
 | 9 | Why did Forma recommend this weight? | yes | 10 | 0 | — | no |
@@ -43,30 +53,31 @@ Mode: **live AI via production proxy**
 #### AI response
 
 ```
-Monday is Push day. Here's what the recommendation engine has for you:
+Tomorrow is **Monday — Push day**. Here's your session:
 
-**Bench Press**
-225 lbs × 7 reps — you hit 6 last session, so the goal is one more rep before adding weight.
+**1. Bench Press**
+225 lbs — aim for 7 reps
+Last time: 225 × 6. Same weight, one more rep before moving up.
 
-**Overhead Press**
-115 lbs × 9 reps — you hit 8 last session, building toward the top of your range.
+**2. Overhead Press**
+115 lbs — aim for 3–7 clean reps
+Last time: 115 × 8. Repeat this weight once more before increasing.
 
-**Incline Dumbbell Press**
-90 lbs × 10 reps — hit 9 last session, one more rep to go.
+**3. Incline Dumbbell Press**
+90 lbs — aim for 5–9 clean reps
+Last time: 90 × 9. Repeat before moving up.
 
-**Tricep Pushdown**
-~37.5 lbs × 10–15 reps — calibration load, first logged session so I'll adjust after you record it.
+**4. Tricep Pushdown**
+37.5 lbs — aim for 10–15 reps
+First logged session — calibration load.
 
-**Lateral Raise**
-~15 lbs × 12–20 reps — same deal, first baseline set.
+**5. Lateral Raise**
+15 lbs — aim for 12–20 reps
+First logged session — calibration load.
 
 ---
 
-**One thing to watch:** Bench has dropped from 8 to 6 reps at 225 while OHP is climbing. Not a major alarm yet — only two sessions logged and it could be normal day-to-day variation — but worth paying attention to today's bench quality. If reps keep slipping over the next 2–3 sessions, we'll dig into it.
-
-Confidence: Medium (early calibration phase across most lifts).
-
-Ready to start the session when you are.
+**One thing to watch:** Bench has dipped two sessions in a row while OHP is climbing. Nothing to change yet, but pay attention to how your setup and bar path feel tomorrow. Confidence: Low (early data, only 2 sessions each).
 ```
 
 #### Evaluation
@@ -114,28 +125,25 @@ Ready to start the session when you are.
 
 ```
 **Observation:**
-Your last two squat sessions:
 - May 29: 280 lbs × 5
 - Jun 8: 275 lbs × 4
-
-That's a small drop in both load and reps — roughly a -7 lb e1RM change across 2 sessions.
+- Estimated 1RM dropped ~7 lbs over two sessions
 
 **Interpretation:**
-A drop this small over 2 sessions is more likely normal day-to-day variation than a true regression. That said, a few possible contributors worth considering:
+With only 2 logged sessions, this is too early to call a trend. A single-session dip of this size is common and can reflect any of these:
 
-- **Fatigue timing** — Legs day is Wednesday. Depending on how Monday Push and Tuesday Pull felt, accumulated fatigue could blunt squat performance
-- **Technique or setup shift** — Small changes in bar position, depth, or bracing can affect output session to session
-- **Insufficient baseline** — With only 2 sessions logged, it's hard to separate a real trend from noise
+- **Normal variation** — day-to-day fluctuations in strength are typical, especially on a heavy compound
+- **Fatigue timing** — your squat falls on Wednesday after Monday push work; accumulated fatigue may be affecting output
+- **Technique or setup** — bar position, depth, or bracing inconsistencies can drop reps without the weight changing
+- **Recovery factors** — sleep, nutrition, or stress in the days before Jun 8
 
-**What the broader data shows:**
-Your Romanian Deadlift and Leg Press are both moving up. That means your legs and posterior chain aren't generally fatigued or undertrained — the squat specifically dipped while the rest of leg work improved.
+**What the broader data says:**
+Your Leg Press improved and Romanian Deadlift improved on the same Jun 8 session, so it's unlikely you were globally fatigued across the board. That makes squat-specific factors — technique, setup, or normal variance — more plausible than a systemic issue.
 
-**Confidence: Low** — 2 data points isn't enough to name a cause.
+**Confidence: Low** — two data points, mixed signals, no clear root cause yet.
 
 **Next step:**
-Repeat 275 lbs on your next Legs day and aim for 5+ clean reps. If it comes back up, this was likely normal variation. If it drops again, we look deeper.
-
-Anything feel off during the last session — depth, fatigue, or setup?
+Forma has you at 275 lbs × 5 on your next Legs day. Hit that cleanly and we'll have a third data point to actually evaluate. If it drops again with good execution, that's worth digging into further.
 ```
 
 #### Evaluation
@@ -143,26 +151,26 @@ Anything feel off during the last session — depth, fatigue, or setup?
 | Field | Value |
 |---|---|
 | Pass/fail | pass |
-| Overall | 10/10 |
-| Context use | 10/10 |
-| Intent understanding | 10/10 |
-| Data grounding | 10/10 |
-| Recommendation quality | 10/10 |
-| Uncertainty calibration | 10/10 |
-| Actionability | 10/10 |
+| Overall | 8/10 |
+| Context use | 8/10 |
+| Intent understanding | 8/10 |
+| Data grounding | 8/10 |
+| Recommendation quality | 8/10 |
+| Uncertainty calibration | 8/10 |
+| Actionability | 5/10 |
 | No fabrication | 10/10 |
-| Conversation naturalness | 10/10 |
+| Conversation naturalness | 8/10 |
 
-**Failed checklist items:** none
+**Failed checklist items:** Gives monitoring or action step
 
-**Failure patterns:** none
+**Failure patterns:** no_actionable_next_step
 
 | Checklist item | Pass |
 |---|---|
 | Separates observation from interpretation | yes |
 | Does not blame sleep unless provided | yes (critical) |
 | Mentions mixed or non-squat signals | yes |
-| Gives monitoring or action step | yes |
+| Gives monitoring or action step | no |
 
 #### Manual review
 
@@ -183,18 +191,26 @@ Anything feel off during the last session — depth, fatigue, or setup?
 #### AI response
 
 ```
-**Observation:** Two major lower-body compounds have dropped across recent sessions — Back Squat down ~13 lbs e1RM and Leg Press down ~20 lbs e1RM. Pull work is holding steady, so this isn't a full-body crash.
+**Observation:**
+Your last two leg sessions show declining numbers — Back Squat dropped from 280×6 to 275×5, and Leg Press from 330×12 to 325×11. Both squat-pattern movements are moving in the same direction across multiple sessions.
 
-**Interpretation:** This *may* point to accumulated fatigue — particularly in the lower body — rather than a technique or programming issue. Squat-pattern work declining together is a meaningful signal. That said, we're still in early calibration (3 sessions on squats/leg press), so some of this could be normal session-to-session variation.
+**Interpretation:**
+This *may* signal accumulated fatigue, but it's still a possible trend, not a confirmed one. Pull work (Deadlift, Row) looks stable, and push data is limited to one session. The decline is concentrated in lower-body compounds specifically.
 
-**Confidence: Medium** — two exercises moving the same direction across multiple sessions supports it, but it's not yet 3+ consecutive clear drops or a total performance collapse.
+**Confidence: Medium** — two signals pointing the same way, but only 3 leg sessions logged and no readiness, sleep, or stress data to confirm recovery is the root cause.
+
+---
 
 **My take:**
-- A full deload isn't clearly justified yet — Pull is stable and push data is limited.
-- A **targeted lower-body deload** makes more sense: drop squat and leg press intensity ~10% this week, keep reps moderate, treat it as an active recovery week.
-- If squat and leg press bounce back next week, it was likely fatigue. If they keep dropping, we dig into sleep, stress, or nutrition.
 
-**Next check:** How has sleep and stress been the past 1–2 weeks? That'll help confirm whether this is accumulated fatigue or something else worth adjusting.
+A full deload isn't clearly warranted yet. I'd lean toward a lighter step first:
+
+1. **Next leg day (Wed) — reduced intensity**: drop squat and leg press by ~10%, focus on form and feel. If you bounce back, it was likely short-term fatigue.
+2. **If decline continues another session** — then a proper deload week (40–50% load reduction across all sessions) makes more sense.
+
+A preemptive full deload on 2 data points risks interrupting progress that might just need one good recovery week naturally.
+
+**How has sleep and stress been lately?** That would sharpen this call significantly.
 ```
 
 #### Evaluation
@@ -241,20 +257,26 @@ Anything feel off during the last session — depth, fatigue, or setup?
 #### AI response
 
 ```
-Honest answer: I don't have enough data to name a real weakness yet.
+Honest answer: I don't have enough data yet to call anything a real weakness.
 
-**Observation:** Two sessions logged — one upper, one lower. Every lift is at a beginner baseline, which is completely normal and expected.
+**What I can see:**
+- 2 sessions total — Jun 3 Lower, Jun 7 Upper
+- Both sessions logged cleanly with reasonable beginner numbers across the board
 
-**Interpretation:** Nothing is standing out as lagging because there's no progression history to compare against yet. One session per split isn't enough to separate a weak point from normal day-to-day variation.
+**Observation:**
+Nothing stands out as dramatically off relative to your other lifts. Your squat (115×8), bench (95×8), and pulls (85×10) are proportional for someone early in training.
 
-**Confidence: Low** — any weakness I named right now would be a guess, not a coaching insight.
+**Why I won't name a "biggest weakness" yet:**
+One session per split is a snapshot, not a pattern. A weakness requires 2–3 sessions of the same movement lagging, or a muscle group clearly falling behind others. Neither is visible yet.
 
-**What I need to give you a real answer:**
-— 4–6 weeks of consistent sessions
-— Progress data across multiple lifts in the same pattern (e.g., push vs. pull)
-— Rep ranges hitting top-end consistently so we can see where you stall first
+**What to watch over the next 4–6 weeks:**
+- Are your **pushing** and **pulling** lifts progressing at a similar rate?
+- Is your **squat** keeping pace with your **leg press**? A big gap there can hint at technique or quad/posterior chain imbalance.
+- Any movement that *feels* consistently harder than the others is worth flagging.
 
-**Next step:** Train your next two cycles as planned. After your next upper and lower session, I'll have comparison points and can start identifying where you're progressing fastest vs. slowest. That's where real weakness analysis begins.
+**Confidence: Low** — not enough history to make a real call.
+
+Keep logging consistently and I'll have a real answer for you in 3–4 more sessions per split. Want me to flag anything specific to watch next session?
 ```
 
 #### Evaluation
@@ -301,20 +323,24 @@ Honest answer: I don't have enough data to name a real weakness yet.
 #### AI response
 
 ```
-**Observation:** Your push session has a split signal — Bench Press has dropped from 230×7 to 215×5 (e1RM down ~33 lbs), while Overhead Press and Incline Dumbbell Press are both trending up.
+**Observation:** Your push session is actually a mixed picture — not a uniform weakness. Two exercises are improving while one is declining:
 
-**Interpretation:** This looks exercise-specific to the Bench Press rather than a true chest or triceps weakness — if those muscles were the problem, your Incline and OHP would likely be stalling too. Something specific to horizontal pressing may be off: setup, bar path, technique, or just normal short-term regression after a near-PR.
+- Bench Press: down from 230×7 → 215×5 (e1RM -33 lbs)
+- Incline DB Press: up from 85×9 → 95×10 (e1RM +15 lbs)
+- Overhead Press: up from 110×8 → 120×8 (e1RM +13 lbs)
 
-**Confidence: Medium** — only 3 logged push sessions, so this is a possible trend, not a confirmed weakness.
+**Interpretation:** The issue appears to be **Bench Press specifically**, not a chest or triceps weakness overall — because those muscles are progressing just fine on incline and OHP. That points toward something exercise-specific: technique, setup, bar path, or how it falls in your session.
+
+It may not be a true weakness so much as a **Bench Press-specific regression** worth investigating.
 
 **Other possibilities:**
-- Fatigue timing on Push day affecting bench specifically
-- Technique or setup inconsistency on flat bench
-- Your recent best was ~284 e1RM, current is ~251 — could be post-PR consolidation
+- Bar path or setup inconsistency
+- Bench placed early in Push when fatigue is lower — but something still off
+- A recent PR (estimated ~284 lbs) followed by a pullback is common; short-term regression after a peak
 
-**Next step:** Don't force load on bench right now. Forma's engine recommends repeating 215 lbs and hitting 6–10 clean reps to re-establish your baseline before progressing. How the next 2–3 sessions trend will tell us a lot more.
+**Confidence:** Medium — only 3 logged Push sessions, but the pattern across all three is consistent.
 
-Want me to look at your bench technique cues or check if recovery timing on Push day could be a factor?
+**Next step:** Before changing programming, I'd want to know — has anything changed about your bench setup, grip, or how it feels lately? That'll tell us if this is technical or just normal post-PR fluctuation.
 ```
 
 #### Evaluation
@@ -322,24 +348,24 @@ Want me to look at your bench technique cues or check if recovery timing on Push
 | Field | Value |
 |---|---|
 | Pass/fail | pass |
-| Overall | 10/10 |
-| Context use | 10/10 |
-| Intent understanding | 10/10 |
-| Data grounding | 10/10 |
-| Recommendation quality | 10/10 |
-| Uncertainty calibration | 10/10 |
-| Actionability | 10/10 |
+| Overall | 9/10 |
+| Context use | 9/10 |
+| Intent understanding | 9/10 |
+| Data grounding | 9/10 |
+| Recommendation quality | 9/10 |
+| Uncertainty calibration | 9/10 |
+| Actionability | 9/10 |
 | No fabrication | 10/10 |
-| Conversation naturalness | 10/10 |
+| Conversation naturalness | 9/10 |
 
-**Failed checklist items:** none
+**Failed checklist items:** Confidence medium or lower
 
 **Failure patterns:** none
 
 | Checklist item | Pass |
 |---|---|
 | Identifies likely pattern or area | yes |
-| Confidence medium or lower | yes |
+| Confidence medium or lower | no |
 | Gives hypotheses not certainty | yes |
 | Does not claim single definite cause | yes (critical) |
 
@@ -361,54 +387,13 @@ Want me to look at your bench technique cues or check if recovery timing on Push
 
 #### AI response
 
-```
-You're already running a solid 5-day push/pull/legs + upper/lower structure with 2 rest days. That's a high-frequency hypertrophy setup — adding a 6th day can work, but let me break it down before recommending one.
-
-**Current structure**
-- 5 training days, 2 full rest days
-- Good frequency: most muscles hit 2x/week
-- Recovery buffer is moderate, not excessive
-
-**Reasonable options for a 6th day**
-
-1. **Accessories/weak-point day** — lower fatigue, isolation-focused (arms, shoulders, calves, whatever's lagging). Easiest to recover from.
-2. **Extra pull/back volume** — if pulling progress or back thickness is a priority, a second dedicated pull session on Saturday works well.
-3. **Full-body GPP/pump day** — light compounds + isolation, moderate volume. Adds total work without heavy CNS cost.
-
-**My lean**
-Without workout history showing a clear weak point yet, I'd lean toward a **Saturday accessories/weak-point day** — it adds volume with minimal recovery cost and keeps Sunday free. Once you've logged a few weeks, a specific target will become more obvious.
-
-Worth asking yourself: are you recovering well from 5 days currently? If sleep and energy are solid, a 6th day makes sense. If you're dragging by Friday, more rest may beat more training.
-
-**Confidence: Low** — no session history yet to confirm where volume is actually low.
-
-Want me to design that Saturday session?
-```
+_API/runtime error:_ API HTTP 529: {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"},"request_id":"req_011CcHNJ5BD5fRV95TouboXG"}
 
 #### Evaluation
 
 | Field | Value |
 |---|---|
-| Pass/fail | pass |
-| Overall | 10/10 |
-| Context use | 10/10 |
-| Intent understanding | 10/10 |
-| Data grounding | 10/10 |
-| Recommendation quality | 10/10 |
-| Uncertainty calibration | 10/10 |
-| Actionability | 10/10 |
-| No fabrication | 10/10 |
-| Conversation naturalness | 10/10 |
-
-**Failed checklist items:** none
-
-**Failure patterns:** none
-
-| Checklist item | Pass |
-|---|---|
-| Program-level reasoning first | yes |
-| Does not jump straight to workout generation | yes (critical) |
-| Gives options if confidence is medium | yes |
+| Pass/fail | API error |
 
 #### Manual review
 
@@ -429,28 +414,33 @@ Want me to design that Saturday session?
 #### AI response
 
 ```
-Going from 5 to 4 days means dropping one session and likely restructuring the split to keep muscle frequency intact.
+Going from 5 to 4 days, here are the reasonable structural paths:
 
-**Your current structure:**
-Push | Pull | Legs | Upper | Lower — 5 days, each muscle hit ~1.5–2x/week.
+**Option 1 — Upper/Lower x2**
+Mon: Upper | Tue: Lower | Thu: Upper | Fri: Lower
+2x frequency per muscle group, strong hypertrophy evidence for intermediates.
 
-**Reasonable options:**
+**Option 2 — Push/Pull/Legs + Full Body**
+Mon: Push | Tue: Pull | Thu: Legs | Fri: Full Body
+Keeps the PPL feel, adds a full-body catch-all day.
 
-1. **Upper/Lower x2** — Mon Upper / Tue Lower / Thu Upper / Fri Lower. Clean 2x frequency for everything, well-supported for hypertrophy at intermediate level.
+**Option 3 — Drop one current day, keep 4**
+Remove Thu Upper (most overlap with Push/Pull). Leaves Push/Pull/Legs/Lower but lower body hits twice while upper hits less evenly.
 
-2. **Push/Pull x2** — Mon Push / Tue Pull / Thu Push / Fri Pull. Simple, good frequency, but legs become accessory work only — not ideal if leg hypertrophy matters.
+---
 
-3. **PPL + Full Body** — Push / Pull / Legs / Full Body. Covers everything but the full-body day can feel congested at 5 exercises.
+**I'd lean toward Option 1 (Upper/Lower x2).**
 
-**I'd lean toward Upper/Lower x2.**
+Reasons:
+- Best muscle frequency balance for hypertrophy at intermediate level
+- Clean structure — each muscle trained twice weekly with adequate recovery
+- Easiest to manage volume per session within your 60-min / 5-exercise preference
 
-It preserves full leg training, keeps 2x weekly frequency for all major muscles, and fits your 60-min / 5-exercise preference cleanly. The structure is straightforward to program and well-matched to your hypertrophy goal.
+Confidence: Medium (no session history yet to confirm weak points or frequency needs)
 
-Suggested days: **Mon / Tue / Thu / Fri** with Wed, Sat, Sun off.
+---
 
-Want me to update your schedule and build out the 4-day Upper/Lower workouts?
-
-Confidence: Medium (no performance data yet, but structure is well-supported for your goal and experience level).
+Want me to update your schedule to Upper/Lower x2 and build out the four sessions?
 ```
 
 #### Evaluation
@@ -498,11 +488,17 @@ Confidence: Medium (no performance data yet, but structure is well-supported for
 #### AI response
 
 ```
-Done. New schedule applied.
+Done. Your new schedule is set.
 
-**Mon: Upper | Tue: Lower | Wed: Rest | Thu: Upper | Fri: Lower | Sat: Rest | Sun: Rest**
+— Mon: Upper
+— Tue: Lower
+— Wed: Rest
+— Thu: Upper
+— Fri: Lower
+— Sat: Rest
+— Sun: Rest
 
-This keeps two full upper and lower sessions per week with a mid-week rest for recovery. Want me to build out the workouts for each day?
+Each Upper day hits chest, back, shoulders, and arms. Each Lower day hits quads, hamstrings, glutes, and calves. Want me to build out the actual workouts for each session?
 ```
 
 #### Evaluation
@@ -550,21 +546,17 @@ This keeps two full upper and lower sessions per week with a mid-week rest for r
 #### AI response
 
 ```
-Here's the reasoning behind the recommendation:
+Forma's recommendation engine is suggesting **70 lbs for 6-8 reps** for your next Bench Press. Here's the reasoning:
 
-**Forma's engine is suggesting 70 lbs for 6–8 reps.**
+**Observation:** You've hit 60 lbs × 10 for three straight sessions (Jun 5, Jun 8, Jun 11) — that's consistent performance at the top of the 6-10 rep target range.
 
-Here's why:
+**Why 70 lbs:** Double progression logic — once you repeatedly hit the top of your rep range with stable performance, the next step is to add weight and reset reps slightly lower. Three sessions at the same weight and reps is enough to justify a load increase.
 
-- **Your last 3 sessions:** 60 lbs × 10 — Jun 5, Jun 8, Jun 11
-- **You hit the top of the target rep range (10 reps) three times in a row.** That's the trigger for a weight increase under double progression — build reps first, then add load once you've consistently hit the ceiling.
-- **+10 lbs** is a standard early-stage calibration jump. At this point in training, the goal is finding your true working range, not grinding small increments.
-- **Rep target resets to 6–8** at the new weight, giving you room to grow into it again.
+**Why only 10 lbs:** You're in an early calibration phase with just 3 logged sessions. The goal right now is finding your working range, not pushing load aggressively. It's a conservative step to test how you respond to added weight.
 
-**Confidence: Medium**
-Only 3 logged sessions, so this is still early calibration. The increase is reasonable, not aggressive — if 70 lbs feels too heavy to hit 6 reps with good form, dropping back to 65 lbs is a valid option.
+**Confidence: Medium** — The progression signal is clear, but 3 sessions is still a short window. If 70 lbs feels too heavy to hit 6 clean reps, drop back to 65 lbs and build from there.
 
-**Next check:** After your next Push session at 70 lbs, I'll have a clearer picture of where your actual working range sits.
+Want to log today or have questions about the target rep range?
 ```
 
 #### Evaluation
@@ -611,18 +603,22 @@ Only 3 logged sessions, so this is still early calibration. The increase is reas
 #### AI response
 
 ```
-**Observation:** Your bench has dropped from 230 lbs x 7 → 215 lbs x 5 over three sessions. Meanwhile OHP went from 110 → 120 lbs and incline from 85 → 95 lbs, both improving.
+**Observation:**
+Your bench has dropped from 230×7 → 220×6 → 215×5 over three sessions (~33 lbs e1RM). Meanwhile OHP went from 110×8 → 120×8 (+13 lbs e1RM) and incline went from 85×9 → 95×10 (+15 lbs e1RM).
 
-**Interpretation:** The pattern points to a bench-specific issue, not a general pressing or chest problem. If your shoulders, triceps, or pecs were the limiter, you'd expect all three lifts to stall — but OHP and incline are both climbing. That makes a broad muscle weakness unlikely here.
+**Interpretation:**
+This pattern matters — your shoulders, triceps, and upper chest are clearly working. The issue appears to be bench-specific, not a push muscle breakdown. A few possibilities:
 
-Most probable causes (not facts):
-- **Technique or setup drift** — arch, grip width, bar path, or leg drive breaking down under load. This is the most common cause of exercise-specific regression while related lifts improve.
-- **Fatigue timing** — if bench always runs first on Push day, accumulated fatigue from recent loading could hit it harder than OHP or incline later in the session. Paradoxically, the reverse is also worth checking: if you recently reordered exercises.
-- **Post-PR regression** — your best estimated 1RM was around 284 lbs, your current estimate is ~251 lbs. Short-term drops after a recent peak are common and often self-correct.
+- **Setup or technique drift** — flat bench has a more precise arch, leg drive, and scapular setup than OHP or incline. Small form changes compound quickly.
+- **Position-specific weakness** — flat bench loads the pec at a longer muscle length and demands more shoulder stability at the bottom. If your anterior shoulder or lower pec is a limiting factor, OHP and incline can still progress around it.
+- **Normal post-PR regression** — your e1RM peak was ~284 lbs. A short dip after a PR push is common before consolidating.
 
-**Confidence: Medium** — the pattern is clear across three sessions but the root cause is still uncertain.
+**Confidence: Medium** — only 3 sessions logged, so this isn't a crisis yet, but the pattern is real.
 
-**Next step:** On your next Push day, film a set at 215 lbs and check your setup — specifically bar path, elbow angle, and whether your leg drive is consistent. Don't chase load yet. Forma's engine also suggests repeating 215 lbs for 6–10 clean reps to re-establish your baseline before going heavier. If the regression continues past two more sessions, we'll dig into technique or programming adjustments.
+**Next step:**
+On your next Push day, treat bench as a technique reset. Keep it at 215 lbs, focus on setup — tight scapulae, leg drive, controlled descent — and aim for 6 clean reps. One more session will tell us a lot more.
+
+Want me to cue the specific setup points to check?
 ```
 
 #### Evaluation

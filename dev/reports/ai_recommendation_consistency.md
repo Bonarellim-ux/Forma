@@ -1,6 +1,6 @@
 # AI / Recommendation Consistency Tester
 
-Generated: 2026-06-15T02:41:10.066Z
+Generated: 2026-06-22T00:38:28.216Z
 
 Purpose: verify that when Forma's deterministic engine recommends something, the AI coach explains the same recommendation and does not invent a different one.
 
@@ -56,9 +56,7 @@ Why did Forma recommend this for Bench Press?
 #### 3. AI response
 
 ```
-Forma's recommendation engine suggested **60 lbs as a calibration load** for Bench Press because you have no prior working sets logged yet — so there's no actual performance data to build from. Without history, the engine falls back to a conservative starting estimate informed by general context like training experience (under 6 months) and a beginner-appropriate load range. The goal isn't to predict your strength — it's to give you a safe, manageable starting point where you can hit **5–10 clean reps** and generate real data. Once you log your first working set, Forma will immediately recalibrate from your actual performance instead of this estimate.
-
-**Confidence: Low** — by design at this stage, which is exactly why it's treated as a calibration load, not a prescription.
+Forma's recommendation engine is suggesting **60 lbs as a calibration load** for 5–10 clean reps on Bench Press — not as a strength prediction, but as a conservative starting point. Since you have no logged working sets yet, the engine is using your bodyweight, training experience (beginner, under 6 months), height/build context, and general population baselines to set a safe first-session load. The goal is to get you a real data point, not to guess your max. After you log your first set, Forma will immediately adjust based on your actual performance. Confidence is currently Low by design — that's expected at baseline before any working sets exist.
 ```
 
 #### 4. Consistency checks
@@ -71,7 +69,7 @@ Forma's recommendation engine suggested **60 lbs as a calibration load** for Ben
 | perHandMention | n/a |
 | repMatch | yes |
 | actionMatch | yes |
-| reasoningOverlap | 43% |
+| reasoningOverlap | 51% |
 | reasoningMatch | yes |
 | calibrationLanguage | yes |
 | noContradiction | yes |
@@ -98,8 +96,8 @@ Forma's recommendation engine suggested **60 lbs as a calibration load** for Ben
 | Rep target | 6-8 |
 | Confidence | medium |
 | Workout action | Trying 70 lbs for 6-8 reps |
-| Engine signal line | Bench Press: trying 70 lbs for 6-8 reps. Medium confidence. Engine state: early_progression. Evidence: Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 11: 60 lbs x 10; Jun 8: 60 lbs x 10; Jun 5: 60 lbs x 10. You reached the top of the 6-10 target range at 60 lbs with stable performance. The 10 lbs increase is an early calibration step, not a confirmed long-term trend yet. |
-| Why | Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 11: 60 lbs x 10; Jun 8: 60 lbs x 10; Jun 5: 60 lbs x 10. You reached the top of the 6-10 target range at 60 lbs with stable performance. The 10 lbs increase is an early calibration step, not a confirmed long-term trend yet. |
+| Engine signal line | Bench Press: trying 70 lbs for 6-8 reps. Medium confidence. Engine state: early_progression. Evidence: Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 18: 60 lbs x 10; Jun 15: 60 lbs x 10; Jun 12: 60 lbs x 10. You reached the top of the 6-10 target range at 60 lbs with stable performance. The 10 lbs increase is an early calibration step, not a confirmed long-term trend yet. |
+| Why | Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 18: 60 lbs x 10; Jun 15: 60 lbs x 10; Jun 12: 60 lbs x 10. You reached the top of the 6-10 target range at 60 lbs with stable performance. The 10 lbs increase is an early calibration step, not a confirmed long-term trend yet. |
 
 #### 2. AI question
 
@@ -112,12 +110,12 @@ Why did Forma recommend this for Bench Press?
 ```
 Forma's recommendation engine is currently suggesting **70 lbs for 6–8 reps** on Bench Press. Here's the reasoning behind it:
 
-- **You've hit 60 lbs × 10 three sessions in a row** (Jun 5, Jun 8, Jun 11) — that's the top of the 6–10 rep target range, held consistently.
-- **Double progression rule:** once you repeatedly hit the top of your rep range at a given weight, the next step is a load increase, then resetting reps to the lower end of the range.
-- **The 10 lb jump is an early calibration step**, not a confirmed long-term trend. With only 3 logged sessions, the engine is still finding your working range rather than maximizing load.
-- **Confidence: Medium** — the pattern is consistent, but the short history limits certainty. If 70 lbs feels too heavy or your form breaks down, dropping to 65 lbs is a reasonable alternative.
+- **You've hit 60 lbs × 10 three sessions in a row** (Jun 12, 15, 18) — that's the top of the 6–10 target rep range, held consistently.
+- Under double progression, once you repeatedly hit the top of the rep range at a given weight, the next step is a weight increase and a rep reset.
+- The engine applied a **10 lb jump** as an early calibration step — not because the trend is fully confirmed, but because you're in an early phase where finding your true working range is the priority.
+- The target drops to 6–8 reps to account for the added load and give you room to build back up.
 
-Next check: how 70 lbs feels for 6–8 clean reps on your next Push day (Monday).
+**Confidence: Medium** — only 3 sessions logged, so this is a calibration move, not a locked-in progression. If 70 lbs feels too heavy to hit 6 reps with good form, drop back to 65 lbs and build from there.
 ```
 
 #### 4. Consistency checks
@@ -130,7 +128,7 @@ Next check: how 70 lbs feels for 6–8 clean reps on your next Push day (Monday)
 | perHandMention | n/a |
 | repMatch | yes |
 | actionMatch | yes |
-| reasoningOverlap | 27% |
+| reasoningOverlap | 29% |
 | reasoningMatch | yes |
 | calibrationLanguage | yes |
 | noContradiction | yes |
@@ -157,8 +155,8 @@ Next check: how 70 lbs feels for 6–8 clean reps on your next Push day (Monday)
 | Rep target | 6-10 |
 | Confidence | medium |
 | Workout action | Reducing slightly to 55 lbs and aiming for 6-10 reps |
-| Engine signal line | Bench Press: reducing slightly to 55 lbs and aiming for 6-10 reps. Medium confidence. Engine state: early_guidance. Evidence: Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 11: 60 lbs x 5; Jun 8: 60 lbs x 4; Jun 5: 60 lbs x 4. Recent top sets stayed below the 6-10 target range at 60 lbs. Reduce slightly to keep reps in target range. The goal is to rebuild clean reps before progressing. |
-| Why | Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 11: 60 lbs x 5; Jun 8: 60 lbs x 4; Jun 5: 60 lbs x 4. Recent top sets stayed below the 6-10 target range at 60 lbs. Reduce slightly to keep reps in target range. The goal is to rebuild clean reps before progressing. |
+| Engine signal line | Bench Press: reducing slightly to 55 lbs and aiming for 6-10 reps. Medium confidence. Engine state: early_guidance. Evidence: Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 18: 60 lbs x 5; Jun 15: 60 lbs x 4; Jun 12: 60 lbs x 4. Recent top sets stayed below the 6-10 target range at 60 lbs. Reduce slightly to keep reps in target range. The goal is to rebuild clean reps before progressing. |
+| Why | Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 18: 60 lbs x 5; Jun 15: 60 lbs x 4; Jun 12: 60 lbs x 4. Recent top sets stayed below the 6-10 target range at 60 lbs. Reduce slightly to keep reps in target range. The goal is to rebuild clean reps before progressing. |
 
 #### 2. AI question
 
@@ -169,13 +167,14 @@ Why did Forma recommend this for Bench Press?
 #### 3. AI response
 
 ```
-Forma's recommendation engine is currently suggesting you **drop slightly to 55 lbs and aim for 6–10 reps**. Here's the reasoning behind it:
+Forma's recommendation engine is suggesting you drop slightly to **55 lbs** and aim for **6–10 reps** on Bench Press. Here's the reasoning behind it:
 
-- **Early calibration phase** — you only have 3 logged sessions, so the engine isn't trying to push load yet. The priority right now is finding your working range and building clean reps.
-- **Reps are below the target range** — your recent sets landed at 60 lbs × 4, 4, then 5. That's below the 6–10 rep target the engine uses for beginners building a base.
-- **Small reduction to hit the range** — dropping to 55 lbs gives you a realistic path to 6–10 clean reps, which sets you up for proper double progression: build reps first, then add weight once you consistently hit the top of that range.
+- **You're in early calibration** — only 3 logged sessions exist, so the engine isn't trying to maximize load yet; it's trying to find your clean working range.
+- **Your top sets have stayed below the 6–10 rep target** — you hit 60 lbs x 4, 4, and 5 across those sessions, which keeps you in the lower end of a beginner rep range.
+- **A small load reduction is the fix** — dropping to 55 lbs should let you hit 6–10 clean reps consistently, which is the foundation before any weight increase.
+- **Confidence is Medium** — three sessions is a start, but not enough to be fully decisive; once you're consistently hitting the top of that rep range at 55 lbs, the engine will flag a weight increase.
 
-**Confidence: Medium** — only 3 sessions logged, so this is early guidance, not a firm long-term prescription. Once you have more sessions in the 6–10 rep range at a given weight, the engine will have stronger data to work with.
+The goal right now is clean reps in range, not heavier singles.
 ```
 
 #### 4. Consistency checks
@@ -215,8 +214,8 @@ Forma's recommendation engine is currently suggesting you **drop slightly to 55 
 | Rep target | 6-10 |
 | Confidence | medium |
 | Workout action | Repeating 60 lbs for 6-10 clean reps |
-| Engine signal line | Bench Press: repeating 60 lbs for 6-10 clean reps. Medium confidence. Engine state: early_guidance. Evidence: Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 11: 60 lbs x 10; Jun 8: 60 lbs x 5; Jun 5: 60 lbs x 8. Your recent reps at this weight have varied quite a bit (8 → 5 → 10). Repeat this load to confirm baseline before increasing weight or reps. |
-| Why | Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 11: 60 lbs x 10; Jun 8: 60 lbs x 5; Jun 5: 60 lbs x 8. Your recent reps at this weight have varied quite a bit (8 → 5 → 10). Repeat this load to confirm baseline before increasing weight or reps. |
+| Engine signal line | Bench Press: repeating 60 lbs for 6-10 clean reps. Medium confidence. Engine state: early_guidance. Evidence: Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 18: 60 lbs x 10; Jun 15: 60 lbs x 5; Jun 12: 60 lbs x 8. Your recent reps at this weight have varied quite a bit (8 → 5 → 10). Repeat this load to confirm baseline before increasing weight or reps. |
+| Why | Early calibration phase — this is based on only 3 logged sessions. The goal is to find your working range, not maximize load yet. Recent working sets: Jun 18: 60 lbs x 10; Jun 15: 60 lbs x 5; Jun 12: 60 lbs x 8. Your recent reps at this weight have varied quite a bit (8 → 5 → 10). Repeat this load to confirm baseline before increasing weight or reps. |
 
 #### 2. AI question
 
@@ -229,12 +228,11 @@ Why did Forma recommend this for Bench Press?
 ```
 Forma's recommendation engine is currently suggesting you **repeat 60 lbs for 6–10 clean reps** on Bench Press. Here's why:
 
-- **Only 3 sessions logged** — that's not enough to confidently set a baseline or progress load yet.
-- **Your reps have varied a lot**: 8 → 5 → 10 across those three sessions. That inconsistency signals the weight isn't fully dialed in yet.
-- The engine is in **early calibration mode**, meaning the priority right now is confirming your working range, not chasing heavier weight.
-- Once you hit the **top of that range (10 reps) consistently**, the engine will signal a weight increase.
+- **Only 3 sessions logged** — that's not enough data to confidently establish your baseline, so the engine is in an early calibration phase rather than pushing you to increase load.
+- **Your rep counts have varied a lot** across those sessions: 8 → 5 → 10. That kind of inconsistency signals the baseline isn't stable yet.
+- **The goal right now is confirmation, not progression** — repeating the same load one more time lets the engine verify where your true working range sits before recommending a weight increase.
 
-Confidence: Medium — based on early-stage data with limited sessions.
+Confidence: Medium — once you hit 60 lbs for a consistent 10 reps across 2 sessions, the engine will have enough signal to recommend moving up.
 ```
 
 #### 4. Consistency checks
@@ -247,7 +245,7 @@ Confidence: Medium — based on early-stage data with limited sessions.
 | perHandMention | n/a |
 | repMatch | yes |
 | actionMatch | yes |
-| reasoningOverlap | 37% |
+| reasoningOverlap | 31% |
 | reasoningMatch | yes |
 | calibrationLanguage | yes |
 | noContradiction | yes |
@@ -286,15 +284,18 @@ Why did Forma recommend this for Bench Press?
 #### 3. AI response
 
 ```
-Forma's recommendation engine is currently suggesting you **repeat 135 lbs** and aim to rebuild reps in the 6–10 range before adding weight.
+Forma's recommendation engine is currently suggesting you **repeat 135 lbs** and aim to rebuild your rep range back to 6–10 clean reps before adding weight.
 
-**Why:** Your reps have dropped across five straight sessions at the same weight — 135 × 10 → 8 → 7 → 6 → 5. That's a clear downward rep trend, not a plateau. Because performance is moving in the wrong direction, the engine flagged the state as **plateaued/regressing** and chose to hold weight rather than progress it.
+Here's why:
 
-**The logic:** Double progression means you build reps first, then add weight. Right now the priority is reversing that rep decline and hitting clean, consistent reps again before bumping the load.
+- **Your reps have dropped across 5 consecutive sessions** at the same weight: 135 lbs × 10 → 8 → 7 → 6 → 5. That's a clear downward trend, not random variation.
+- **The engine flagged a plateau/regression state**, meaning you haven't consolidated strength at this load yet — progressing the weight now would likely make it worse.
+- **The logic is double progression**: rebuild reps first (back to 6–10), then earn the weight increase. Jumping to 140 lbs before stabilizing at 135 lbs would likely stall you further.
+- The engine's goal is to set you up for a clean, confident increase rather than forcing progress prematurely.
 
-**Confidence: High** — five consecutive sessions of declining reps at the same weight is strong evidence to hold and rebuild rather than increase.
+**Confidence: High** — five sessions of consecutive rep decline at the same load is a strong, clear signal.
 
-Once you hit the top of your rep range (around 10 clean reps) consistently, the engine will signal a weight increase.
+Once you hit 135 lbs × 10 cleanly for 1–2 sessions, that's your green light to move to 140 lbs.
 ```
 
 #### 4. Consistency checks
@@ -307,7 +308,7 @@ Once you hit the top of your rep range (around 10 clean reps) consistently, the 
 | perHandMention | n/a |
 | repMatch | yes |
 | actionMatch | yes |
-| reasoningOverlap | 14% |
+| reasoningOverlap | 12% |
 | reasoningMatch | partial |
 | calibrationLanguage | n/a |
 | noContradiction | yes |
@@ -346,7 +347,7 @@ Why did Forma recommend this for DB Shoulder Press?
 #### 3. AI response
 
 ```
-Forma's recommendation engine suggested **15 lbs per hand** as your starting load for DB Shoulder Press because you have no prior working sets logged yet — so there's no actual performance data to build from. Instead, the engine used a conservative calibration approach, factoring in your training experience (under 6 months) and general beginner context to set a safe, manageable starting point. The goal isn't to predict your strength — it's to give you a load where you can hit **8–12 clean reps** and establish a real baseline. Once you log your first working set, Forma will adjust from your actual performance rather than the estimate. Confidence on this is **Low** by design — that's expected before any sets are recorded.
+Forma's recommendation engine suggested **15 lbs per hand** for DB Shoulder Press as a calibration load, not a strength prediction. Since you have no prior working sets logged yet, the engine defaulted to a conservative starting point based on your training experience (under 6 months) and general beginner context. The goal is to hit **8–12 clean reps** with good form on your first session, then Forma will adjust from your actual performance. The engine's confidence is **Low** for exactly this reason — one logged set changes everything and gives real data to work from.
 ```
 
 #### 4. Consistency checks
@@ -359,7 +360,7 @@ Forma's recommendation engine suggested **15 lbs per hand** as your starting loa
 | perHandMention | yes |
 | repMatch | yes |
 | actionMatch | yes |
-| reasoningOverlap | 46% |
+| reasoningOverlap | 45% |
 | reasoningMatch | yes |
 | calibrationLanguage | yes |
 | noContradiction | yes |
@@ -398,7 +399,14 @@ Why did Forma recommend this for Custom Strength Drill?
 #### 3. AI response
 
 ```
-Forma's recommendation engine suggested **15 lbs for 8–12 reps** as your starting load for Custom Strength Drill. Since you have no logged working sets for this exercise yet, the engine has no performance data to build from — so it defaulted to a conservative general calibration load rather than a strength-based prediction. There's also no strong exercise-category match in your history to pull a smarter estimate from, which is why confidence is marked **Low**. The 15 lb figure is essentially a safe starting point: once you log your first real working set, Forma will recalibrate from your actual performance and confidence will improve from there.
+Forma's recommendation engine suggested **15 lbs for 8–12 reps** as a conservative calibration load for Custom Strength Drill. Here's why:
+
+- **No prior working sets exist** for this exercise, so the engine has no performance history to build from.
+- With no exercise-category match strong enough to borrow a starting point from, it defaulted to a general conservative baseline rather than risk recommending too heavy a load.
+- The engine is in **baseline state**, meaning 15 lbs is not a strength prediction — it's a safe starting point to collect your first real data point.
+- **Confidence is Low** by design here. Once you log your first working set, Forma will recalibrate from your actual performance and future suggestions will be much more accurate.
+
+Bottom line: no data in → conservative starting load out. Log the set and the engine will adjust from there.
 ```
 
 #### 4. Consistency checks
@@ -411,7 +419,7 @@ Forma's recommendation engine suggested **15 lbs for 8–12 reps** as your start
 | perHandMention | n/a |
 | repMatch | yes |
 | actionMatch | yes |
-| reasoningOverlap | 44% |
+| reasoningOverlap | 43% |
 | reasoningMatch | yes |
 | calibrationLanguage | yes |
 | noContradiction | yes |
