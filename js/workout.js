@@ -245,9 +245,8 @@ function vLog(){
   const aiReply=S.inlineAIReply?'<div class="inline-ai-reply">'+renderMd(S.inlineAIReply)+'</div>':'';
   const aiLoading=S.inlineAILoading?'<div style="padding:4px 0 10px;display:flex;gap:3px;align-items:center"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>':'';
   const sparkleSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="3.4"/></svg>';
-  // Collapsed by default so the exercise you're logging leads; expands on tap and stays
-  // open while there's a draft, a reply, or a request in flight.
-  const aiExpanded=S.inlineAIOpen||S.inlineAILoading||!!S.inlineAIReply||!!(S.inlineAIDraft&&S.inlineAIDraft.length);
+  // Open by default during workouts; users can collapse it when they want more room.
+  const aiExpanded=S.inlineAIOpen!==false||S.inlineAILoading||!!S.inlineAIReply||!!(S.inlineAIDraft&&S.inlineAIDraft.length);
   const inlineAI=isTemplate?'':
     (!aiExpanded?
     '<button class="inline-ai-collapsed" onclick="S.inlineAIOpen=true;render();setTimeout(function(){var t=document.getElementById(\'inline-ta\');if(t)t.focus();},60)">'+
@@ -396,7 +395,7 @@ function vLog(){
             '</div>'+
             '<div class="num-row">'+
               '<button onclick="nudgeW('+i+',-'+step()+')">&minus;</button>'+
-              '<input id="w'+i+'" type="number" value="'+ex.inputW+'" oninput="syncW('+i+',this.value)" onchange="previewE1('+i+')">'+
+              '<input id="w'+i+'" type="number" value="'+ex.inputW+'" oninput="syncW('+i+',this.value)">'+
               '<button onclick="nudgeW('+i+','+step()+')">+</button>'+
             '</div>'+
             '<div id="plate'+i+'">'+(isBarbell(ex.name)&&parseFloat(ex.inputW)>0?(function(){
@@ -412,12 +411,11 @@ function vLog(){
           '</div>'+
           '<div class="num-row">'+
             '<button onclick="nudgeR('+i+',-1)">&minus;</button>'+
-            '<input id="r'+i+'" type="number" value="'+ex.inputR+'" oninput="syncR('+i+',this.value)" onchange="previewE1('+i+')">'+
+            '<input id="r'+i+'" type="number" value="'+ex.inputR+'" oninput="syncR('+i+',this.value)">'+
             '<button onclick="nudgeR('+i+',1)">+</button>'+
           '</div>'+
         '</div>'+
-      '</div>'+
-      '<div id="prev'+i+'" class="e1-preview" style="min-height:15px;margin-top:7px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums">'+(ex.inputW!==''&&ex.inputW!=null?e1PreviewHtml(ex.name,parseFloat(ex.inputW)||0,parseInt(ex.inputR)||0):'')+'</div>';
+      '</div>';
 
     // ── Card header ─────────────────────────────
     const isDragging=S.dragIdx===i;
@@ -434,28 +432,28 @@ function vLog(){
           '<button onclick="saveExEdit('+i+')" style="flex:2;background:var(--blue);color:#fff;border:none;border-radius:7px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Save</button>'+
         '</div>'+
       '</div>':
-      // ── Normal header: name owns row 1; last/history + utilities sit quietly on row 2 ──
+      // ── Normal header: title + exercise actions are grouped, history sits underneath ──
       (function(){
         var nm=ex.name.replace(/'/g,"\\'");
         var lastInline=last?
-          '<button onclick="S.exHistoryPanel=\''+nm+'\';render()" title="Tap to see full history" style="background:none;border:none;padding:0;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:7px;min-width:0">'+
-            '<span style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Last <span class="mono" style="color:var(--sub);font-weight:600">'+(isCardio?last.w+' min':toDisp(last.w)+' '+uLbl()+' × '+last.r)+'</span></span>'+
-            '<span style="font-size:11px;color:var(--blue);font-weight:700;white-space:nowrap;flex-shrink:0">History ›</span>'+
+          '<button class="ex-history-link" onclick="S.exHistoryPanel=\''+nm+'\';render()" title="Tap to see full history">'+
+            '<span>Last <span class="mono ex-history-value">'+(isCardio?last.w+' min':toDisp(last.w)+' '+uLbl()+' × '+last.r)+'</span></span>'+
+            '<span class="ex-history-cta">History ›</span>'+
           '</button>':
-          '<span style="font-size:11px;color:var(--muted);font-style:italic">First time</span>';
+          '<button class="ex-history-link is-empty" onclick="S.exHistoryPanel=\''+nm+'\';render()" title="Tap to see full history">First time</button>';
         var util='<button onclick="showExInstruct(\''+nm+'\')" title="How to perform" class="ex-util-btn">?</button>'+
           '<button onclick="startExEdit('+i+')" title="Rename exercise" class="ex-util-btn" style="font-style:normal">✎</button>'+
           '<button onclick="toggleSubstitutions('+i+')" title="Swap exercise" class="ex-util-btn">⇄</button>';
-        return '<div style="margin-bottom:13px">'+
-          '<div style="display:flex;align-items:flex-start;gap:8px">'+
-            '<button class="drag-handle" id="dh-'+i+'" draggable="true" ondragstart="exDragStart(event,'+i+')" ondragend="exDragEnd(event)" ontouchstart="exTouchStart(event,'+i+')" title="Drag to reorder" style="flex-shrink:0;margin-top:1px">&#8942;&#8942;</button>'+
-            '<div style="flex:1;min-width:0;font-weight:750;font-size:16px;color:var(--white);line-height:1.25;letter-spacing:-.01em;overflow-wrap:anywhere">'+ex.name+'</div>'+
-            '<button onclick="removeExFromWorkout('+i+')" title="Remove exercise" style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;opacity:.55">&#215;</button>'+
+        return '<div class="ex-card-head">'+
+          '<button class="drag-handle ex-drag" id="dh-'+i+'" draggable="true" ondragstart="exDragStart(event,'+i+')" ondragend="exDragEnd(event)" ontouchstart="exTouchStart(event,'+i+')" title="Drag to reorder">&#8942;&#8942;</button>'+
+          '<div class="ex-head-main">'+
+            '<div class="ex-title-line">'+
+              '<div class="ex-title-text">'+escH(ex.name)+'</div>'+
+              '<div class="ex-title-actions">'+util+'</div>'+
+            '</div>'+
+            '<div class="ex-meta-row">'+lastInline+'</div>'+
           '</div>'+
-          '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;padding-left:25px">'+
-            lastInline+
-            '<div style="display:flex;align-items:center;gap:3px;flex-shrink:0">'+util+'</div>'+
-          '</div>'+
+          '<button class="ex-remove-btn" onclick="removeExFromWorkout('+i+')" title="Remove exercise">&#215;</button>'+
         '</div>';
       })();
 
