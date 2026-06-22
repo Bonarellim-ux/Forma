@@ -212,18 +212,18 @@ function vAuth(){
       '<div class="logo" style="font-size:38px;margin-bottom:8px">Forma<span>.</span></div>'+
       '<div style="font-size:15px;color:var(--sub);line-height:1.5;margin-bottom:22px">Sign in to keep your workouts, program, profile, and settings connected to your account.</div>'+
       setupMsg+
-      '<div class="card">'+
+      '<form class="card" autocomplete="on" onsubmit="event.preventDefault();formaSubmitAuth()">'+
         '<div style="font-size:20px;font-weight:900;color:var(--white);margin-bottom:4px">'+(isSignup?'Create account':'Welcome back')+'</div>'+
         '<div style="font-size:12px;color:var(--muted);margin-bottom:16px">'+(isSignup?'Start with a cloud-synced Forma account.':'Use your Forma account to load your training data.')+'</div>'+
         '<label class="lbl">EMAIL</label>'+
-        '<input value="'+escH(a.email||'')+'" oninput="S.auth.email=this.value" autocomplete="email" inputmode="email" placeholder="you@example.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:12px;font-size:14px;color:var(--white);outline:none;font-family:inherit;margin-bottom:10px">'+
+        '<input id="forma-auth-email" name="email" type="email" value="'+escH(a.email||'')+'" oninput="S.auth.email=this.value" autocomplete="username" inputmode="email" placeholder="you@example.com" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:12px;font-size:14px;color:var(--white);outline:none;font-family:inherit;margin-bottom:10px">'+
         '<label class="lbl">PASSWORD</label>'+
-        '<input value="'+escH(a.password||'')+'" oninput="S.auth.password=this.value" type="password" autocomplete="'+(isSignup?'new-password':'current-password')+'" placeholder="••••••••" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:12px;font-size:14px;color:var(--white);outline:none;font-family:inherit;margin-bottom:12px">'+
+        '<input id="forma-auth-password" name="password" value="'+escH(a.password||'')+'" oninput="S.auth.password=this.value" type="password" autocomplete="'+(isSignup?'new-password':'current-password')+'" placeholder="••••••••" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:12px;font-size:14px;color:var(--white);outline:none;font-family:inherit;margin-bottom:12px">'+
         (a.error?'<div style="color:#E05050;font-size:12px;line-height:1.45;margin-bottom:10px">'+escH(a.error)+'</div>':'')+
         (a.notice?'<div style="color:#2DAA70;font-size:12px;line-height:1.45;margin-bottom:10px">'+escH(a.notice)+'</div>':'')+
-        '<button class="press" onclick="formaSubmitAuth()" '+disabled+' style="width:100%;background:var(--blue);border:none;color:#fff;border-radius:11px;padding:13px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;margin-bottom:10px">'+(a.loading?'Please wait...':isSignup?'Create account':'Sign in')+'</button>'+
-        '<button onclick="formaToggleAuthMode()" style="width:100%;background:none;border:none;color:var(--blue);font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">'+(isSignup?'Already have an account? Sign in':'New to Forma? Create account')+'</button>'+
-      '</div>'+
+        '<button type="submit" class="press" '+disabled+' style="width:100%;background:var(--blue);border:none;color:#fff;border-radius:11px;padding:13px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;margin-bottom:10px">'+(a.loading?'Please wait...':isSignup?'Create account':'Sign in')+'</button>'+
+        '<button type="button" onclick="formaToggleAuthMode()" style="width:100%;background:none;border:none;color:var(--blue);font-size:13px;font-weight:800;cursor:pointer;font-family:inherit">'+(isSignup?'Already have an account? Sign in':'New to Forma? Create account')+'</button>'+
+      '</form>'+
     '</div>'+
   '</div>';
 }

@@ -432,7 +432,7 @@ function vLog(){
           '<button onclick="saveExEdit('+i+')" style="flex:2;background:var(--blue);color:#fff;border:none;border-radius:7px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Save</button>'+
         '</div>'+
       '</div>':
-      // ── Normal header: title + exercise actions are grouped, history sits underneath ──
+      // ── Normal header: title gets its own row; history and utilities share a compact toolbar.
       (function(){
         var nm=ex.name.replace(/'/g,"\\'");
         var lastInline=last?
@@ -449,9 +449,11 @@ function vLog(){
           '<div class="ex-head-main">'+
             '<div class="ex-title-line">'+
               '<div class="ex-title-text">'+escH(ex.name)+'</div>'+
+            '</div>'+
+            '<div class="ex-meta-row">'+
+              lastInline+
               '<div class="ex-title-actions">'+util+'</div>'+
             '</div>'+
-            '<div class="ex-meta-row">'+lastInline+'</div>'+
           '</div>'+
           '<button class="ex-remove-btn" onclick="removeExFromWorkout('+i+')" title="Remove exercise">&#215;</button>'+
         '</div>';
@@ -544,6 +546,8 @@ function vLog(){
     '<button class="btn-dashed" onclick="toggleAddEx()">+ add exercise</button>';
 
   const anyLogged=w.exercises.some(function(e){return e.sets.length>0;});
+  const bottomFinish=!isTemplate&&anyLogged?
+    '<button class="bottom-finish-btn press" onclick="finishWorkout()">Finish Workout →</button>':'';
 
   // ── Exercise history panel ─────────────────────────────────
   const histPanel=S.exHistoryPanel?vExHistoryPanel(S.exHistoryPanel):'';
@@ -593,6 +597,7 @@ function vLog(){
   inlineAI+
   exCards+
   addPanel+
+  bottomFinish+
   '<div style="height:calc(24px + env(safe-area-inset-bottom))"></div>'+
   histPanel+
   instructPanel;
