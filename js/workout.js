@@ -260,7 +260,6 @@ function vLog(){
       '<div class="inline-ai-hdr">'+
         sparkleSvg+
         '<span style="font-size:11px;font-weight:800;color:var(--blue);letter-spacing:.08em;flex-shrink:0">AI COACH</span>'+
-        '<span style="font-size:10px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"> &mdash; ask anything or get a recommendation</span>'+
         '<button onclick="S.inlineAIOpen=false;S.inlineAIReply=\'\';S.inlineAIDraft=\'\';render()" title="Collapse" style="margin-left:auto;flex-shrink:0;background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;display:flex;line-height:1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>'+
       '</div>'+
       aiReply+aiLoading+
