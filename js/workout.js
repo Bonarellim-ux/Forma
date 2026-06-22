@@ -244,12 +244,23 @@ function vLog(){
   // AI coach panel (only shown during real workouts)
   const aiReply=S.inlineAIReply?'<div class="inline-ai-reply">'+renderMd(S.inlineAIReply)+'</div>':'';
   const aiLoading=S.inlineAILoading?'<div style="padding:4px 0 10px;display:flex;gap:3px;align-items:center"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>':'';
+  const sparkleSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="3.4"/></svg>';
+  // Collapsed by default so the exercise you're logging leads; expands on tap and stays
+  // open while there's a draft, a reply, or a request in flight.
+  const aiExpanded=S.inlineAIOpen||S.inlineAILoading||!!S.inlineAIReply||!!(S.inlineAIDraft&&S.inlineAIDraft.length);
   const inlineAI=isTemplate?'':
+    (!aiExpanded?
+    '<button class="inline-ai-collapsed" onclick="S.inlineAIOpen=true;render();setTimeout(function(){var t=document.getElementById(\'inline-ta\');if(t)t.focus();},60)">'+
+      sparkleSvg+
+      '<span>Ask the AI coach</span>'+
+      '<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'+
+    '</button>'
+    :
     '<div class="inline-ai">'+
       '<div class="inline-ai-hdr">'+
-        '<div style="width:3px;height:14px;background:var(--blue);border-radius:2px"></div>'+
-        '<span style="font-size:11px;font-weight:700;color:var(--blue);letter-spacing:.07em">AI COACH</span>'+
-        '<span style="font-size:10px;color:var(--muted)"> &mdash; ask anything or get a recommendation</span>'+
+        sparkleSvg+
+        '<span style="font-size:11px;font-weight:800;color:var(--blue);letter-spacing:.08em;flex-shrink:0">AI COACH</span>'+
+        '<button onclick="S.inlineAIOpen=false;S.inlineAIReply=\'\';S.inlineAIDraft=\'\';render()" title="Collapse" style="margin-left:auto;flex-shrink:0;background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;display:flex;line-height:1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></button>'+
       '</div>'+
       aiReply+aiLoading+
       '<button onclick="sendRecommend()" '+(S.inlineAILoading?'disabled':'')+' style="width:100%;background:var(--s2);border:1px solid var(--border2);color:var(--blue);border-radius:8px;padding:9px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:10px;opacity:'+(S.inlineAILoading?.5:1)+'">'+
@@ -265,7 +276,7 @@ function vLog(){
           'onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendInlineAI()}">'+escH(S.inlineAIDraft)+'</textarea>'+
         '<button class="sm-send-btn" onclick="sendInlineAI()" '+(S.inlineAILoading?'disabled':'')+'>&#8593;</button>'+
       '</div>'+
-    '</div>';
+    '</div>');
 
   // Exercise cards
   const exCards=w.exercises.map(function(ex,i){
@@ -423,24 +434,30 @@ function vLog(){
           '<button onclick="saveExEdit('+i+')" style="flex:2;background:var(--blue);color:#fff;border:none;border-radius:7px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Save</button>'+
         '</div>'+
       '</div>':
-      // ── Normal header: drag · name+? · [last | ✎ · ×] ───────
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'+
-        // Drag grip
-        '<button class="drag-handle" id="dh-'+i+'" draggable="true" ondragstart="exDragStart(event,'+i+')" ondragend="exDragEnd(event)" ontouchstart="exTouchStart(event,'+i+')" title="Drag to reorder" style="flex-shrink:0">&#8942;&#8942;</button>'+
-        // Name + ? button + pencil rename
-        '<div style="flex:1;min-width:0">'+
-          '<div style="display:flex;align-items:center;gap:5px">'+
-            '<div style="font-weight:700;font-size:15px;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3">'+ex.name+'</div>'+
-            '<button onclick="showExInstruct(\''+ex.name.replace(/'/g,"\\'")+'\')" title="How to perform" style="width:17px;height:17px;border-radius:50%;background:var(--s2);border:1px solid var(--border);color:var(--blue);font-size:9px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;padding:0">?</button>'+
-            '<button onclick="startExEdit('+i+')" title="Rename exercise" style="width:20px;height:20px;border-radius:5px;background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;opacity:.6">&#9999;</button>'+            '<button onclick="toggleSubstitutions('+i+')" title="Show substitutions" style="width:20px;height:20px;border-radius:5px;background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;opacity:.65">&#8644;</button>'+
+      // ── Normal header: name owns row 1; last/history + utilities sit quietly on row 2 ──
+      (function(){
+        var nm=ex.name.replace(/'/g,"\\'");
+        var lastInline=last?
+          '<button onclick="S.exHistoryPanel=\''+nm+'\';render()" title="Tap to see full history" style="background:none;border:none;padding:0;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:7px;min-width:0">'+
+            '<span style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Last <span class="mono" style="color:var(--sub);font-weight:600">'+(isCardio?last.w+' min':toDisp(last.w)+' '+uLbl()+' × '+last.r)+'</span></span>'+
+            '<span style="font-size:11px;color:var(--blue);font-weight:700;white-space:nowrap;flex-shrink:0">History ›</span>'+
+          '</button>':
+          '<span style="font-size:11px;color:var(--muted);font-style:italic">First time</span>';
+        var util='<button onclick="showExInstruct(\''+nm+'\')" title="How to perform" class="ex-util-btn">?</button>'+
+          '<button onclick="startExEdit('+i+')" title="Rename exercise" class="ex-util-btn" style="font-style:normal">✎</button>'+
+          '<button onclick="toggleSubstitutions('+i+')" title="Swap exercise" class="ex-util-btn">⇄</button>';
+        return '<div style="margin-bottom:13px">'+
+          '<div style="display:flex;align-items:flex-start;gap:8px">'+
+            '<button class="drag-handle" id="dh-'+i+'" draggable="true" ondragstart="exDragStart(event,'+i+')" ondragend="exDragEnd(event)" ontouchstart="exTouchStart(event,'+i+')" title="Drag to reorder" style="flex-shrink:0;margin-top:1px">&#8942;&#8942;</button>'+
+            '<div style="flex:1;min-width:0;font-weight:750;font-size:16px;color:var(--white);line-height:1.25;letter-spacing:-.01em;overflow-wrap:anywhere">'+ex.name+'</div>'+
+            '<button onclick="removeExFromWorkout('+i+')" title="Remove exercise" style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;opacity:.55">&#215;</button>'+
           '</div>'+
-        '</div>'+
-        // Right cluster: last session info · remove
-        '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'+
-          lastHtml+
-          '<button onclick="removeExFromWorkout('+i+')" title="Remove" style="width:26px;height:26px;border-radius:7px;background:#FEE8E8;border:1px solid #FCC;color:#C44;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;padding:0">&#215;</button>'+
-        '</div>'+
-      '</div>';
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;padding-left:25px">'+
+            lastInline+
+            '<div style="display:flex;align-items:center;gap:3px;flex-shrink:0">'+util+'</div>'+
+          '</div>'+
+        '</div>';
+      })();
 
     const subPanel=(S.substituteIdx===i&&!isEditing)?(function(){
       const subs=getExerciseSubstitutions(ex.name).filter(function(o){return o&&o.name&&o.name!==ex.name;}).slice(0,3);
@@ -772,9 +789,9 @@ function vFeedback(){
 
   const debriefCard=(S.feedbackLoading||S.feedback)?
     '<div class="card" style="margin-bottom:18px">'+
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'+
-        '<div style="width:3px;height:14px;background:var(--blue);border-radius:2px"></div>'+
-        '<span style="font-size:11px;font-weight:700;color:var(--blue);letter-spacing:.08em">COACH DEBRIEF</span>'+
+      '<div style="display:flex;align-items:center;gap:7px;margin-bottom:12px">'+
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="3.4"/></svg>'+
+        '<span style="font-size:11px;font-weight:800;color:var(--blue);letter-spacing:.08em">COACH DEBRIEF</span>'+
       '</div>'+
       (S.feedbackLoading?
         '<div style="display:flex;align-items:center;gap:10px;padding:6px 0">'+

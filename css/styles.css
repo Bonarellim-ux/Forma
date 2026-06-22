@@ -378,9 +378,13 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 .typing-dot:nth-child(3){animation-delay:.4s}
 
 /* ── Inline AI coach ─────────────────────────────────────────── */
-.inline-ai{background:var(--s1);border:1px solid rgba(196,212,228,.72);border-radius:var(--r-lg);padding:15px;margin-bottom:14px;box-shadow:var(--sh-sm)}
+.inline-ai{background:var(--s1);border:1px solid var(--border);border-radius:var(--r-lg);padding:13px;margin-bottom:14px;box-shadow:var(--sh-xs)}
 .inline-ai-hdr{display:flex;align-items:center;gap:6px;margin-bottom:10px}
-.inline-ai-reply{background:rgba(14,123,196,.06);border:1px solid rgba(14,123,196,.13);border-left:3px solid var(--blue);border-radius:12px;padding:11px 13px;margin-bottom:11px;font-size:13px;line-height:1.6;color:var(--white)}
+/* Collapsed AI coach: a slim prompt bar so the exercise leads the screen */
+.inline-ai-collapsed{width:100%;display:flex;align-items:center;gap:9px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r-lg);padding:13px 15px;margin-bottom:14px;cursor:pointer;font-family:inherit;box-shadow:var(--sh-xs);color:var(--sub);font-size:13px;font-weight:600;transition:border-color .15s var(--ease-out),box-shadow .15s var(--ease-out),transform .14s var(--ease-out)}
+.inline-ai-collapsed:active{transform:scale(.99)}
+.inline-ai-collapsed .chev{margin-left:auto;color:var(--muted);flex-shrink:0}
+.inline-ai-reply{background:rgba(14,123,196,.06);border:1px solid rgba(14,123,196,.13);border-radius:12px;padding:11px 13px;margin-bottom:11px;font-size:13px;line-height:1.6;color:var(--white)}
 .inline-ai-row{display:flex;gap:8px;align-items:flex-end}
 .inline-ta{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:16px;padding:10px 13px;color:var(--white);font-size:13px;outline:none;line-height:1.4;max-height:80px;overflow-y:auto;resize:none;font-family:inherit;transition:border-color .15s,box-shadow .15s}
 .inline-ta:focus{border-color:var(--blue)}
@@ -393,6 +397,9 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 .ex-card{background:var(--s1);border:1px solid rgba(196,212,228,.72);border-radius:var(--r-lg);padding:15px;margin-bottom:12px;width:100%;box-shadow:var(--sh-sm);transition:box-shadow .15s,border-color .15s,transform .14s var(--ease-out)}
 .ex-card:active{transform:translateY(1px)}
 .ex-card.editing{border:2px solid var(--blue);box-shadow:0 0 0 3px rgba(14,123,196,.08),var(--sh-sm)}
+/* Consistent quiet utility chips on the exercise header (how-to / rename / swap) */
+.ex-util-btn{width:26px;height:26px;border-radius:7px;background:var(--s2);border:1px solid var(--border);color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;padding:0;font-family:inherit;transition:color .15s,background .15s,transform .14s var(--ease-out)}
+.ex-util-btn:active{transform:scale(.92);color:var(--blue)}
 .ex-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:8px;min-width:0}
 .ex-name-row{display:flex;align-items:center;gap:8px;min-width:0;flex:1;overflow:hidden}
 .ex-name{font-weight:800;font-size:15px;letter-spacing:-.035em;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -409,19 +416,17 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 
 /* ── Recommendation row ──────────────────────────────────────── */
 .rec-row{
-  background:linear-gradient(135deg,var(--soft-blue),var(--card-elevated));
+  background:var(--soft-blue);
   border:1px solid var(--soft-blue-strong);
-  border-left:4px solid var(--blue);
   border-radius:var(--r-md);
-  padding:11px 12px;
-  margin:-2px 0 11px;
-  box-shadow:var(--sh-sm);
+  padding:12px 13px;
+  margin:-2px 0 13px;
   cursor:pointer;
   transition:background .18s,border-color .18s,transform .12s,box-shadow .18s;
   -webkit-tap-highlight-color:transparent;
 }
 .rec-row:active{transform:scale(.99);box-shadow:var(--sh-xs)}
-.rec-row.applied{background:linear-gradient(135deg,rgba(45,170,112,.1),var(--card-elevated));border-color:rgba(45,170,112,.3);border-left-color:var(--success);box-shadow:var(--sh-xs)}
+.rec-row.applied{background:rgba(45,170,112,.08);border-color:rgba(45,170,112,.28)}
 .rec-row-main{display:flex;align-items:flex-start;justify-content:space-between;gap:9px}
 .rec-row-mark{width:18px;height:18px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 7px rgba(14,123,196,.3)}
 .rec-row.applied .rec-row-mark{background:var(--success);box-shadow:0 2px 7px rgba(45,170,112,.3)}
@@ -524,11 +529,22 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 .drag-handle{touch-action:none;cursor:grab;color:var(--muted);font-size:18px;padding:4px 5px;border-radius:6px;background:none;border:none;display:flex;align-items:center;flex-shrink:0;line-height:1;user-select:none;-webkit-user-select:none;transition:color .15s}
 .drag-handle:active,.drag-handle.held{cursor:grabbing;color:var(--blue);background:var(--dim)}
 
+/* ── Home section rhythm ─────────────────────────────────────── */
+/* One consistent beat between major home sections, one header style. */
+.home-section{margin-top:26px}
+.home-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;min-height:18px}
+.home-section-label{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.home-section-link{background:none;border:none;color:var(--blue);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;padding:0;display:flex;align-items:center;gap:4px}
+.home-greeting{font-size:13px;color:var(--muted);font-weight:600;margin-bottom:11px}
+/* Selected-day plan: a light panel grouped under the week strip, not a card that competes with the hero. */
+.home-day-detail{margin-top:13px;background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:2px 15px 13px;box-shadow:var(--sh-xs)}
+.home-day-detail-head{display:flex;justify-content:space-between;align-items:center;padding:12px 0 9px}
+
 /* ── Home week strip ─────────────────────────────────────────── */
 .home-week-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .home-week-title{font-size:11px;font-weight:900;color:var(--muted);letter-spacing:.1em}
 .home-week-edit{background:none;border:none;color:var(--blue);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;padding:0;display:flex;align-items:center;gap:4px}
-.home-week-strip{display:flex;gap:6px;margin-bottom:16px}
+.home-week-strip{display:flex;gap:6px}
 .home-week-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;min-width:0}
 .home-week-label{font-size:10px;font-weight:700;letter-spacing:.04em;line-height:1;color:var(--muted);transition:color .16s}
 .home-week-day.today .home-week-label{color:var(--blue)}
@@ -563,7 +579,7 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 .tour-coach-card{position:absolute;left:18px;right:18px;bottom:calc(14px + env(safe-area-inset-bottom));background:var(--s1);border:1px solid rgba(196,212,228,.72);border-radius:var(--r-xl);padding:16px;box-shadow:var(--sh-lg)}
 .tour-coach-title{font-size:17px;font-weight:800;color:var(--white);letter-spacing:-.03em;line-height:1.15;margin-bottom:6px}
 .tour-coach-copy{font-size:13px;color:var(--sub);line-height:1.55}
-.tour-coach-example{background:var(--s2);border-left:3px solid var(--blue);border-radius:0 10px 10px 0;padding:10px 12px;margin-top:10px;font-size:12px;color:var(--white);line-height:1.5}
+.tour-coach-example{background:var(--soft-blue);border:1px solid var(--soft-blue-strong);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:12px;color:var(--white);line-height:1.5}
 .tour-coach-actions{display:flex;gap:8px;margin-top:12px}
 .tour-coach-actions button{flex:1;border-radius:var(--r-sm);padding:12px 10px;font-size:12px;font-weight:800;font-family:inherit}
 

@@ -283,7 +283,7 @@ function vStrengthScore(){
     return '<div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'+
         '<div style="display:flex;align-items:center;gap:8px">'+
-          '<div style="width:3px;height:16px;background:'+pg.color+';border-radius:2px"></div>'+
+          '<span style="width:8px;height:8px;border-radius:50%;background:'+pg.color+';flex-shrink:0;display:inline-block"></span>'+
           '<span style="font-size:13px;font-weight:800;color:var(--white)">'+pg.name+'</span>'+
         '</div>'+
         '<span style="font-size:11px;font-weight:700;color:'+LEVEL_COLORS[Math.min(avgLevel,5)]+'">'+LEVELS[Math.min(avgLevel,5)]+'</span>'+
@@ -306,7 +306,7 @@ function vStrengthScore(){
             '</div>'+
           '</div>'+
           '<div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">'+
-            '<div style="height:100%;width:'+r.score+'%;background:'+pg.color+';border-radius:2px;opacity:'+(r.val>0?1:0.2)+';transition:width .5s ease"></div>'+
+            '<div style="height:100%;width:'+r.score+'%;background:'+r.levelColor+';border-radius:2px;opacity:'+(r.val>0?1:0.2)+';transition:width .5s ease"></div>'+
           '</div>'+
           (r.needed&&r.level<5?'<div style="font-size:9px;color:var(--muted);margin-top:3px">'+r.needed+' '+uLbl()+' to '+LEVELS[Math.min(r.level+1,5)]+'</div>':'')+
         '</div>';
@@ -744,14 +744,14 @@ function vCalendar(){
     cells+=
       '<div onclick="'+(hasWorkout?'selCalWorkout('+wIdx+')':isEmpty?'promptPastWorkout(\''+year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0')+'\')':'')+'" '+
         'style="'+
-          'aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;'+
-          'background:'+(isSelected?col:hasWorkout?hexA(col,.1):(isToday?'var(--s2)':'none'))+';'+
-          'border:1.5px solid '+(isSelected?col:isToday?'var(--blue)':isEmpty?'transparent':'transparent')+';'+
+          'aspect-ratio:1;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;'+
+          'background:'+(isSelected?'var(--blue)':isToday?'var(--soft-blue)':'none')+';'+
+          'border:1.5px solid '+(isSelected||isToday?'var(--blue)':'transparent')+';'+
           'cursor:'+(hasWorkout||isEmpty?'pointer':'default')+';'+
           'position:relative'+
         '">'+
         '<span style="font-size:12px;font-weight:'+(isToday||hasWorkout?700:400)+';color:'+(isSelected?'#fff':isToday?'var(--blue)':'var(--white)')+'">'+d+'</span>'+
-        (hasWorkout?'<div style="width:5px;height:5px;border-radius:50%;background:'+(isSelected?'rgba(255,255,255,.8)':col)+'"></div>':
+        (hasWorkout?'<div style="width:5px;height:5px;border-radius:50%;background:'+(isSelected?'#fff':col)+'"></div>':
          isEmpty?'<div style="width:5px;height:5px;border-radius:50%;background:transparent;border:1px dashed var(--dim)"></div>':'')+
       '</div>';
   }
@@ -801,10 +801,13 @@ function vCalendar(){
   // Recent summary strip (last 30 days)
   const recent=S.workouts.slice(0,8).map(function(w,idx){
     const c=spCol(w.split);
-    return '<div onclick="selCalWorkout('+idx+')" style="flex-shrink:0;background:'+hexA(c,.1)+';border:1px solid '+hexA(c,.3)+';border-radius:8px;padding:8px 10px;cursor:pointer;min-width:80px">'+
-      '<div style="font-size:9px;font-weight:700;color:'+c+';letter-spacing:.06em">'+spLbl(w.split).toUpperCase()+'</div>'+
-      '<div style="font-size:10px;color:var(--muted);margin-top:2px">'+fmtD(w.date)+'</div>'+
-      '<div style="font-size:10px;color:var(--sub);margin-top:1px">'+w.exercises.filter(function(e){return e.sets.length>0;}).length+' exercises</div>'+
+    return '<div onclick="selCalWorkout('+idx+')" style="flex-shrink:0;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:9px 11px;cursor:pointer;min-width:92px;box-shadow:var(--sh-xs)">'+
+      '<div style="display:flex;align-items:center;gap:6px">'+
+        '<span style="width:7px;height:7px;border-radius:50%;background:'+c+';flex-shrink:0"></span>'+
+        '<span style="font-size:9px;font-weight:800;color:var(--sub);letter-spacing:.06em">'+spLbl(w.split).toUpperCase()+'</span>'+
+      '</div>'+
+      '<div style="font-size:11px;font-weight:700;color:var(--white);margin-top:4px">'+fmtD(w.date)+'</div>'+
+      '<div style="font-size:10px;color:var(--muted);margin-top:1px">'+w.exercises.filter(function(e){return e.sets.length>0;}).length+' exercises</div>'+
     '</div>';
   }).join('');
 
@@ -910,9 +913,9 @@ function vProgressChart(){
   const analysisHtml=(function(){
     if(S.chartAnalysisEx===S.selEx&&S.chartAnalysis){
       return '<div style="background:var(--s1);border:1px solid rgba(26,158,212,.25);border-radius:12px;padding:14px;margin-bottom:18px">'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'+
-          '<div style="width:3px;height:14px;background:var(--blue);border-radius:2px"></div>'+
-          '<span style="font-size:11px;font-weight:700;color:var(--blue);letter-spacing:.08em">COACH ANALYSIS</span>'+
+        '<div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">'+
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="3.4"/></svg>'+
+          '<span style="font-size:11px;font-weight:800;color:var(--blue);letter-spacing:.08em">COACH ANALYSIS</span>'+
         '</div>'+
         '<div style="font-size:13px;line-height:1.75;color:var(--white)">'+renderMd(S.chartAnalysis)+'</div>'+
       '</div>';
