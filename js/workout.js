@@ -451,8 +451,8 @@ function vLog(){
               '<div class="ex-title-text">'+escH(ex.name)+'</div>'+
             '</div>'+
             '<div class="ex-meta-row">'+
-              lastInline+
               '<div class="ex-title-actions">'+util+'</div>'+
+              lastInline+
             '</div>'+
           '</div>'+
           '<button class="ex-remove-btn" onclick="removeExFromWorkout('+i+')" title="Remove exercise">&#215;</button>'+
