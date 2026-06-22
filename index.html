@@ -442,8 +442,8 @@ function vHome(){
     return '<div class="home-section" style="background:var(--s1);border:1px solid rgba(26,158,212,.3);border-radius:16px;padding:16px">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'+
         '<div style="display:flex;align-items:center;gap:8px">'+
-          '<div style="width:3px;height:16px;background:var(--blue);border-radius:2px"></div>'+
-          '<span style="font-size:11px;font-weight:700;color:var(--blue);letter-spacing:.08em">COACH DEBRIEF</span>'+
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="3.4"/></svg>'+
+          '<span style="font-size:11px;font-weight:800;color:var(--blue);letter-spacing:.08em">COACH DEBRIEF</span>'+
           '<span style="font-size:10px;color:var(--muted)">Today</span>'+
         '</div>'+
         '<button onclick="S.debriefDismissed=true;render()" title="Dismiss" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;padding:2px 4px;font-family:inherit;opacity:.6">&times;</button>'+
@@ -808,8 +808,8 @@ function vWorkoutDetail(){
   (w.debrief?
     '<div style="background:var(--s1);border:1px solid rgba(26,158,212,.25);border-radius:12px;padding:14px;margin-top:6px">'+
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'+
-        '<div style="width:3px;height:14px;background:var(--blue);border-radius:2px"></div>'+
-        '<span style="font-size:11px;font-weight:700;color:var(--blue);letter-spacing:.08em">COACH DEBRIEF</span>'+
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="3.4"/></svg>'+
+        '<span style="font-size:11px;font-weight:800;color:var(--blue);letter-spacing:.08em">COACH DEBRIEF</span>'+
       '</div>'+
       '<div style="font-size:13px;line-height:1.75;color:var(--white)">'+renderMd(w.debrief)+'</div>'+
     '</div>':''

@@ -790,9 +790,9 @@ function vFeedback(){
 
   const debriefCard=(S.feedbackLoading||S.feedback)?
     '<div class="card" style="margin-bottom:18px">'+
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'+
-        '<div style="width:3px;height:14px;background:var(--blue);border-radius:2px"></div>'+
-        '<span style="font-size:11px;font-weight:700;color:var(--blue);letter-spacing:.08em">COACH DEBRIEF</span>'+
+      '<div style="display:flex;align-items:center;gap:7px;margin-bottom:12px">'+
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="3.4"/></svg>'+
+        '<span style="font-size:11px;font-weight:800;color:var(--blue);letter-spacing:.08em">COACH DEBRIEF</span>'+
       '</div>'+
       (S.feedbackLoading?
         '<div style="display:flex;align-items:center;gap:10px;padding:6px 0">'+
