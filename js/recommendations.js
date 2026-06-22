@@ -180,6 +180,15 @@ function exerciseProgressionProfile(exName){
   else if(category==='upper_isolation'){minTarget=10;maxTarget=15;}
   else if(category==='small_isolation'){minTarget=12;maxTarget=20;}
   else if(category==='bodyweight'){minTarget=8;maxTarget=15;}
+  // Shift rep targets toward the user's stated goal. Hypertrophy/general keep the
+  // category defaults; strength biases lower (heavier, fewer reps), endurance higher.
+  const goalBias=profileGoalBias();
+  if(goalBias==='strength'){
+    if(isCompound){minTarget=Math.max(3,minTarget-3);maxTarget=Math.max(minTarget+2,maxTarget-3);}
+    else{minTarget=Math.max(6,minTarget-3);maxTarget=Math.max(minTarget+2,maxTarget-4);}
+  }else if(goalBias==='endurance'){
+    minTarget=minTarget+3;maxTarget=Math.min(25,maxTarget+5);
+  }
   return{
     category:category,
     isLower:isLower,
@@ -340,6 +349,16 @@ function profileExperienceLevel(){
   if(exp.includes('1')||exp.includes('2')||exp.includes('intermediate'))return 'intermediate';
   if(exp.includes('beginner')||exp.includes('novice')||exp.includes('starting')||exp.includes('6 months'))return 'beginner';
   return 'unknown';
+}
+
+// Maps the user's free-text goal to a rep-range bias. Hypertrophy/general keep the
+// category defaults; strength → lower reps, endurance → higher reps.
+function profileGoalBias(){
+  const g=String(S&&S.profile&&S.profile.goal||'').toLowerCase();
+  if(/strength|stronger|power(?!\s*clean)|powerlift|1\s*rm|one rep max|heav/.test(g))return 'strength';
+  if(/endur|stamina|conditioning|toning|tone up|lean out|cardio/.test(g))return 'endurance';
+  if(/muscle|hypertroph|\bsize\b|mass|bigger|build/.test(g))return 'hypertrophy';
+  return 'general';
 }
 
 function profileAge(){
@@ -586,6 +605,7 @@ function firstTimeSourceInterpretation(start,p,exName){
   const source=start&&start.source;
   const category=start&&start.category||p.category;
   const label=categoryCalibrationLabel(category,exName);
+  if(source==='cross_exercise_estimate'&&start&&start.basisName)return 'an estimate from your logged '+start.basisName+' ('+start.basisDisp+' '+uLbl()+') scaled by the typical strength ratio to '+label;
   if(source==='unknown_fallback')return 'a conservative general starting point because there is no strong exercise-category match';
   if(source==='category_fallback')return 'a conservative category-based starting point for '+label+' because there is no exact exercise match in your history';
   if(source==='equipment_adjusted_calibration'||source==='safer_calibration'){
@@ -663,6 +683,76 @@ function firstTimeBuildCalibration(exName,level,position){
   };
 }
 
+// ── Cross-exercise inference for first-time recommendations ───────────────
+// When a movement has no logged history, estimate its starting working weight
+// from RELATED compound lifts the user has already logged, scaled by relative
+// difficulty (EX_DEFAULTS values double as strength-ratio anchors). This makes
+// the very first recommendation use real demonstrated strength instead of a
+// generic novice calibration range.
+function recMovementFamily(exName){
+  const n=normExName(exName);
+  if(/(leg extension|leg press|hack squat|\bsquat\b|lunge|split squat|step ?up|bulgarian)/.test(n))return 'squat';
+  if(/(deadlift|\brdl\b|romanian|hip thrust|good morning|glute|leg curl|hamstring|back extension|hyperextension)/.test(n))return 'hinge';
+  if(/(row|pulldown|pull ?up|chin|lat pull|face pull|rear delt|shrug|pullover)/.test(n))return 'pull';
+  if(/(bicep|preacher|hammer|\bcurl\b)/.test(n))return 'pull';
+  if(/(bench|chest|incline|decline|\bdip\b|overhead|\bohp\b|shoulder press|military|push press|tricep|pushdown|skull|close grip|push ?up|\bpress\b)/.test(n))return 'push';
+  return null;
+}
+function recMedianWorkingKg(sessions){
+  const ws=sessions.slice(0,3).map(function(s){return Number(s.topW);}).filter(function(x){return x>0;}).sort(function(a,b){return a-b;});
+  if(!ws.length)return 0;
+  return ws[Math.floor((ws.length-1)/2)];
+}
+function crossExerciseStartEstimate(exName){
+  const p=exerciseProgressionProfile(exName);
+  if(!p.isCompound)return null;                       // ratios only transfer reliably between compounds
+  const fam=recMovementFamily(exName);
+  if(!fam)return null;
+  const targetAnchor=rawDefaultExerciseLbs(exName);
+  if(!(targetAnchor>0))return null;
+  const target=normExName(exName);
+  const seen={};
+  const cands=[];
+  (S.workouts||[]).forEach(function(w){
+    if(!w||!Array.isArray(w.exercises))return;
+    w.exercises.forEach(function(ex){
+      if(!ex||!ex.name)return;
+      const nm=normExName(ex.name);
+      if(nm===target||seen[nm])return;
+      if(!exerciseProgressionProfile(ex.name).isCompound)return;
+      if(recMovementFamily(ex.name)!==fam)return;     // same push/pull/squat/hinge family only
+      const anchor=rawDefaultExerciseLbs(ex.name);
+      if(!(anchor>0))return;
+      const sess=getRecentExerciseSessions(ex.name,6).filter(function(s){return s&&s.topW>0&&s.topR>0;});
+      if(!sess.length)return;
+      const wkg=recMedianWorkingKg(sess);
+      if(!(wkg>0))return;
+      seen[nm]=true;
+      cands.push({name:ex.name,anchor:anchor,wkg:wkg,n:sess.length,closeness:Math.abs(Math.log(targetAnchor/anchor))});
+    });
+  });
+  if(!cands.length)return null;
+  // Prefer the lift with the most data; tie-break by closest relative difficulty (most reliable transfer).
+  cands.sort(function(a,b){return (b.n-a.n)||(a.closeness-b.closeness);});
+  const primary=cands[0];
+  const estKg=primary.wkg*(targetAnchor/primary.anchor)*0.9; // start a touch under on a brand-new movement
+  const displayJump=S.unit==='lbs'?(p.jump||5):Math.min(p.jump||2.5,2.5);
+  let disp=roundToProgressionJump(displayWeightFromKg(estKg),displayJump);
+  const minLoad=firstTimeUsesBarbell(exName)?(S.unit==='kg'?20:45):displayJump;
+  disp=Math.max(disp,minLoad);
+  return {
+    weightDisp:Math.round(disp*10)/10,
+    weight:kgFromDisplayWeight(disp),
+    repTarget:firstTimeRepTarget(exName,p.category),
+    category:p.category,
+    loadBasis:firstTimeLoadBasis(exName),
+    source:'cross_exercise_estimate',
+    confidence:'medium',
+    basisName:primary.name,
+    basisDisp:Math.round(displayWeightFromKg(primary.wkg)*10)/10
+  };
+}
+
 function firstTimeStartingTarget(exName){
   const p=exerciseProgressionProfile(exName);
   const baseLbs=rawDefaultExerciseLbs(exName);
@@ -686,7 +776,10 @@ function firstTimeStartingTarget(exName){
       profileNotes:startingWeightProfileNotes()
     });
   }
-  return Object.assign({},start,{
+  // Prefer a cross-exercise estimate from related logged lifts over the generic
+  // calibration range when one is available (no equipment substitution forced).
+  const cross=crossExerciseStartEstimate(exName);
+  return Object.assign({},(cross||start),{
     baseLbs:baseLbs,
     profileNotes:startingWeightProfileNotes()
   });
@@ -927,12 +1020,16 @@ function starterOverloadSuggestion(exName,currentInputW,sessions){
     const repTarget=start?start.repTarget:p.minTarget+'-'+p.maxTarget;
     const loadBasis=start&&start.loadBasis==='per hand'?' per hand':'';
     // TEMP: based on ACSM Progression Models in Resistance Training for Healthy Adults (Med Sci Sports Exerc, 2009; DOI 10.1249/MSS.0b013e3181915670) - use a conservative calibration load until Forma has exercise-specific history; replace with rule engine when research database is complete.
+    const isCross=start&&start.source==='cross_exercise_estimate';
     const action=start&&start.variation?
       'I\'d recommend '+start.variation+' — '+startDisp+' '+uLbl()+loadBasis+' for '+repTarget+' clean reps.':
+      isCross?
+      'I\'d recommend starting at '+startDisp+' '+uLbl()+loadBasis+' for '+repTarget+' clean reps.':
       'I\'d recommend using '+startDisp+' '+uLbl()+loadBasis+' as a calibration load for '+repTarget+' clean reps.';
     const why=firstTimeCalibrationWhyLines(exName,start,p);
     const detail=recommendationDetail(action,why);
-    const reasonLabel=start&&(start.source==='equipment_adjusted_calibration'||start.source==='safer_calibration')?'Equipment-adjusted calibration load':'Conservative calibration load';
+    const reasonLabel=isCross?'Estimated from a similar lift':
+      (start&&(start.source==='equipment_adjusted_calibration'||start.source==='safer_calibration')?'Equipment-adjusted calibration load':'Conservative calibration load');
     return recommendationResult({dir:'same',action:'baseline',confidence:start&&start.confidence?start.confidence:'low',trend:'unknown',state:'baseline',category:start&&start.category?start.category:p.category,weight:kgFromDisplayWeight(startDisp),weightDisp:startDisp,repTarget:repTarget,reason:reasonLabel,source:start&&start.source,loadBasis:start&&start.loadBasis,variation:start&&start.variation,displayText:start&&start.displayText,equipmentAdjusted:start&&start.equipmentAdjusted,adjustmentReason:start&&start.adjustmentReason,confidenceReason:start&&start.confidenceReason,detail:detail});
   }
   const last=sessions[0];
