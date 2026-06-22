@@ -20,7 +20,7 @@
   --danger-border:#FCCECE;
   --button-bg:#0E7BC4;
   --input-bg:#F6F8FB;
-  --nav-bg:rgba(255,255,255,.96);
+  --nav-bg:#FFFFFF;
   --header-bg:rgba(245,247,250,.94);
   --sheet-bg:#FFFFFF;
   --modal-bg:#FFFFFF;
@@ -80,7 +80,7 @@ html[data-theme="dark"]{
   --danger-border:rgba(244,123,123,.34);
   --button-bg:#239BDA;
   --input-bg:#111615;
-  --nav-bg:rgba(10,13,15,.97);
+  --nav-bg:#0A0D0F;
   --header-bg:rgba(10,13,15,.94);
   --sheet-bg:#121715;
   --modal-bg:#181C1A;
@@ -178,10 +178,9 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
   z-index:9999;
   display:flex;
   min-height:58px;
-  /* Let the bar grow for the home-indicator instead of clipping the buttons,
-     and trim the inset so the icons sit lower (less empty gap). The bottom
-     strip stays nav-coloured, so it blends into the device edge. */
-  padding:6px 8px max(6px,calc(env(safe-area-inset-bottom) - 12px));
+  /* Solid bar fills to the physical bottom (under the home indicator). Icons sit
+     just above it — trim most of the safe-area inset so they aren't floating high. */
+  padding:7px 8px max(6px,calc(env(safe-area-inset-bottom) - 22px));
   box-shadow:0 -8px 28px rgba(47,72,96,.08);
 }
 .nav button{
