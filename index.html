@@ -22,7 +22,7 @@
 <title>Forma</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="css/styles.css?v=home-momentum1">
+<link rel="stylesheet" href="css/styles.css?v=home-momentum2">
 </head>
 <body>
 <div id="root"></div>
@@ -269,6 +269,34 @@ function homeRecentWorkoutCount(days){
   }).length;
 }
 
+function homeShortExerciseName(name){
+  const raw=String(name||'').trim();
+  const n=raw.toLowerCase();
+  const rules=[
+    [/overhead press|\bohp\b/,'OHP'],
+    [/bench press|chest press/,'Bench'],
+    [/incline.*press|incline.*bench/,'Incline'],
+    [/lat pulldown|pulldown/,'Pulldown'],
+    [/low row|cable row|machine row|t-bar row|barbell row|row/,'Row'],
+    [/romanian deadlift|\brdl\b/,'RDL'],
+    [/deadlift/,'Deadlift'],
+    [/squat|hack squat|leg press/,'Squat'],
+    [/shoulder press/,'Shoulder Press'],
+    [/tricep|pushdown|extension|skull/,'Triceps'],
+    [/bicep|curl/,'Curl'],
+    [/lateral raise|side delt|rear delt|face pull|reverse pec/,'Delts'],
+    [/calf/,'Calves'],
+    [/leg curl|hamstring/,'Hamstrings']
+  ];
+  for(let i=0;i<rules.length;i++){if(rules[i][0].test(n))return rules[i][1];}
+  const cleaned=raw
+    .replace(/\b(machine|cable|dumbbell|barbell|smith|seated|standing|single[- ]arm|chest[- ]supported)\b/gi,'')
+    .replace(/\s+/g,' ')
+    .trim();
+  if(cleaned.length<=14)return cleaned||raw;
+  return cleaned.split(/\s+/).slice(0,2).join(' ')||raw;
+}
+
 function getHomeBiggestWin(){
   const cutoff=new Date();cutoff.setHours(0,0,0,0);cutoff.setDate(cutoff.getDate()-13);
   const byEx={};
@@ -309,13 +337,15 @@ function getHomeBiggestWin(){
     }
   });
   if(best){
+    const lift=homeShortExerciseName(best.name);
     return{
-      value:best.name+' +'+best.diff+(best.type==='reps'?' reps':' '+uLbl()),
-      sub:best.type==='reps'?'recent rep win':'recent e1RM trend',
+      value:lift+' +'+best.diff+(best.type==='reps'?' reps':' '+uLbl()),
+      sub:best.type==='reps'?'best set improved':'best recent trend',
       hasWin:true
     };
   }
-  if(homeRecentWorkoutCount(14)>0)return{value:'On track',sub:'sessions completed',hasWin:false};
+  const recent14=homeRecentWorkoutCount(14);
+  if(recent14>0)return{value:recent14+' session'+(recent14===1?'':'s'),sub:'logged recently',hasWin:false};
   return{value:'Keep logging',sub:'wins appear soon',hasWin:false};
 }
 
@@ -331,7 +361,9 @@ function getHomeMomentum(consistency,biggestWin){
   const activityPts=Math.round(25*Math.min(1,recent/Math.max(1,weeklyPlanned)));
   const progressPts=biggestWin.hasWin?25:0;
   const score=Math.max(0,Math.min(100,consistencyPts+activityPts+progressPts));
-  return{value:String(score),sub:'momentum score'};
+  const workoutText=recent+' workout'+(recent===1?'':'s');
+  const winText=biggestWin.hasWin?' + 1 win':'';
+  return{value:String(score),sub:recent?workoutText+winText:'start this week'};
 }
 
 function renderHomeMomentumRow(){
@@ -341,7 +373,7 @@ function renderHomeMomentumRow(){
   const cards=[
     {label:'Momentum',value:momentum.value,sub:momentum.sub,cls:'momentum'},
     {label:'Biggest Win',value:biggestWin.value,sub:biggestWin.sub,cls:'win'},
-    {label:'Consistency',value:consistency.value,sub:consistency.sub,cls:'consistency'}
+    {label:'Consistency',value:consistency.planned?(consistency.completed+' of '+consistency.planned):consistency.value,sub:consistency.planned?'done so far':consistency.sub,cls:'consistency'}
   ];
   return '<div class="home-momentum-row">'+cards.map(function(c){
     return '<div class="home-momentum-card '+c.cls+'">'+
