@@ -22,7 +22,7 @@
 <title>Forma</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="css/styles.css?v=workout-header2">
+<link rel="stylesheet" href="css/styles.css?v=home-momentum1">
 </head>
 <body>
 <div id="root"></div>
@@ -212,6 +212,146 @@ function homePlanItems(exs){
   }).filter(Boolean).sort(function(a,b){return b.score-a.score;}).slice(0,3);
 }
 
+function homeWeekInfo(){
+  const now=new Date();
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const day=(today.getDay()+6)%7; // Monday = 0
+  const start=new Date(today);start.setDate(today.getDate()-day);
+  const end=new Date(start);end.setDate(start.getDate()+6);
+  return{start:start,end:end,today:today,dayIndex:day};
+}
+
+function homeDateKeyToDay(k){
+  const d=new Date(k+'T12:00:00');
+  return DAYS[(d.getDay()+6)%7]||'mon';
+}
+
+function homeWorkoutDate(w){
+  if(!w||!w.date)return null;
+  const d=new Date(String(w.date).slice(0,10)+'T12:00:00');
+  return isNaN(d.getTime())?null:d;
+}
+
+function homeCompletedWorkoutCounts(info){
+  const done={};
+  (S.workouts||[]).forEach(function(w){
+    const d=homeWorkoutDate(w);
+    if(!d||d<info.start||d>info.today)return;
+    const key=localYMD(d);
+    const day=homeDateKeyToDay(key);
+    const planned=cleanSplit((S.schedule||{})[day]);
+    const split=cleanSplit(w.split);
+    if(!planned||planned==='rest'||!split||split==='rest')return;
+    if(isCardioSplit(split)&&!isCardioSplit(planned))return;
+    done[key]=true;
+  });
+  return Object.keys(done).length;
+}
+
+function getHomeConsistency(){
+  const info=homeWeekInfo();
+  const planned=DAYS.slice(0,info.dayIndex+1).filter(function(d){
+    const sp=cleanSplit((S.schedule||{})[d]);
+    return sp&&sp!=='rest';
+  }).length;
+  if(!S.schedule||!Object.keys(S.schedule).length)return{value:'—',sub:'no schedule yet',ratio:0,planned:0,completed:0};
+  if(!planned)return{value:'0/0',sub:'planned so far',ratio:0,planned:0,completed:0};
+  const completed=Math.min(planned,homeCompletedWorkoutCounts(info));
+  return{value:completed+'/'+planned,sub:'done this week',ratio:Math.min(1,completed/planned),planned:planned,completed:completed};
+}
+
+function homeRecentWorkoutCount(days){
+  const cutoff=new Date();cutoff.setHours(0,0,0,0);cutoff.setDate(cutoff.getDate()-days+1);
+  return(S.workouts||[]).filter(function(w){
+    const d=homeWorkoutDate(w);
+    const sp=cleanSplit(w&&w.split);
+    return d&&d>=cutoff&&sp&&sp!=='rest';
+  }).length;
+}
+
+function getHomeBiggestWin(){
+  const cutoff=new Date();cutoff.setHours(0,0,0,0);cutoff.setDate(cutoff.getDate()-13);
+  const byEx={};
+  (S.workouts||[]).forEach(function(w){
+    const d=homeWorkoutDate(w);
+    if(!d||d<cutoff)return;
+    (w.exercises||[]).forEach(function(ex){
+      if(!ex||!ex.name||isCardioEx(ex.name))return;
+      const work=(ex.sets||[]).filter(function(s){return !s.warmup&&(s.w>0||s.r>0);});
+      if(!work.length)return;
+      const weighted=work.filter(function(s){return s.w>0&&s.r>0;});
+      const bw=work.filter(function(s){return s.w===0&&s.r>0;});
+      let val=0,type='load';
+      if(weighted.length){
+        val=Math.max.apply(null,weighted.map(function(s){return e1rm(s.w,s.r);}));
+      }else if(bw.length){
+        val=Math.max.apply(null,bw.map(function(s){return s.r;}));
+        type='reps';
+      }else return;
+      if(!byEx[ex.name])byEx[ex.name]=[];
+      byEx[ex.name].push({date:d,val:val,type:type});
+    });
+  });
+  let best=null;
+  Object.keys(byEx).forEach(function(name){
+    const rows=byEx[name].sort(function(a,b){return a.date-b.date;});
+    if(rows.length<2)return;
+    const latest=rows[rows.length-1];
+    const prev=Math.max.apply(null,rows.slice(0,-1).filter(function(r){return r.type===latest.type;}).map(function(r){return r.val;}));
+    if(!Number.isFinite(prev))return;
+    const diff=latest.val-prev;
+    if(diff<=0)return;
+    const displayDiff=latest.type==='reps'?Math.round(diff):Math.round(toDisp(diff)*10)/10;
+    if(displayDiff<=0)return;
+    const score=latest.type==='reps'?displayDiff:toDisp(diff);
+    if(!best||score>best.score){
+      best={name:name,diff:displayDiff,type:latest.type,score:score};
+    }
+  });
+  if(best){
+    return{
+      value:best.name+' +'+best.diff+(best.type==='reps'?' reps':' '+uLbl()),
+      sub:best.type==='reps'?'recent rep win':'recent e1RM trend',
+      hasWin:true
+    };
+  }
+  if(homeRecentWorkoutCount(14)>0)return{value:'On track',sub:'sessions completed',hasWin:false};
+  return{value:'Keep logging',sub:'wins appear soon',hasWin:false};
+}
+
+function getHomeMomentum(consistency,biggestWin){
+  const weeklyPlanned=DAYS.filter(function(d){
+    const sp=cleanSplit((S.schedule||{})[d]);
+    return sp&&sp!=='rest';
+  }).length;
+  const recent=homeRecentWorkoutCount(7);
+  if(!(S.workouts||[]).length)return{value:'New',sub:'build your baseline'};
+  if(!weeklyPlanned)return{value:'—',sub:'set your schedule'};
+  const consistencyPts=consistency.planned?Math.round(50*consistency.ratio):0;
+  const activityPts=Math.round(25*Math.min(1,recent/Math.max(1,weeklyPlanned)));
+  const progressPts=biggestWin.hasWin?25:0;
+  const score=Math.max(0,Math.min(100,consistencyPts+activityPts+progressPts));
+  return{value:String(score),sub:'momentum score'};
+}
+
+function renderHomeMomentumRow(){
+  const consistency=getHomeConsistency();
+  const biggestWin=getHomeBiggestWin();
+  const momentum=getHomeMomentum(consistency,biggestWin);
+  const cards=[
+    {label:'Momentum',value:momentum.value,sub:momentum.sub,cls:'momentum'},
+    {label:'Biggest Win',value:biggestWin.value,sub:biggestWin.sub,cls:'win'},
+    {label:'Consistency',value:consistency.value,sub:consistency.sub,cls:'consistency'}
+  ];
+  return '<div class="home-momentum-row">'+cards.map(function(c){
+    return '<div class="home-momentum-card '+c.cls+'">'+
+      '<div class="home-momentum-label">'+c.label+'</div>'+
+      '<div class="home-momentum-value">'+escH(c.value)+'</div>'+
+      '<div class="home-momentum-sub">'+escH(c.sub)+'</div>'+
+    '</div>';
+  }).join('')+'</div>';
+}
+
 function vHome(){
   const today=todayKey();
   const sp=S.schedule[today];
@@ -362,6 +502,7 @@ function vHome(){
       '</div>'+
     '</div>'+
 
+    renderHomeMomentumRow()+
     profileNudge+
     rationaleCard+
 

@@ -551,6 +551,16 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 .home-section-label{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
 .home-section-link{background:none;border:none;color:var(--blue);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;padding:0;display:flex;align-items:center;gap:4px}
 .home-greeting{font-size:13px;color:var(--muted);font-weight:600;margin-bottom:11px}
+.home-momentum-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.home-momentum-card{position:relative;overflow:hidden;min-width:0;border-radius:15px;padding:11px 9px 10px;border:1px solid var(--border);box-shadow:var(--sh-xs);background:var(--card-bg)}
+.home-momentum-card::before{content:'';position:absolute;inset:0;opacity:.82;pointer-events:none}
+.home-momentum-card.momentum::before{background:linear-gradient(135deg,rgba(26,158,212,.18),rgba(26,158,212,.04))}
+.home-momentum-card.win::before{background:linear-gradient(135deg,rgba(45,170,112,.18),rgba(26,158,212,.035))}
+.home-momentum-card.consistency::before{background:linear-gradient(135deg,rgba(123,111,224,.17),rgba(26,158,212,.035))}
+.home-momentum-label,.home-momentum-value,.home-momentum-sub{position:relative;z-index:1}
+.home-momentum-label{font-size:8.5px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home-momentum-value{font-size:16px;font-weight:900;line-height:1.08;color:var(--white);letter-spacing:-.045em;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home-momentum-sub{font-size:9.5px;font-weight:700;line-height:1.25;color:var(--sub);margin-top:3px;min-height:24px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 /* Selected-day plan: a light panel grouped under the week strip, not a card that competes with the hero. */
 .home-day-detail{margin-top:13px;background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:2px 15px 13px;box-shadow:var(--sh-xs)}
 .home-day-detail-head{display:flex;justify-content:space-between;align-items:center;padding:12px 0 9px}
