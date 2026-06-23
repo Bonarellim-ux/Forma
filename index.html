@@ -22,7 +22,7 @@
 <title>Forma</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="css/styles.css?v=home-momentum3">
+<link rel="stylesheet" href="css/styles.css?v=home-momentum-ring1">
 </head>
 <body>
 <div id="root"></div>
@@ -377,9 +377,10 @@ function renderHomeMomentumRow(){
   ];
   return '<div class="home-momentum-row">'+cards.map(function(c){
     const longVal=String(c.value||'').length>11?' long-value':'';
+    const pct=Math.max(0,Math.min(100,parseInt(c.value,10)||0));
     return '<div class="home-momentum-card '+c.cls+longVal+'">'+
       '<div class="home-momentum-label">'+c.label+'</div>'+
-      '<div class="home-momentum-value">'+escH(c.value)+'</div>'+
+      (c.cls==='momentum'?'<div class="home-momentum-ring" style="--pct:'+pct+'"><span>'+escH(c.value)+'</span></div>':'<div class="home-momentum-value">'+escH(c.value)+'</div>')+
       '<div class="home-momentum-sub">'+escH(c.sub)+'</div>'+
     '</div>';
   }).join('')+'</div>';
