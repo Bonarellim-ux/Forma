@@ -211,7 +211,7 @@ function vQuickAIPanel(){
         'style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;color:var(--white);outline:none;font-family:inherit">'+
       '<button onclick="sendQuickAI()" '+(S.quickAILoading?'disabled':'')+' style="width:38px;height:38px;border-radius:50%;background:'+(S.quickAILoading?'var(--s2)':'var(--blue)')+';border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">'+
         (S.quickAILoading?
-          '<div style="width:14px;height:14px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--blue);animation:spin 1s linear infinite"></div>':
+          '<span style="display:flex;gap:2px"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span>':
           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>')+
       '</button>'+
     '</div>'+
@@ -329,7 +329,7 @@ function vChat(){
   const keyNotice=(!hasKey()&&!S.tourActive)?'<div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:4px 0 12px;font-size:12px;color:var(--sub);line-height:1.45">'+aiKeyMessage()+'</div>':'';
   const msgs=S.messages.map(function(m){
     if(m.role==='typing'){
-      return '<div class="msg ai"><div class="avatar">L</div><div><div class="bubble" style="display:flex;align-items:center;gap:5px;padding:14px 16px"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div></div>';
+      return '<div class="msg ai"><div class="avatar">L</div><div>'+(typeof vSkeletonAIMessage==='function'?vSkeletonAIMessage():'<div class="bubble" style="display:flex;align-items:center;gap:5px;padding:14px 16px"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>')+'</div></div>';
     }
     const pills=(m.actions||[]).length?'<div class="action-pills">'+m.actions.map(function(a){return '<span class="apill">&#10003; '+actionLbl(a)+'</span>';}).join('')+'</div>':'';
     const fbtns=buildFBtns(m.actions||[]);

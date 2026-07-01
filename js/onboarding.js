@@ -139,8 +139,15 @@ function vOnboarding(){
   // ── Generating ───────────────────────────────────────────────
   if(def.type==='generating'){
     return '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:90vh;padding:32px 24px;text-align:center">'+
-      '<div style="margin-bottom:28px">'+
-        '<div class="spinner" style="width:44px;height:44px;border-width:3px;margin:0 auto"></div>'+
+      '<div class="skeleton-card" style="width:100%;max-width:330px;border-radius:20px;padding:18px;margin-bottom:28px;text-align:left">'+
+        '<div style="display:flex;gap:8px;margin-bottom:14px">'+
+          '<div class="skeleton skeleton-pill" style="width:74px;height:26px"></div>'+
+          '<div class="skeleton skeleton-pill" style="width:92px;height:26px"></div>'+
+        '</div>'+
+        '<div class="skeleton skeleton-line w-72 h-title"></div>'+
+        '<div class="skeleton skeleton-line w-92"></div>'+
+        '<div class="skeleton skeleton-line w-78"></div>'+
+        '<div class="skeleton skeleton-line h-button"></div>'+
       '</div>'+
       '<div style="font-size:22px;font-weight:800;color:var(--white);letter-spacing:-.5px;margin-bottom:10px">Building your program…</div>'+
       '<div style="font-size:14px;color:var(--sub);line-height:1.7;max-width:260px">The AI is creating your personalised schedule and exercise selection.</div>'+

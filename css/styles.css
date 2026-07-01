@@ -167,6 +167,65 @@ input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 .has-nav{padding-bottom:calc(66px + env(safe-area-inset-bottom))!important}
 .is-chat{padding:0 0 72px!important}
 
+/* ── Skeleton loading states ─────────────────────────────────── */
+.skeleton{
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(90deg,rgba(226,234,242,.72),rgba(244,248,252,.95),rgba(226,234,242,.72));
+  background-size:220% 100%;
+  animation:skeletonShimmer 1.45s var(--ease-in-out) infinite;
+  border-radius:999px;
+}
+.skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0));pointer-events:none}
+.skeleton-card{
+  background:var(--card-bg);
+  border:1px solid var(--border);
+  box-shadow:var(--sh-sm);
+}
+.skeleton-line{height:11px;margin-bottom:8px;border-radius:999px}
+.skeleton-line.h-title{height:32px;border-radius:12px}
+.skeleton-line.h-value{height:18px;border-radius:10px}
+.skeleton-line.h-button{height:46px;border-radius:14px;margin-top:12px;margin-bottom:0}
+.skeleton-circle{width:34px;height:34px;border-radius:50%}
+.skeleton-pill{height:30px;border-radius:999px}
+.skeleton-header-action{width:86px;height:34px}
+.skeleton-page{animation:skeletonPageIn .22s var(--ease-out) both}
+.skeleton-hero-card{border-radius:20px;padding:18px;margin-bottom:14px;min-height:248px}
+.skeleton-momentum-row .home-momentum-card{align-items:center;justify-content:center}
+.skeleton-week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.skeleton-week-tile{min-width:0;text-align:center}
+.skeleton-week-tile .skeleton-line{height:10px;margin:0 auto 6px}
+.skeleton-week-tile .skeleton-pill{height:54px;border-radius:14px}
+.skeleton-session-card{border-radius:14px;padding:15px;margin-bottom:8px}
+.skeleton-workout-head{border-radius:16px;padding:14px;margin-bottom:10px}
+.skeleton-ex-card .ex-card-head{align-items:flex-start}
+.skeleton-drag{width:22px;height:38px;border-radius:9px;flex-shrink:0}
+.skeleton-rec-card{background:var(--soft-blue);border:1px solid rgba(14,123,196,.14);border-radius:14px;padding:14px;margin:12px 0}
+.skeleton-input{height:58px;border-radius:14px;margin-top:8px}
+.skeleton-button-wide{height:48px;border-radius:15px;margin-top:12px}
+.skeleton-ai-bubble{background:var(--s1);border:1px solid var(--border);border-radius:14px 14px 14px 4px;padding:14px 16px;box-shadow:var(--sh-xs)}
+.skeleton-stats-card{border-radius:14px;padding:14px;margin-bottom:18px}
+.skeleton-chart{height:170px;border-radius:14px;margin-top:14px}
+.skeleton-caption{font-size:11px;color:var(--muted);margin-top:10px}
+.w-24{width:24%}.w-26{width:26%}.w-28{width:28%}.w-34{width:34%}.w-36{width:36%}.w-38{width:38%}.w-40{width:40%}.w-42{width:42%}.w-46{width:46%}.w-48{width:48%}.w-52{width:52%}.w-54{width:54%}.w-58{width:58%}.w-62{width:62%}.w-64{width:64%}.w-68{width:68%}.w-70{width:70%}.w-72{width:72%}.w-76{width:76%}.w-78{width:78%}.w-82{width:82%}.w-88{width:88%}.w-92{width:92%}.w-100{width:100%}
+@keyframes skeletonShimmer{0%{background-position:120% 0}100%{background-position:-120% 0}}
+@keyframes skeletonPageIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+html[data-theme="dark"] .skeleton{
+  background:linear-gradient(90deg,rgba(31,40,43,.95),rgba(44,58,63,.88),rgba(31,40,43,.95));
+  background-size:220% 100%;
+}
+html[data-theme="dark"] .skeleton::after{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,0))}
+html[data-theme="dark"] .skeleton-card{
+  background:linear-gradient(180deg,rgba(19,25,27,.98),rgba(14,18,20,.98));
+  border-color:rgba(65,73,75,.7);
+  box-shadow:0 12px 28px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.035);
+}
+html[data-theme="dark"] .skeleton-rec-card{background:rgba(69,180,234,.08);border-color:rgba(69,180,234,.16)}
+@media (prefers-reduced-motion:reduce){
+  .skeleton{animation:none}
+  .skeleton-page{animation:none}
+}
+
 /* ── Bottom nav ──────────────────────────────────────────────── */
 .nav{
   position:fixed;left:50%;bottom:0;

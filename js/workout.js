@@ -237,7 +237,7 @@ document.addEventListener('visibilitychange',function(){
 });
 
 function vLog(){
-  if(!S.workout)return '';
+  if(!S.workout)return typeof vSkeletonWorkout==='function'?vSkeletonWorkout():'';
   const w=S.workout;
   const isTemplate=!!w.templateOnly;
 
@@ -797,10 +797,8 @@ function vFeedback(){
         '<span style="font-size:11px;font-weight:800;color:var(--blue);letter-spacing:.08em">COACH DEBRIEF</span>'+
       '</div>'+
       (S.feedbackLoading?
-        '<div style="display:flex;align-items:center;gap:10px;padding:6px 0">'+
-          '<div class="spinner" style="width:16px;height:16px;flex-shrink:0"></div>'+
-          '<span style="font-size:12px;color:var(--muted)">Analyzing your session...</span>'+
-        '</div>':
+        (typeof vSkeletonAIMessage==='function'?vSkeletonAIMessage():
+        '<div style="display:flex;align-items:center;gap:10px;padding:6px 0"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>'):
         '<div style="font-size:13px;line-height:1.75;color:var(--white)">'+renderMd(S.feedback||'')+'</div>')+
     '</div>':'';
 

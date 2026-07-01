@@ -921,10 +921,9 @@ function vProgressChart(){
       '</div>';
     }
     if(S.chartAnalysisLoading){
-      return '<div style="background:var(--s1);border:1px solid rgba(26,158,212,.15);border-radius:12px;padding:14px;margin-bottom:18px;display:flex;align-items:center;gap:10px">'+
-        '<div class="spinner" style="width:16px;height:16px;flex-shrink:0"></div>'+
-        '<span style="font-size:12px;color:var(--muted)">Analyzing '+S.selEx+' progression...</span>'+
-      '</div>';
+      return typeof vSkeletonStatsBlock==='function'
+        ? vSkeletonStatsBlock('Analyzing '+S.selEx+' progression')
+        : '<div style="background:var(--s1);border:1px solid rgba(26,158,212,.15);border-radius:12px;padding:14px;margin-bottom:18px;display:flex;align-items:center;gap:10px"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>';
     }
     return '<button onclick="requestChartAnalysis()" style="width:100%;background:var(--s1);border:1px solid var(--border2);border-radius:10px;padding:11px;font-size:12px;font-weight:700;color:var(--blue);cursor:pointer;font-family:inherit;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:6px">'+
       '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>'+

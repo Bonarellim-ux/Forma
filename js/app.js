@@ -2,9 +2,87 @@
 // App rendering, navigation, global input helpers, and startup orchestration.
 
 // ── RENDER ────────────────────────────────────────────────────
+function skeletonLine(cls){
+  return '<div class="skeleton skeleton-line '+(cls||'')+'"></div>';
+}
+function vSkeletonHome(){
+  const week=['','','','','','',''];
+  return '<div class="skeleton-page skeleton-home">'+
+    '<div class="home-greeting">'+skeletonLine('w-38')+'</div>'+
+    '<div class="skeleton-hero-card skeleton-card">'+
+      skeletonLine('w-24')+
+      skeletonLine('w-58 h-title')+
+      skeletonLine('w-78')+
+      '<div style="height:16px"></div>'+
+      skeletonLine('w-88')+
+      skeletonLine('w-100 h-button')+
+    '</div>'+
+    '<div class="home-momentum-row skeleton-momentum-row">'+
+      '<div class="home-momentum-card skeleton-card"><div class="skeleton skeleton-circle"></div>'+skeletonLine('w-54')+skeletonLine('w-68')+'</div>'+
+      '<div class="home-momentum-card skeleton-card">'+skeletonLine('w-58')+skeletonLine('w-70 h-value')+skeletonLine('w-64')+'</div>'+
+      '<div class="home-momentum-card skeleton-card">'+skeletonLine('w-54')+skeletonLine('w-48 h-value')+skeletonLine('w-76')+'</div>'+
+    '</div>'+
+    '<div class="home-section">'+
+      '<div class="home-section-head">'+skeletonLine('w-28')+skeletonLine('w-26')+'</div>'+
+      '<div class="skeleton-week-strip">'+week.map(function(){return '<div class="skeleton-week-tile">'+skeletonLine('w-42')+'<div class="skeleton skeleton-pill"></div></div>';}).join('')+'</div>'+
+    '</div>'+
+    '<div class="home-section">'+
+      '<div class="home-section-head">'+skeletonLine('w-36')+'</div>'+
+      '<div class="skeleton-session-card skeleton-card">'+skeletonLine('w-46 h-value')+skeletonLine('w-64')+'</div>'+
+      '<div class="skeleton-session-card skeleton-card">'+skeletonLine('w-40 h-value')+skeletonLine('w-54')+'</div>'+
+    '</div>'+
+  '</div>';
+}
+function vSkeletonApp(){
+  return '<div class="shell">'+
+    '<div class="hdr">'+
+      '<div class="logo">Forma<span>.</span></div>'+
+      '<div class="skeleton skeleton-pill skeleton-header-action"></div>'+
+    '</div>'+
+    '<div class="content">'+vSkeletonHome()+'</div>'+
+  '</div>';
+}
+function vSkeletonWorkout(){
+  return '<div class="skeleton-page skeleton-workout">'+
+    '<div class="skeleton-workout-head skeleton-card">'+skeletonLine('w-34')+skeletonLine('w-52 h-value')+'</div>'+
+    '<div style="display:flex;gap:4px;margin-bottom:10px">'+[1,2,3,4,5].map(function(){return '<div class="skeleton skeleton-line" style="height:4px;flex:1"></div>';}).join('')+'</div>'+
+    [1,2,3].map(function(){return '<div class="ex-card skeleton-card skeleton-ex-card">'+
+      '<div class="ex-card-head">'+
+        '<div class="skeleton skeleton-drag"></div>'+
+        '<div class="ex-head-main">'+skeletonLine('w-62 h-value')+skeletonLine('w-46')+'</div>'+
+        '<div class="skeleton skeleton-circle"></div>'+
+      '</div>'+
+      '<div class="skeleton-rec-card">'+skeletonLine('w-34')+skeletonLine('w-82 h-value')+skeletonLine('w-38')+'</div>'+
+      '<div class="ex-inputs">'+
+        '<div style="flex:1">'+skeletonLine('w-24')+'<div class="skeleton skeleton-input"></div></div>'+
+        '<div style="flex:1">'+skeletonLine('w-24')+'<div class="skeleton skeleton-input"></div></div>'+
+      '</div>'+
+      '<div class="skeleton skeleton-button-wide"></div>'+
+    '</div>';}).join('')+
+  '</div>';
+}
+function vSkeletonAIMessage(){
+  return '<div class="skeleton-ai-bubble">'+
+    '<div style="display:flex;gap:5px;margin-bottom:9px"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>'+
+    skeletonLine('w-88')+skeletonLine('w-72')+
+  '</div>';
+}
+function vSkeletonStatsBlock(label){
+  return '<div class="skeleton-stats-card skeleton-card">'+
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'+
+      '<div class="skeleton skeleton-circle" style="width:18px;height:18px"></div>'+
+      '<div style="flex:1">'+skeletonLine('w-34')+'</div>'+
+    '</div>'+
+    skeletonLine('w-92')+
+    skeletonLine('w-78')+
+    '<div class="skeleton skeleton-chart"></div>'+
+    (label?'<div class="skeleton-caption">'+escH(label)+'</div>':'')+
+  '</div>';
+}
+
 function render(){
   if(!S.loaded){
-    document.getElementById('root').innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--muted)">loading...</div>';
+    document.getElementById('root').innerHTML=vSkeletonApp();
     return;
   }
   if(S.auth&&S.auth.configured&&!S.auth.user){
